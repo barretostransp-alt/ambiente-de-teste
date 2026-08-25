@@ -289,7 +289,7 @@ async function doLogin() {
       // no banco (mesmo Supabase dos outros módulos) — não mais do Apps
       // Script nem de metadados soltos na conta de login.
       const pr = await fetch(
-        SUPABASE_URL + '/rest/v1/usuarios?select=nome,login,perfil,permissoes(ferramentas)&auth_user_id=eq.' + j.user.id,
+        SUPABASE_URL + '/rest/v1/usuarios?select=nome,login,perfil,deve_trocar_senha,permissoes(ferramentas)&auth_user_id=eq.' + j.user.id,
         { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + j.access_token } }
       );
       const linhas = await pr.json();
@@ -311,6 +311,9 @@ async function doLogin() {
       // usarem nas chamadas da API
       localStorage.setItem('barretos_auth_token',   j.access_token);
       localStorage.setItem('barretos_auth_refresh', j.refresh_token);
+      // Senha temporária (ex: a padrão dada na criação da conta) — o shell
+      // força a troca antes de liberar o resto do sistema.
+      localStorage.setItem('barretos_deve_trocar_senha', (perfilRow && perfilRow.deve_trocar_senha) ? '1' : '');
       window.location.href = 'shell.html';
     } else {
       setMsg(j.error_description || j.msg || 'Login ou senha incorretos.', '');
