@@ -540,10 +540,10 @@ function rCard(c){
   var cot=c["COTAÇÃO"]||"";
   var srch=[key,titulo,cli,vend,c["MOTORISTA"]||"",ro,fret,c["NF"]||"",c["CTE"]||"",cot?"cotacao "+cot:""].join(" ").toLowerCase();
   return "<div class=\"kcard\" draggable=\"true\""
-    +" data-key=\""+e(key)+"\" data-s=\""+srch+"\" data-v=\""+e(vend)+"\""+
+    +" data-key=\""+e(key)+"\" data-s=\""+e(srch)+"\" data-v=\""+e(vend)+"\""+
     " ondragstart=\"dstart(event,event.currentTarget)\" ondragend=\"dend(event)\">"+
-    "<div class=\"kcard-top\"><span class=\"kcard-code\">"+key+(c["CTE"]?" · CTE "+e(c["CTE"])+"":"")+"</span>"+
-    (acomp?"<span class=\"kcard-acomp\">"+acomp+"</span>":"")+
+    "<div class=\"kcard-top\"><span class=\"kcard-code\">"+e(key)+(c["CTE"]?" · CTE "+e(c["CTE"])+"":"")+"</span>"+
+    (acomp?"<span class=\"kcard-acomp\">"+e(acomp)+"</span>":"")+
     "</div>"+
     (cot?"<div style=\"margin-bottom:5px\"><span class=\"ktag\" style=\"background:rgba(245,197,24,.1);color:var(--gold,#F5C518);border:1px solid rgba(245,197,24,.3)\"><i class=\"ti ti-file-invoice\" style=\"font-size:9px\"></i> Cotação #"+String(cot).padStart(4,"0")+"</span></div>":"")+
     "<div class=\"kcard-cli\">"+e(titulo||"(sem título)")+"</div>"+
