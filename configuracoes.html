@@ -423,7 +423,9 @@ function renderUsuarios(){
       + '<div class="tool-actions">'
       + '<span class="save-msg" id="msg-' + login.replace(/\s/g,"_") + '" style="display:none"></span>'
       + (souAdminAgora && !u.eh_admin
-          ? '<button class="btn-save" style="background:transparent;border:1px solid var(--red);color:var(--red)" onclick="excluirUsuarioClick(\'' + u.id + '\',\'' + u.nome.replace(/'/g,"\\'") + '\')">'
+          ? '<button class="btn-save" style="background:transparent;border:1px solid var(--gold);color:var(--gold)" onclick="alterarPerfilClick(\'' + u.id + '\',\'' + u.nome.replace(/'/g,"\\'") + '\',\'' + (isGestor?"colaborador":"gestor") + '\')">'
+            + '<i class="ti ti-arrows-exchange" style="font-size:13px"></i> Tornar ' + (isGestor?"Colaborador":"Gestor") + '</button>'
+            + '<button class="btn-save" style="background:transparent;border:1px solid var(--red);color:var(--red)" onclick="excluirUsuarioClick(\'' + u.id + '\',\'' + u.nome.replace(/'/g,"\\'") + '\')">'
             + '<i class="ti ti-trash" style="font-size:13px"></i> Excluir usuário</button>'
           : '')
       + '<button class="btn-save" onclick="salvarPermissoes(\'' + login + '\')">'
@@ -431,6 +433,25 @@ function renderUsuarios(){
       + '</div></div>';
     container.appendChild(card);
   });
+}
+
+async function alterarPerfilClick(id, nome, novoPerfil){
+  const rotulo = novoPerfil === 'gestor' ? 'Gestor' : 'Colaborador';
+  if (!confirm('Tornar "' + nome + '" ' + rotulo + '?')) return;
+  try {
+    const res = await apiFetch(API_BASE + "/usuarios/" + id + "/perfil", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ perfil: novoPerfil }),
+    });
+    if (!res.ok) {
+      const dados = await res.json().catch(() => ({}));
+      throw new Error(dados.error || 'Erro ao alterar perfil');
+    }
+    carregarUsuarios();
+  } catch(e) {
+    alert('Erro ao alterar perfil: ' + e.message);
+  }
 }
 
 async function excluirUsuarioClick(id, nome){
