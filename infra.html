@@ -376,7 +376,7 @@ function mapearParaApi_(dados){
   var mapa = {
     "DT CODIGO":"codigo","Resumo":"resumo","TITULO":"titulo","Status":"status","ACOMPANHAMENTO":"acompanhamento",
     "CLIENTE":"cliente","CONTATO CLIENTE":"contato_cliente","CNPJ TOMADOR":"cnpj_tomador","VENDEDOR":"vendedor",
-    "DATA DA COLETA":"data_coleta","PREVISÃO DE ENTREGA":"previsao_entrega",
+    "DATA DA COLETA":"data_coleta","PREVISÃO DE ENTREGA":"previsao_entrega","MODALIDADE":"modalidade","TIPO DE MATERIAL":"tipo_material",
     "CTE":"cte","MDF":"mdf","NF":"nf","DATA DA ENTREGA":"data_entrega",
     "CIDADE ORIGEM":"cidade_origem","UF ORIGEM":"uf_origem","CIDADE DESTINO":"cidade_destino","UF DESTINO":"uf_destino",
     "FRETE COBRADO":"frete_cobrado","FRETE PAGO":"frete_pago","CUSTO OPERACIONAL TOTAL":"custo_operacional_total","ADIANTAMENTO":"adiantamento",
@@ -398,7 +398,7 @@ function mapearDoApi_(row){
   var mapaInverso = {
     codigo:"DT CODIGO", resumo:"Resumo", titulo:"TITULO", status:"Status", acompanhamento:"ACOMPANHAMENTO",
     cliente:"CLIENTE", contato_cliente:"CONTATO CLIENTE", cnpj_tomador:"CNPJ TOMADOR", vendedor:"VENDEDOR",
-    data_coleta:"DATA DA COLETA", previsao_entrega:"PREVISÃO DE ENTREGA",
+    data_coleta:"DATA DA COLETA", previsao_entrega:"PREVISÃO DE ENTREGA", modalidade:"MODALIDADE", tipo_material:"TIPO DE MATERIAL",
     cte:"CTE", mdf:"MDF", nf:"NF", data_entrega:"DATA DA ENTREGA",
     cidade_origem:"CIDADE ORIGEM", uf_origem:"UF ORIGEM", cidade_destino:"CIDADE DESTINO", uf_destino:"UF DESTINO",
     frete_cobrado:"FRETE COBRADO", frete_pago:"FRETE PAGO", custo_operacional_total:"CUSTO OPERACIONAL TOTAL", adiantamento:"ADIANTAMENTO",
@@ -655,6 +655,8 @@ function buildForm(data,isNew){
     "<div class=\"fg\"><label>Contato Cliente</label>"+inp("CONTATO CLIENTE","Nome / Telefone")+"</div>"+
     "<div class=\"fg\"><label>Data da Coleta</label>"+dateinp("DATA DA COLETA")+"</div>"+
     "<div class=\"fg\"><label>Previs\u00e3o de Entrega</label>"+dateinp("PREVIS\u00c3O DE ENTREGA")+"</div>"+
+    "<div class=\"fg\"><label>Modalidade</label>"+sel("MODALIDADE",["","Dedicado","Fracionado"],"")+"</div>"+
+    "<div class=\"fg\"><label>Tipo de Material</label>"+inp("TIPO DE MATERIAL","Ex: pe\u00e7as automotivas, eletr\u00f4nicos...")+"</div>"+
   "</div></div>"+
 
   // ── FISCAL
