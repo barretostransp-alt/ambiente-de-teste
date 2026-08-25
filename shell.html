@@ -849,21 +849,6 @@ function logout(){
   showLogin();
 }
 
-/* ── Logout automático por inatividade (1h) ──
-   Só conta atividade no próprio shell (clique no menu, teclado, rolagem,
-   toque) — não enxerga o que acontece dentro do iframe de cada módulo
-   (limitação de segurança do navegador entre frames). Na prática cobre
-   bem o caso comum (a pessoa navegando entre telas de tempos em tempos);
-   quem fica muito tempo parado preenchendo um formulário longo sem
-   nenhum clique fora dele pode ser deslogado antes de terminar. */
-var _ultimaAtividadeShell = Date.now();
-['click','keydown','touchstart','scroll'].forEach(function(evento){
-  document.addEventListener(evento, function(){ _ultimaAtividadeShell = Date.now(); }, { passive:true, capture:true });
-});
-setInterval(function(){
-  if (Date.now() - _ultimaAtividadeShell > 60*60*1000) logout();
-}, 60*1000);
-
 document.addEventListener("DOMContentLoaded", function(){
   carregarCorSalva();
   // Re-apply color after user session loads (login might not be set yet)
