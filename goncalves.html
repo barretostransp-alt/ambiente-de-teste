@@ -900,19 +900,48 @@ function renderAttList() {
   });
 }
 
-// Baixa todos os anexos já salvos do card de uma vez. O atributo "download"
-// de um <a> é ignorado pelo navegador quando a url é de outro domínio (caso
-// do Drive) — clicar nesses links só navega a página atual pro arquivo, e
-// como cada clique cancela a navegação anterior, só o último "vencia" e
-// baixava de fato. Abrir cada um numa aba nova (síncrono, sem
-// setTimeout, senão o navegador deixa de considerar "clique do usuário" e
-// bloqueia como pop-up) resolve: cada aba baixa/abre seu próprio arquivo
-// sem atrapalhar as outras.
-function baixarTodosAnexos() {
+// Baixa todos os anexos do card de uma vez, num zip só. Tentativas
+// anteriores (clicar em vários <a download> ou abrir várias abas) esbarram
+// em duas limitações do navegador: o atributo "download" é ignorado em
+// link de outro domínio (caso do Drive), e window.open() em sequência é
+// bloqueado como pop-up a partir do segundo. A saída é o servidor buscar
+// os arquivos e devolver um zip único — o navegador baixa isso numa blob:
+// url, que é sempre "mesma origem", sem bloqueio nenhum.
+async function baixarTodosAnexos() {
   if (!driveAtts.length) return;
-  driveAtts.forEach(function(a) {
-    window.open(a.url, "_blank");
-  });
+  var btn = document.getElementById("btn-baixar-tudo");
+  var orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "<span class=\"spinner\"></span> Baixando...";
+  try {
+    var res = await apiFetch(API_BASE + "/kanban/anexos-zip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        empresa: ABA,
+        arquivos: driveAtts.map(function(a) { return { id: a.id, nome: a.nome }; }),
+      }),
+    });
+    if (!res.ok) {
+      var j = await res.json().catch(function() { return {}; });
+      alert("Erro ao gerar o zip. " + (j.error || ""));
+      return;
+    }
+    var blob = await res.blob();
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "anexos_" + (editKey || "card") + ".zip";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("Erro de conexão ao gerar o zip.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
 }
 
 function getAtt(key) {
