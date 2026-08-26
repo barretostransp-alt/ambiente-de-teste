@@ -49,6 +49,13 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .col-body{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:60px;}
 .col-body::-webkit-scrollbar{width:3px;}
 .col-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.resumo{flex:1;min-width:240px;background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
+.resumo-ttl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-dim);margin-bottom:2px;}
+.resumo-kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;}
+.resumo-kpi .n{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--txt);}
+.resumo-kpi .n.warn{color:var(--gold);}
+.resumo-kpi .lbl{font-size:11px;color:var(--txt-mid);}
 .kcard{background:var(--card);border:1px solid var(--border);border-radius:8px;
   padding:10px 12px;cursor:grab;transition:all .15s;border-left:3px solid transparent;user-select:none;}
 .kcard:hover{border-color:rgba(245,184,0,.3);border-left-color:var(--gold);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.4);}
@@ -509,6 +516,39 @@ function doFilter(){
   });
 }
 
+// Resumo do quadro — preenche o espaço que sobrou desde que as colunas
+// "Aguardando Manifesto"/"Manifestos" saíram (ver automação Faturamento →
+// Kanban). Em vez de virar mais uma coluna manual, mostra informação que
+// já existia espalhada (valor em aberto, pendências) direto no quadro.
+function parseValorBR_(s){
+  if(s===null||s===undefined||s==="")return 0;
+  var v=String(s).replace(/R\$\s*/g,"").trim();
+  if(v.indexOf(",")!==-1)v=v.replace(/\./g,"").replace(",",".");
+  var n=parseFloat(v);
+  return isFinite(n)?n:0;
+}
+function fmtMoeda_(v){
+  return (v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+}
+function dataAmanhaBR_(){
+  var d=new Date();d.setDate(d.getDate()+1);
+  return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
+}
+function montarResumo_(cards){
+  var abertos=cards.filter(function(c){return c["Status"]!=="FATURADO"&&c["Status"]!=="FINALIZADO";});
+  var valorAberto=abertos.reduce(function(s,c){return s+parseValorBR_(c["FRETE COBRADO"]);},0);
+  var semValePedagio=cards.filter(function(c){return c["DATA DA COLETA"]&&!c["VALE PEDAGIO"];}).length;
+  var semDataColeta=cards.filter(function(c){return !c["DATA DA COLETA"];}).length;
+  var coletaAmanha=cards.filter(function(c){return c["DATA DA COLETA"]===dataAmanhaBR_();}).length;
+
+  return "<div class=\"resumo\">"+
+    "<div class=\"resumo-ttl\">Resumo do Quadro</div>"+
+    "<div class=\"resumo-kpi\"><div class=\"n\">"+fmtMoeda_(valorAberto)+"</div><div class=\"lbl\">Em aberto (não faturado)</div></div>"+
+    "<div class=\"resumo-kpi\"><div class=\"n"+(semValePedagio?" warn":"")+"\">"+semValePedagio+"</div><div class=\"lbl\">Sem Vale Pedágio</div></div>"+
+    "<div class=\"resumo-kpi\"><div class=\"n"+(semDataColeta?" warn":"")+"\">"+semDataColeta+"</div><div class=\"lbl\">Sem Data de Coleta</div></div>"+
+    "<div class=\"resumo-kpi\"><div class=\"n\">"+coletaAmanha+"</div><div class=\"lbl\">Coleta amanhã</div></div>"+
+    "</div>";
+}
 function renderBoard(){
   var h="";
   STATUS_LIST.forEach(function(st){
@@ -522,6 +562,7 @@ function renderBoard(){
       (cc.length?cc.map(rCard).join(""):"<div class=\"empty-col\">Sem cards</div>")+
       "</div></div>";
   });
+  h+=montarResumo_(allCards);
   document.getElementById("board").innerHTML=h;
 }
 function onColClick(ev){
