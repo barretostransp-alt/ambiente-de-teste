@@ -445,6 +445,9 @@ body.tema-claro .tbl thead tr{background:#F8FAFC!important;}
           <option value="PAGO">Pago</option>
           <option value="VENCIDO">Vencido</option>
         </select>
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalStatusEmMassa()" style="white-space:nowrap">
+          <i class="ti ti-checks" style="font-size:13px"></i> Alterar Status em Massa
+        </button>
         <button class="btn btn-ghost btn-sm" onclick="exportViagensExcel()" style="white-space:nowrap">
           <i class="ti ti-file-spreadsheet" style="font-size:13px"></i> Excel
         </button>
@@ -847,6 +850,33 @@ body.tema-claro .tbl thead tr{background:#F8FAFC!important;}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modal-viagem').classList.remove('open')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveViagem()"><i class="ti ti-check" style="font-size:14px"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Alterar status em massa (Viagens) -->
+<div id="modal-viagens-lote" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-checks" style="color:var(--gold);margin-right:6px"></i>Alterar Status em Massa</div>
+      <button class="modal-close" onclick="document.getElementById('modal-viagens-lote').classList.remove('open')">×</button>
+    </div>
+    <div style="padding:2px 0 10px;font-size:12.5px;color:var(--txt-dim)" id="vg-lote-resumo">
+      0 viagens no período/filtro selecionado
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Novo status para essas viagens</label>
+        <select class="form-input" id="vg-lote-status">
+          <option value="A Vencer">À Vencer</option>
+          <option value="Pago">Pago</option>
+          <option value="Vencido">Vencido</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-viagens-lote').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="aplicarStatusEmMassaViagens()"><i class="ti ti-check" style="font-size:14px"></i> Aplicar</button>
     </div>
   </div>
 </div>
@@ -2888,6 +2918,38 @@ async function saveViagemStatusInline(sel, r) {
     'SITUAÇÃO DE PAGAMENTO':newStatus,MOTORISTA3:r['MOTORISTA3']||''};
   const res = await apiPost(data);
   if(!res?.success && API_BASE) alert('Erro ao salvar status. '+(res?.error?res.error:'Verifique se o backend está rodando.'));
+}
+
+// Abre o modal de alteração em massa considerando as viagens que estão
+// atualmente na tela (respeita todos os filtros ativos — placa, motorista,
+// cliente, embarque, status e principalmente o período "De/Até").
+function abrirModalStatusEmMassa() {
+  const rows = window.filteredViagens || [];
+  if (!rows.length) { alert('Nenhuma viagem no filtro atual pra alterar.'); return; }
+  document.getElementById('vg-lote-resumo').textContent =
+    rows.length + (rows.length === 1 ? ' viagem no período/filtro selecionado' : ' viagens no período/filtro selecionado');
+  document.getElementById('modal-viagens-lote').classList.add('open');
+}
+
+// Aplica o status escolhido a todas as viagens filtradas de uma vez (mesma
+// ideia da classificação em lote da Conciliação Bancária: junta os ids e
+// manda uma chamada só pro backend).
+async function aplicarStatusEmMassaViagens() {
+  const rows = window.filteredViagens || [];
+  const situacaoPagamento = document.getElementById('vg-lote-status').value;
+  const ids = rows.map(r => r._id).filter(Boolean);
+  if (!ids.length) { alert('Nenhuma viagem no filtro atual pra alterar.'); return; }
+  try {
+    const res = await apiFetch(`${API_BASE}/viagens/lote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, situacaoPagamento }),
+    });
+    if (!res.ok) { const j = await res.json().catch(()=>({})); alert('Erro ao alterar status em massa. ' + (j.error || '')); return; }
+  } catch (e) { alert('Erro de conexão ao alterar status em massa.'); return; }
+
+  document.getElementById('modal-viagens-lote').classList.remove('open');
+  await loadAllData();
 }
 
 /* ═══════════════════════════════════════

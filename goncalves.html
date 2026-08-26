@@ -214,6 +214,9 @@ body.tema-claro .kcard-foot .ktag[style*="22C55E"]{
         <button class="bdng" id="btn-del" onclick="deleteCard()" style="display:none">
           <i class="ti ti-trash" style="font-size:12px"></i> Excluir
         </button>
+        <button class="bgh" id="btn-baixar-tudo" onclick="baixarTodosAnexos()" style="display:none">
+          <i class="ti ti-download" style="font-size:12px"></i> Baixar Todos
+        </button>
         <span class="mmsg" id="mmsg"></span>
       </div>
       <div style="display:flex;gap:8px;">
@@ -230,8 +233,8 @@ body.tema-claro .kcard-foot .ktag[style*="22C55E"]{
 
 <script>
 var ABA="GONCALVES", PFX="G", SK="jira_url_GONCALVES", ATK="att_GON_", EXTK="extra_GON_";
-var STATUS_LIST=["OPERACIONAL","COLETA","AGUARDANDO MANIFESTO","FATURADO","MANIFESTOS","FINALIZADO"];
-var SC={"OPERACIONAL":"#3B82F6","COLETA":"#F59E0B","AGUARDANDO MANIFESTO":"#8B5CF6","FATURADO":"#F5B800","MANIFESTOS":"#EC4899","FINALIZADO":"#22C55E"};
+var STATUS_LIST=["OPERACIONAL","COLETA","FATURADO","FINALIZADO"];
+var SC={"OPERACIONAL":"#3B82F6","COLETA":"#F59E0B","FATURADO":"#F5B800","FINALIZADO":"#22C55E"};
 var AO=["","EM ROTA DE COLETA","AGUARDANDO CARREGAMENTO","CARREGANDO","EM ROTA DE ENTREGA","DESCARREGANDO","CONCLUIDO","NECESSARIO TRANSBORDO","RETOMAR CONTRATAÇÃO","SEM CONTATO"];
 
 // Field map: chave do dado → id do elemento HTML
@@ -880,6 +883,8 @@ function renderAttList() {
   }
   if (!out) out = "<div style=\"color:var(--text-muted);font-size:12px;padding:8px 0\">Nenhum anexo</div>";
   l.innerHTML = out;
+  var btnBaixarTudo = document.getElementById("btn-baixar-tudo");
+  if (btnBaixarTudo) btnBaixarTudo.style.display = driveAtts.length ? "" : "none";
   // Bind clicks via addEventListener — resolve problemas com onclick inline em innerHTML
   var btns = l.querySelectorAll(".arm");
   btns.forEach(function(btn, n) {
@@ -892,6 +897,24 @@ function renderAttList() {
         rmAtt(n - driveAtts.length);
       }
     });
+  });
+}
+
+// Baixa todos os anexos já salvos do card de uma vez (um download por
+// arquivo, com um pequeno intervalo entre cada um pra o navegador não
+// bloquear como se fosse pop-up). Reaproveita a mesma url de download que
+// cada anexo já usa individualmente (a.url, ver renderAttList acima).
+function baixarTodosAnexos() {
+  if (!driveAtts.length) return;
+  driveAtts.forEach(function(a, i) {
+    setTimeout(function() {
+      var link = document.createElement("a");
+      link.href = a.url;
+      link.download = a.nome || "arquivo";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }, i * 400);
   });
 }
 
