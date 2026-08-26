@@ -49,13 +49,19 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .col-body{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:60px;}
 .col-body::-webkit-scrollbar{width:3px;}
 .col-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-.resumo{flex:1;min-width:240px;background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
-.resumo-ttl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-dim);margin-bottom:2px;}
-.resumo-kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;}
-.resumo-kpi .n{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--txt);}
-.resumo-kpi .n.warn{color:var(--gold);}
-.resumo-kpi .lbl{font-size:11px;color:var(--txt-mid);}
+.resumo{flex:1;min-width:260px;align-self:flex-start;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;}
+.resumo-ttl{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-dim);}
+.resumo-hero{background:var(--gold-dim);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.resumo-hero .n{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:28px;font-weight:700;color:var(--txt);line-height:1.15;}
+.resumo-hero .lbl{font-size:11px;color:var(--txt-dim);margin-top:4px;}
+.resumo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.resumo-kpi{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--border);
+  border-radius:8px;padding:10px 12px;}
+.resumo-kpi.warn{border-left-color:var(--gold);}
+.resumo-kpi .n{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;color:var(--txt);}
+.resumo-kpi.warn .n{color:var(--gold);}
+.resumo-kpi .lbl{font-size:10.5px;color:var(--txt-mid);margin-top:2px;}
 .kcard{background:var(--card);border:1px solid var(--border);border-radius:8px;
   padding:10px 12px;cursor:grab;transition:all .15s;border-left:3px solid transparent;user-select:none;}
 .kcard:hover{border-color:rgba(245,184,0,.3);border-left-color:var(--gold);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.4);}
@@ -543,11 +549,12 @@ function montarResumo_(cards){
 
   return "<div class=\"resumo\">"+
     "<div class=\"resumo-ttl\">Resumo do Quadro</div>"+
-    "<div class=\"resumo-kpi\"><div class=\"n\">"+fmtMoeda_(valorAberto)+"</div><div class=\"lbl\">Em aberto (não faturado)</div></div>"+
-    "<div class=\"resumo-kpi\"><div class=\"n"+(semValePedagio?" warn":"")+"\">"+semValePedagio+"</div><div class=\"lbl\">Sem Vale Pedágio</div></div>"+
-    "<div class=\"resumo-kpi\"><div class=\"n"+(semDataColeta?" warn":"")+"\">"+semDataColeta+"</div><div class=\"lbl\">Sem Data de Coleta</div></div>"+
-    "<div class=\"resumo-kpi\"><div class=\"n\">"+coletaAmanha+"</div><div class=\"lbl\">Coleta amanhã</div></div>"+
-    "</div>";
+    "<div class=\"resumo-hero\"><div class=\"n\">"+fmtMoeda_(valorAberto)+"</div><div class=\"lbl\">Em aberto (não faturado)</div></div>"+
+    "<div class=\"resumo-grid\">"+
+    "<div class=\"resumo-kpi"+(semValePedagio?" warn":"")+"\"><div class=\"n\">"+semValePedagio+"</div><div class=\"lbl\">Sem Vale Pedágio</div></div>"+
+    "<div class=\"resumo-kpi"+(semDataColeta?" warn":"")+"\"><div class=\"n\">"+semDataColeta+"</div><div class=\"lbl\">Sem Data de Coleta</div></div>"+
+    "<div class=\"resumo-kpi\" style=\"grid-column:1/-1\"><div class=\"n\">"+coletaAmanha+"</div><div class=\"lbl\">Coleta amanhã</div></div>"+
+    "</div></div>";
 }
 function renderBoard(){
   var h="";
