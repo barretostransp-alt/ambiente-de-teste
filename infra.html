@@ -903,21 +903,18 @@ function renderAttList() {
   });
 }
 
-// Baixa todos os anexos já salvos do card de uma vez (um download por
-// arquivo, com um pequeno intervalo entre cada um pra o navegador não
-// bloquear como se fosse pop-up). Reaproveita a mesma url de download que
-// cada anexo já usa individualmente (a.url, ver renderAttList acima).
+// Baixa todos os anexos já salvos do card de uma vez. O atributo "download"
+// de um <a> é ignorado pelo navegador quando a url é de outro domínio (caso
+// do Drive) — clicar nesses links só navega a página atual pro arquivo, e
+// como cada clique cancela a navegação anterior, só o último "vencia" e
+// baixava de fato. Abrir cada um numa aba nova (síncrono, sem
+// setTimeout, senão o navegador deixa de considerar "clique do usuário" e
+// bloqueia como pop-up) resolve: cada aba baixa/abre seu próprio arquivo
+// sem atrapalhar as outras.
 function baixarTodosAnexos() {
   if (!driveAtts.length) return;
-  driveAtts.forEach(function(a, i) {
-    setTimeout(function() {
-      var link = document.createElement("a");
-      link.href = a.url;
-      link.download = a.nome || "arquivo";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }, i * 400);
+  driveAtts.forEach(function(a) {
+    window.open(a.url, "_blank");
   });
 }
 
