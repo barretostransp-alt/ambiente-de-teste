@@ -37,7 +37,7 @@ body{display:flex;align-items:center;justify-content:center;padding:24px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ─── WIZARD ─── */
-#wizard-screen{display:none;width:100%;max-width:640px}
+#wizard-screen{display:none;width:100%;max-width:760px}
 .wz-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 .wz-avatar{width:38px;height:38px;border-radius:50%;background:var(--gold);color:#111;font-family:'Syne',sans-serif;
   font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -65,6 +65,42 @@ body{display:flex;align-items:center;justify-content:center;padding:24px}
 .wz-note b{color:var(--gold)}
 .wz-placeholder{background:var(--card);border:1px dashed var(--border);border-radius:10px;padding:16px;
   font-size:12.5px;color:var(--txt-dim);margin-top:auto}
+
+.wz-body{display:flex;gap:26px;flex:1;min-height:0}
+.wz-text{flex:1;min-width:0}
+.wz-demo-wrap{width:236px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.wz-demo-lbl{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--txt-dim);
+  display:flex;align-items:center;gap:5px}
+.wz-demo-lbl i{color:var(--gold);font-size:11px}
+.wz-demo-screen{position:relative;height:230px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden}
+.wz-frame{position:absolute;inset:0;padding:14px;opacity:0;transition:opacity .4s ease;display:flex;flex-direction:column;gap:8px}
+.wz-frame.on{opacity:1}
+.wz-demo-cap{font-size:11.5px;color:var(--txt-mid);line-height:1.5;min-height:32px}
+.wz-demo-dots{display:flex;gap:4px;justify-content:center}
+.wz-demo-dot{width:4px;height:4px;border-radius:50%;background:var(--border);transition:background .2s}
+.wz-demo-dot.on{background:var(--gold)}
+
+/* peças reutilizadas nas simulações animadas */
+.dm-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 9px;font-size:10.5px}
+.dm-card.hl{border-color:var(--gold)}
+.dm-code{color:var(--gold);font-weight:700;font-size:10px}
+.dm-badge{display:inline-flex;font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:99px;
+  background:var(--gold-dim);color:var(--gold);letter-spacing:.03em}
+.dm-badge.green{background:rgba(34,197,94,.14);color:var(--green)}
+.dm-field{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:9.5px;color:var(--txt-dim)}
+.dm-field.filled{color:var(--txt);border-color:var(--gold)}
+.dm-btn{background:var(--gold);color:#111;font-size:9.5px;font-weight:700;border-radius:6px;padding:6px 10px;
+  text-align:center;width:fit-content}
+.dm-cols{display:flex;gap:6px;flex:1}
+.dm-col{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px;
+  display:flex;flex-direction:column;gap:5px;min-width:0}
+.dm-col-hd{font-size:7px;font-weight:700;letter-spacing:.04em;color:var(--txt-dim);text-transform:uppercase}
+.dm-chip{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--txt-dim);
+  font-size:8.5px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.25s}
+.dm-chip.active{background:var(--gold);color:#111}
+.dm-chip.done{background:var(--green);color:#111}
+.dm-row{display:flex;align-items:center;gap:6px}
 
 .wz-foot{display:flex;align-items:center;gap:10px;margin-top:20px}
 .wz-dots{flex:1;display:flex;gap:5px;overflow-x:auto;padding-bottom:2px}
@@ -226,8 +262,12 @@ var MODULOS = {
   },
   cotacao: {
     label: 'Cotação Comercial', icon: 'ti-calculator', cat: 'Comercial',
-    lead: 'Onde uma cotação de frete nasce, até ser aprovada e virar um card no Kanban automaticamente.',
-    pontos: ['Cotações acima de 5% de desconto passam por aprovação em cascata (Filipe → Gabriel Pinheiro acima de 5% → Diego Flórido acima de 15%).', 'Quando aprovada, o card já nasce no Kanban com modalidade, tipo de material e dados do cliente preenchidos sozinhos.'],
+    lead: 'Onde uma cotação de frete nasce, passa pela aprovação interna e, quando o cliente aceita, vira um card no Kanban automaticamente.',
+    pontos: [
+      'Toda cotação passa pelo fluxo de aprovação interna, não importa o desconto — só não entram nessa fila as cotações feitas pelos próprios aprovadores (Filipe, Gabriel Pinheiro, Diego Flórido). Filipe é avisado na hora; se passar de 5 minutos sem decisão, Gabriel Pinheiro também é avisado; depois de 15 minutos, Diego Flórido entra no alerta também.',
+      'Quando aprovada pelo cliente e informado pelo vendedor no histórico das cotações (mudando o status pra "Aceita"), o card já nasce sozinho no Kanban com modalidade, tipo de material e dados do cliente preenchidos.',
+    ],
+    video: 'cotacao',
   },
   relatorio: {
     label: 'Relatório de Vendedor', icon: 'ti-chart-bar', cat: 'Comercial',
@@ -237,17 +277,25 @@ var MODULOS = {
   crm: {
     label: 'CRM', icon: 'ti-target-arrow', cat: 'Comercial',
     lead: 'Funil comercial completo: prospecção de clientes, timeline de contato, metas da equipe e produtividade dos vendedores.',
-    pontos: [],
+    pontos: [
+      'Cada cliente prospectado tem uma timeline própria — todo contato feito (ligação, e-mail, reunião) fica registrado ali, com data.',
+      'Um cliente do CRM pode virar cliente oficial (o mesmo cadastro que aparece em Cotação/Faturamento) automaticamente, sem precisar cadastrar de novo.',
+      'A tela de Metas da Equipe e Produtividade mostra o desempenho de cada vendedor no funil — quantos contatos, quantas conversões.',
+    ],
   },
   clientes: {
     label: 'Clientes', icon: 'ti-users', cat: 'Comercial',
     lead: 'Cadastro central de clientes (CNPJ, contato, endereço) usado por Cotação, Faturamento e CRM.',
-    pontos: [],
+    pontos: ['Um cliente cadastrado aqui já aparece pronto pra selecionar em qualquer outra tela que precise dele — não precisa digitar CNPJ/endereço de novo em cada módulo.'],
   },
   financeiro: {
     label: 'Financeiro', icon: 'ti-cash', cat: 'Financeiro',
     lead: 'Contas a pagar e a receber da empresa. O que você vê aqui depende do seu papel neste módulo específico.',
-    pontos: [],
+    pontos: [
+      'Pra solicitar um PIX (pagamento a motorista, fornecedor, etc.), o mais rápido é abrir pelo card do Kanban: a solicitação já importa titular, banco e chave PIX que já estavam salvos no card, sem digitar tudo de novo.',
+      'Também dá pra lançar um pagamento manualmente, sem vincular a nenhum card, escolhendo forma de pagamento (Pix ou outra) e preenchendo os dados na hora.',
+      'Toda solicitação nova cai na Fila do Dia — quem processa (Lisa, Daniel ou Alex) marca como paga a partir de lá.',
+    ],
     detalhes: function(user){
       var master = ehUm_(user, ['lisa','daniel','alex sandro']);
       if(master){
@@ -255,11 +303,18 @@ var MODULOS = {
       }
       return { nota: '<b>Sua visão aqui é simplificada:</b> você só vê a Fila do Dia (pra solicitar um pagamento) e o Histórico das suas próprias solicitações. Contas a Pagar/Receber ficam visíveis só pra Lisa, Daniel e Alex.' };
     },
+    video: 'financeiro',
   },
   faturamento: {
     label: 'Faturamento', icon: 'ti-file-invoice', cat: 'Financeiro',
     lead: 'Fila de emissão de CT-e a partir dos cards do Kanban, e depois a conferência do canhoto de entrega. O que você vê aqui também depende do seu papel.',
-    pontos: [],
+    pontos: [
+      'Pra solicitar faturamento, informa o código do card do Kanban — os dados de transporte já vêm de lá, só falta completar o que for específico do faturamento (natureza da operação, etc.) e enviar pra fila.',
+      'Quando o CT-e é emitido, o card correspondente já vira FATURADO no Kanban sozinho, sem precisar arrastar.',
+      'Depois, quando o canhoto de entrega chega, o vendedor anexa ele por aqui (aba de Anexos: NF, CT-e e canhoto) e clica em "Enviar Canhoto" — isso volta a aparecer na fila pra quem confere.',
+      'Quando o canhoto é conferido e marcado como finalizado, o card vira FINALIZADO no Kanban sozinho também.',
+    ],
+    video: 'faturamento',
     detalhes: function(user){
       var vendedor = ehUm_(user, ['sabrina','leonardo']);
       if(vendedor){
@@ -271,42 +326,51 @@ var MODULOS = {
   conciliacao: {
     label: 'Conciliação Bancária', icon: 'ti-building-bank', cat: 'Financeiro',
     lead: 'Classifica automaticamente os lançamentos do extrato bancário por categoria, aprendendo com o que já foi classificado antes.',
-    pontos: ['Dá pra selecionar vários lançamentos e classificar todos de uma vez.'],
+    pontos: [
+      'Importe o extrato do banco e o sistema tenta classificar sozinho cada lançamento, com base em classificações parecidas feitas antes.',
+      'Dá pra selecionar vários lançamentos de uma vez e aplicar a mesma categoria a todos — não precisa abrir um por um.',
+      'Quando você classifica um lançamento novo manualmente, o sistema aprende e sugere a mesma categoria pra descrições parecidas no futuro.',
+    ],
   },
   frota: {
     label: 'Gestão da Frota', icon: 'ti-truck', cat: 'Operacional',
     lead: 'Veículos, motoristas, viagens, combustível, manutenções e multas.',
-    pontos: ['Na aba Viagens, dá pra selecionar um período e alterar o status de pagamento (À Vencer/Pago/Vencido) de todas as viagens filtradas de uma vez, sem precisar entrar em cada uma.'],
+    pontos: [
+      'Cadastro de veículos e motoristas, com vínculo entre eles (qual motorista está associado a qual placa).',
+      'Cada viagem lançada calcula sozinha o km rodado e a média de consumo, comparando com a viagem anterior do mesmo veículo.',
+      'Na aba Viagens, dá pra selecionar um período e alterar o status de pagamento (À Vencer/Pago/Vencido) de todas as viagens filtradas de uma vez, sem precisar entrar em cada uma.',
+      'Manutenções e multas ficam vinculadas ao veículo, então o histórico de cada placa fica todo num lugar só.',
+    ],
   },
   despesas: {
     label: 'Despesas', icon: 'ti-wallet', cat: 'Geral',
-    lead: 'Despesas gerais da empresa (aluguel, energia, RH...) — separado da Frota.',
-    pontos: [],
+    lead: 'Despesas gerais da empresa (aluguel, energia, RH...) — separado da Frota, que tem sua própria aba de despesas por veículo.',
+    pontos: ['Lançamento simples: data, descrição, valor e status de pagamento.'],
   },
   diarias: {
     label: 'Diárias de Motoristas', icon: 'ti-calendar-check', cat: 'RH',
     lead: 'Controle de diárias pagas a motoristas por viagem.',
-    pontos: [],
+    pontos: ['Cada diária fica vinculada ao motorista e à viagem correspondente, pra ficar fácil conferir depois.'],
   },
   recrutamento: {
     label: 'Recrutamento e Seleção', icon: 'ti-user-search', cat: 'RH',
     lead: 'Vagas abertas e candidatos em processo seletivo.',
-    pontos: [],
+    pontos: ['Cada vaga tem seus próprios candidatos vinculados — dá pra acompanhar quem está em qual etapa do processo.'],
   },
   ideias: {
     label: 'Laboratório de Ideias', icon: 'ti-bulb', cat: 'Melhoria',
     lead: 'Onde qualquer um pode sugerir melhorias pro sistema ou pra operação.',
-    pontos: [],
+    pontos: ['Sugeriu, registrou — fica guardado pra ser avaliado depois, não se perde numa conversa de corredor ou mensagem avulsa.'],
   },
   helpdesk: {
     label: 'Helpdesk', icon: 'ti-headset', cat: 'Melhoria',
     lead: 'Chamados internos de suporte (TI, sistema, dúvidas).',
-    pontos: [],
+    pontos: ['Abriu um chamado, ele fica registrado com data — dá pra acompanhar o andamento sem precisar ficar cobrando por mensagem.'],
   },
   config: {
     label: 'Configurações', icon: 'ti-settings', cat: 'Admin',
     lead: 'Criação de usuários e liberação de acesso por módulo — só quem é admin do sistema entra aqui.',
-    pontos: [],
+    pontos: ['Cada usuário novo já recebe uma senha temporária e é obrigado a trocar no primeiro acesso.', 'A liberação de acesso é por módulo — dá pra escolher exatamente quais telas cada pessoa vai ver, igual foi feito com o seu próprio acesso.'],
   },
 };
 
@@ -357,6 +421,7 @@ function wzRenderDots(){
 function wzIrPara(i){ wzIdx = i; wzRender(); }
 
 function wzRender(){
+  pararDemo_();
   var passo = wzPassos[wzIdx];
   var mod = passo.mod;
   document.getElementById('wz-progress').textContent = 'Passo '+(wzIdx+1)+' de '+wzPassos.length;
@@ -372,12 +437,31 @@ function wzRender(){
     ? '<div class="wz-placeholder">Conteúdo detalhado desta tela ainda está sendo preparado — em breve entra aqui.</div>'
     : '';
 
-  document.getElementById('wz-card').innerHTML =
+  var textoHtml =
     '<div class="wz-icon"><i class="ti '+mod.icon+'"></i></div>'+
     '<div class="wz-cat">'+mod.cat+'</div>'+
     '<div class="wz-title">'+mod.label+'</div>'+
     '<div class="wz-lead">'+mod.lead+'</div>'+
     pontosHtml + notaHtml + vazioHtml;
+
+  var demo = mod.video && DEMOS[mod.video];
+  if(demo){
+    document.getElementById('wz-card').innerHTML =
+      '<div class="wz-body">'+
+        '<div class="wz-text">'+textoHtml+'</div>'+
+        '<div class="wz-demo-wrap">'+
+          '<div class="wz-demo-lbl"><i class="ti ti-player-play"></i> Como funciona</div>'+
+          '<div class="wz-demo-screen" id="wz-demo-screen">'+
+            demo.map(function(f,i){ return '<div class="wz-frame'+(i===0?' on':'')+'" data-i="'+i+'">'+f.html+'</div>'; }).join('')+
+          '</div>'+
+          '<div class="wz-demo-cap" id="wz-demo-cap">'+demo[0].cap+'</div>'+
+          '<div class="wz-demo-dots" id="wz-demo-dots">'+demo.map(function(_,i){ return '<div class="wz-demo-dot'+(i===0?' on':'')+'"></div>'; }).join('')+'</div>'+
+        '</div>'+
+      '</div>';
+    iniciarDemo_(demo);
+  } else {
+    document.getElementById('wz-card').innerHTML = '<div class="wz-body"><div class="wz-text">'+textoHtml+'</div></div>';
+  }
 
   document.getElementById('wz-btn-back').style.visibility = wzIdx===0 ? 'hidden' : 'visible';
   var btnNext = document.getElementById('wz-btn-next');
@@ -388,6 +472,67 @@ function wzRender(){
   }
   wzRenderDots();
 }
+
+/* ══════════════════════════════
+   SIMULAÇÕES ANIMADAS — não são gravações reais de tela (não temos essa
+   ferramenta), são reconstruções fiéis (mesmas cores/formato do sistema)
+   que se repetem em loop ao lado do texto, mostrando o passo a passo de
+   3 fluxos que a diretoria pediu pra ficar bem intuitivo.
+══════════════════════════════ */
+var _demoTimer = null;
+function pararDemo_(){ if(_demoTimer){ clearInterval(_demoTimer); _demoTimer = null; } }
+function iniciarDemo_(frames){
+  var i = 0;
+  var screen = document.getElementById('wz-demo-screen');
+  var cap = document.getElementById('wz-demo-cap');
+  var dots = document.getElementById('wz-demo-dots');
+  if(!screen) return;
+  _demoTimer = setInterval(function(){
+    i = (i+1) % frames.length;
+    screen.querySelectorAll('.wz-frame').forEach(function(el,idx){ el.classList.toggle('on', idx===i); });
+    if(dots) dots.querySelectorAll('.wz-demo-dot').forEach(function(el,idx){ el.classList.toggle('on', idx===i); });
+    if(cap) cap.textContent = frames[i].cap;
+  }, 2600);
+}
+
+var DEMOS = {
+  cotacao: [
+    { cap:'Vendedor cria a cotação — ela entra automaticamente na fila de aprovação interna.',
+      html:'<div class="dm-card hl"><div class="dm-row" style="justify-content:space-between"><span class="dm-code">#0128</span><span class="dm-badge">Aguardando</span></div><div style="margin-top:5px;color:var(--txt-mid)">ALPHA · São Paulo → Vitória</div></div>' },
+    { cap:'Filipe é avisado na hora. Sem decisão em 5min, Gabriel Pinheiro também é avisado; em 15min, Diego Flórido também.',
+      html:'<div style="font-size:9px;color:var(--txt-dim);margin-bottom:2px">Aprovadores</div><div class="dm-row"><div class="dm-chip active">F</div><div class="dm-chip">GP</div><div class="dm-chip">DF</div></div>' },
+    { cap:'Aprovada internamente.',
+      html:'<div class="dm-card hl"><div class="dm-row" style="justify-content:space-between"><span class="dm-code">#0128</span><span class="dm-badge green">Aprovada</span></div></div><div class="dm-row" style="margin-top:6px"><div class="dm-chip done">F</div></div>' },
+    { cap:'Cliente aceita, e o vendedor troca o status pra "Aceita" no histórico da cotação.',
+      html:'<div style="font-size:9px;color:var(--txt-dim);margin-bottom:2px">Histórico da cotação</div><div class="dm-field filled">Status: Aceita ✓</div>' },
+    { cap:'O card nasce sozinho no Kanban, já com modalidade, tipo de material e dados do cliente preenchidos.',
+      html:'<div class="dm-cols"><div class="dm-col"><div class="dm-col-hd">Operacional</div><div class="dm-card hl" style="padding:5px 6px"><span class="dm-code" style="font-size:8px">#B2601</span></div></div><div class="dm-col"><div class="dm-col-hd">Coleta</div></div><div class="dm-col"><div class="dm-col-hd">Faturado</div></div></div>' },
+  ],
+  financeiro: [
+    { cap:'Abra a solicitação de PIX a partir do card do Kanban, informando o código.',
+      html:'<div style="font-size:9px;color:var(--txt-dim);margin-bottom:2px">Solicitação PIX</div><div class="dm-field filled">Código: S26100</div>' },
+    { cap:'Titular, banco e chave PIX já vêm preenchidos sozinhos, direto dos dados salvos no card.',
+      html:'<div class="dm-field filled">Titular: João Silva</div><div class="dm-field filled">Banco: Nubank</div><div class="dm-field filled">Chave: joão@…</div>' },
+    { cap:'Confirma e envia a solicitação.',
+      html:'<div class="dm-btn">Enviar solicitação</div>' },
+    { cap:'Cai na Fila do Dia, aguardando quem processa (Lisa, Daniel ou Alex).',
+      html:'<div class="dm-card hl"><div class="dm-row" style="justify-content:space-between"><span class="dm-code" style="font-size:9px">João Silva</span><span class="dm-badge">Na fila</span></div></div>' },
+    { cap:'Marcado como pago — sai da fila.',
+      html:'<div class="dm-card"><div class="dm-row" style="justify-content:space-between"><span class="dm-code" style="font-size:9px">João Silva</span><span class="dm-badge green">Pago</span></div></div>' },
+  ],
+  faturamento: [
+    { cap:'Informa o código do card do Kanban pra solicitar o faturamento.',
+      html:'<div style="font-size:9px;color:var(--txt-dim);margin-bottom:2px">Solicitar Faturamento</div><div class="dm-field filled">Código: S26100</div>' },
+    { cap:'Dados do transporte já vêm do card — só falta completar o que for específico, como a natureza da operação.',
+      html:'<div class="dm-field filled">Origem/Destino ✓</div><div class="dm-field filled">Natureza da Operação: —</div>' },
+    { cap:'CT-e emitido — o card já vira FATURADO no Kanban sozinho, sem arrastar.',
+      html:'<div class="dm-cols"><div class="dm-col"><div class="dm-col-hd">Coleta</div></div><div class="dm-col"><div class="dm-col-hd">Faturado</div><div class="dm-card hl" style="padding:5px 6px"><span class="dm-code" style="font-size:8px">S26100</span></div></div><div class="dm-col"><div class="dm-col-hd">Finalizado</div></div></div>' },
+    { cap:'Quando o canhoto chega, o vendedor anexa e clica em "Enviar Canhoto".',
+      html:'<div class="dm-row"><i class="ti ti-paperclip" style="color:var(--gold)"></i><span style="font-size:10px">canhoto.pdf</span></div><div class="dm-btn">Enviar Canhoto</div>' },
+    { cap:'Canhoto conferido — o card vira FINALIZADO sozinho também.',
+      html:'<div class="dm-cols"><div class="dm-col"><div class="dm-col-hd">Faturado</div></div><div class="dm-col"><div class="dm-col-hd">Finalizado</div><div class="dm-card hl" style="padding:5px 6px"><span class="dm-code" style="font-size:8px">S26100</span> <span style="color:var(--green)">✓</span></div></div></div>' },
+  ],
+};
 
 function wzVoltar(){ if(wzIdx>0){ wzIdx--; wzRender(); } }
 function wzProximo(){
