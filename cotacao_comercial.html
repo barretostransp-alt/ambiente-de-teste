@@ -4747,16 +4747,22 @@ async function carregarSugestoesPedagio(nomesRodovia, pontosRota){
     });
     var lista = await res.json();
     if(Array.isArray(lista)) pedagioPracasSelecionadas = lista;
-    statusEl.textContent = lista.length ? '' : 'Nenhuma praça sugerida automaticamente — busque manualmente se souber que a rota tem pedágio.';
+    if(!lista.length) statusEl.textContent = 'Nenhuma praça sugerida automaticamente — busque manualmente se souber que a rota tem pedágio.';
   }catch(e){
     statusEl.textContent = 'Não foi possível buscar sugestões de pedágio agora.';
   }
   renderPedagioChips();
+  // Já calcula o valor de pedágio direto da rota sugerida — sem precisar
+  // clicar em "Calcular Pedágio" pra ver o total assim que a rota é
+  // escolhida (só falta o clique manual quando o usuário edita as praças
+  // à mão, ver removerPracaPedagio/adicionarPracaPedagioPorIndice_ abaixo).
+  if(pedagioPracasSelecionadas.length) await calcularPedagio();
 }
 
 function removerPracaPedagio(i){
   pedagioPracasSelecionadas.splice(i,1);
   renderPedagioChips();
+  if(pedagioPracasSelecionadas.length) calcularPedagio();
 }
 
 var pedagioBuscaTimer_ = null;
@@ -4787,6 +4793,7 @@ function adicionarPracaPedagioPorIndice_(i){
   document.getElementById('pedagio-busca-input').value = '';
   document.getElementById('pedagio-busca-drop').classList.remove('open');
   renderPedagioChips();
+  if(pedagioPracasSelecionadas.length) calcularPedagio();
 }
 
 document.addEventListener('click', function(ev){
