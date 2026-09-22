@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mapa das Operações</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Montserrat:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,7 +19,7 @@
 html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;overflow:hidden;}
 .topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);
   display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;}
-.tb-logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--gold);white-space:nowrap;}
+.tb-logo{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;color:var(--gold);white-space:nowrap;}
 .tb-sep{color:var(--border);font-size:18px;}
 .tb-sub{font-size:11.5px;color:var(--txt-dim);}
 .tb-r{margin-left:auto;display:flex;align-items:center;gap:7px;}
@@ -42,6 +42,12 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .chip:hover{border-color:var(--gold-b);}
 .chip.ativo{color:#111;font-weight:700;border-color:transparent;}
 .chip .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.chip .traco-prev{width:18px;height:0;border-bottom:3px solid var(--txt-mid);flex-shrink:0;}
+/* Status não tem mais cor própria (virou estilo de traço) — o "ativo"
+   genérico (fundo colorido, texto preto) é feito pro chip de vendedor;
+   aqui só destaca borda/fundo neutro. */
+#chips-status .chip.ativo{color:var(--txt);background:var(--gold-dim);border-color:var(--gold);}
+#chips-status .chip.ativo .traco-prev{border-bottom-color:var(--gold);}
 #status-carregando{font-size:11px;color:var(--txt-dim);}
 
 .legenda{border-top:1px solid var(--border);padding-top:16px;}
@@ -51,7 +57,7 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .leg-vendedor-nome .sw{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
 .leg-status-row{display:flex;gap:5px;padding-left:16px;flex-wrap:wrap;}
 .leg-status-item{display:flex;align-items:center;gap:4px;font-size:9.5px;color:var(--txt-dim);}
-.leg-status-item .bar{width:14px;height:3px;border-radius:2px;}
+.leg-status-item .bar{width:16px;height:0;border-bottom-width:3px;}
 
 /* Tooltip do card (mesmo visual do card no quadro Kanban) — largura fixa
    e quebra de linha, sem isso o texto da rota (às vezes bem comprida)
@@ -199,16 +205,23 @@ function mostrarTelaSemPermissao() {
 
 function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
-/* ── Cores: vendedor = matiz, status = tonalidade da mesma matiz ── */
+/* ── Cor = vendedor (matiz fixa); status = estilo do traço ── */
 var HUE_VENDEDOR = { Filipe:210, Sabrina:330, 'Jessé':160, Diego:25, Leonardo:270, Gabriel:48 };
-var LUZ_STATUS = { OPERACIONAL:45, COLETA:65, FATURADO:30 };
-function corDaRota(vendedor, status){
+function corDoVendedor(vendedor){
   var hue = HUE_VENDEDOR[vendedor];
   var sat = (hue===undefined) ? 0 : 68;
   if (hue===undefined) hue = 0;
-  var luz = LUZ_STATUS[status] || 50;
-  return 'hsl(' + hue + ',' + sat + '%,' + luz + '%)';
+  return 'hsl(' + hue + ',' + sat + '%,50%)';
 }
+// Pontilhado (Operacional) / tracejado (Coleta) / sólido (Faturado) —
+// dashArray no formato Leaflet/SVG "traço,vão"; pontilhado usa traço bem
+// curto + lineCap redondo pra virar bolinha em vez de tracinho.
+var TRACO_STATUS = {
+  OPERACIONAL: { dashArray: '1,9', lineCap: 'round' },
+  COLETA:      { dashArray: '11,7', lineCap: 'butt' },
+  FATURADO:    { dashArray: null, lineCap: 'round' },
+};
+var ESTILO_CSS_STATUS = { OPERACIONAL: 'dotted', COLETA: 'dashed', FATURADO: 'solid' };
 
 /* ── Geocodificação (Nominatim) com cache em localStorage ── */
 var GEO_CACHE_KEY = 'mapaop_geocache_v1';
@@ -330,7 +343,8 @@ function renderizarMapa(){
     if (filtroStatus && !filtroStatus.has(c.status)) return;
     algumaVisivel = true;
     var latlngs = c._geometria.map(function(p){ return [p[1], p[0]]; });
-    var linha = L.polyline(latlngs, { color: corDaRota(c.vendedor, c.status), weight: 4, opacity: .85 }).addTo(mapa);
+    var traco = TRACO_STATUS[c.status] || TRACO_STATUS.FATURADO;
+    var linha = L.polyline(latlngs, { color: corDoVendedor(c.vendedor), weight: 4, opacity: .85, dashArray: traco.dashArray, lineCap: traco.lineCap }).addTo(mapa);
     linha.bindTooltip(tooltipHtml(c), { className: 'rota-tip', sticky: true, direction: 'top' });
     linha.on('mouseover', function(){ linha.setStyle({ weight: 7, opacity: 1 }); });
     linha.on('mouseout', function(){ linha.setStyle({ weight: 4, opacity: .85 }); });
@@ -350,11 +364,12 @@ function renderizarFiltros(){
   var elV = document.getElementById('chips-vendedor');
   elV.innerHTML = vendedoresPresentes.map(function(v){
     return '<span class="chip" data-v="'+e(v)+'" onclick="toggleFiltroVendedor(\''+e(v).replace(/'/g,"\\'")+'\')" style="margin-right:6px">'+
-      '<span class="dot" style="background:'+corDaRota(v==='?'?undefined:v,'OPERACIONAL')+'"></span>'+e(v)+'</span>';
+      '<span class="dot" style="background:'+corDoVendedor(v==='?'?undefined:v)+'"></span>'+e(v)+'</span>';
   }).join('');
   var elS = document.getElementById('chips-status');
   elS.innerHTML = STATUS_ABERTOS.map(function(s){
-    return '<span class="chip" data-s="'+s+'" onclick="toggleFiltroStatus(\''+s+'\')"><span class="dot" style="background:hsl(0,0%,'+(LUZ_STATUS[s])+'%)"></span>'+s+'</span>';
+    return '<span class="chip" data-s="'+s+'" onclick="toggleFiltroStatus(\''+s+'\')">'+
+      '<span class="traco-prev" style="border-bottom-style:'+ESTILO_CSS_STATUS[s]+'"></span>'+s+'</span>';
   }).join('');
   atualizarClassesChips();
 }
@@ -364,14 +379,12 @@ function atualizarClassesChips(){
     var v = el.getAttribute('data-v');
     var ativo = !filtroVendedores || filtroVendedores.has(v);
     el.classList.toggle('ativo', ativo);
-    el.style.background = ativo ? corDaRota(v==='?'?undefined:v,'OPERACIONAL') : '';
+    el.style.background = ativo ? corDoVendedor(v==='?'?undefined:v) : '';
   });
   document.querySelectorAll('#chips-status .chip').forEach(function(el){
     var s = el.getAttribute('data-s');
     var ativo = !filtroStatus || filtroStatus.has(s);
     el.classList.toggle('ativo', ativo);
-    el.style.background = ativo ? 'hsl(0,0%,'+LUZ_STATUS[s]+'%)' : '';
-    el.style.color = ativo ? (LUZ_STATUS[s] > 55 ? '#111' : '#fff') : '';
   });
 }
 
@@ -394,10 +407,11 @@ function toggleFiltroStatus(s){
 function renderizarLegenda(){
   var vendedoresPresentes = Array.from(new Set(todosOsCards.map(function(c){ return c.vendedor || '?'; })));
   document.getElementById('legenda-corpo').innerHTML = vendedoresPresentes.map(function(v){
+    var cor = corDoVendedor(v==='?'?undefined:v);
     return '<div class="leg-vendedor">'+
-      '<div class="leg-vendedor-nome"><span class="sw" style="background:'+corDaRota(v==='?'?undefined:v,'OPERACIONAL')+'"></span>'+e(v)+'</div>'+
+      '<div class="leg-vendedor-nome"><span class="sw" style="background:'+cor+'"></span>'+e(v)+'</div>'+
       '<div class="leg-status-row">'+STATUS_ABERTOS.map(function(s){
-        return '<span class="leg-status-item"><span class="bar" style="background:'+corDaRota(v==='?'?undefined:v,s)+'"></span>'+s.slice(0,4)+'</span>';
+        return '<span class="leg-status-item"><span class="bar" style="border-bottom-style:'+ESTILO_CSS_STATUS[s]+';border-bottom-color:'+cor+'"></span>'+s.slice(0,4)+'</span>';
       }).join('')+'</div>'+
     '</div>';
   }).join('');
