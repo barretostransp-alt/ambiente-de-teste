@@ -53,15 +53,19 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .leg-status-item{display:flex;align-items:center;gap:4px;font-size:9.5px;color:var(--txt-dim);}
 .leg-status-item .bar{width:14px;height:3px;border-radius:2px;}
 
-/* Tooltip do card (mesmo visual do card no quadro Kanban) */
+/* Tooltip do card (mesmo visual do card no quadro Kanban) — largura fixa
+   e quebra de linha, sem isso o texto da rota (às vezes bem comprida)
+   ultrapassava a caixa em vez de quebrar (Leaflet deixa tooltip com
+   white-space:nowrap por padrão). */
 .leaflet-tooltip.rota-tip{background:var(--card);border:1px solid var(--border);border-radius:8px;
-  padding:10px 12px;color:var(--txt);box-shadow:0 6px 20px rgba(0,0,0,.5);opacity:1!important;max-width:230px;}
+  padding:10px 12px;color:var(--txt);box-shadow:0 6px 20px rgba(0,0,0,.5);opacity:1!important;
+  width:230px;white-space:normal;}
 .leaflet-tooltip.rota-tip::before{display:none;}
-.kcard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:4px;}
-.kcard-code{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.05em;}
-.kcard-cli{font-size:11px;color:var(--txt);font-weight:600;margin-bottom:3px;}
+.kcard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:4px;flex-wrap:wrap;}
+.kcard-code{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.05em;white-space:normal;word-break:break-word;}
+.kcard-cli{font-size:11px;color:var(--txt);font-weight:600;margin-bottom:3px;white-space:normal;word-break:break-word;overflow-wrap:break-word;}
 .kcard-foot{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:4px;}
-.ktag{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap;}
+.ktag{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;white-space:normal;word-break:break-word;}
 .tg{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-b);}
 .tb{background:rgba(59,130,246,.1);color:#3B82F6;border:1px solid rgba(59,130,246,.3);}
 .kav{width:18px;height:18px;border-radius:4px;background:var(--gold);display:flex;align-items:center;
@@ -69,6 +73,17 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 
 #sem-dados{display:none;position:absolute;inset:0;align-items:center;justify-content:center;
   color:var(--txt-dim);font-size:12.5px;flex-direction:column;gap:8px;pointer-events:none;}
+
+/* ── TEMA CLARO ── mesma paleta usada nos outros módulos (pinheiro.html
+   etc.) — como quase tudo aqui já usa var(--...), só redefinir as
+   variáveis já re-pinta a página inteira. */
+body.tema-claro{
+  --bg:#F0F2F5;--surface:#FFFFFF;--card:#FFFFFF;--border:#E2E6ED;
+  --gold:#D97706;--gold-dim:rgba(217,119,6,.10);--gold-b:rgba(217,119,6,.28);
+  --txt:#111827;--txt-dim:#6B7280;--txt-mid:#6B7280;
+}
+body.tema-claro .chip{color:#374151;}
+body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);}
 </style>
 </head>
 <body>
@@ -394,6 +409,27 @@ document.addEventListener('DOMContentLoaded', function(){
   if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
   carregarTudo();
 });
+</script>
+
+<script>
+/* ── SISTEMA DE TEMA (injetado) ──────────────────────────── */
+(function(){
+  function applyTema(t){
+    document.body.classList.remove('tema-claro','tema-escuro');
+    if(t==='claro') document.body.classList.add('tema-claro');
+  }
+  var t=localStorage.getItem('barretos_tema')||'escuro';
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){ applyTema(t); });
+  } else { applyTema(t); }
+  window.addEventListener('message',function(ev){
+    if(ev.data && ev.data.type==='barretos_tema'){
+      localStorage.setItem('barretos_tema', ev.data.tema);
+      applyTema(ev.data.tema);
+    }
+  });
+})();
+/* ─────────────────────────────────────────────────────────── */
 </script>
 </body>
 </html>
