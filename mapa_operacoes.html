@@ -174,6 +174,29 @@ function mostrarTelaSemAcesso() {
   document.body.appendChild(el);
 }
 
+// Trava específica dessa tela: mesma permissão que controla o item no
+// menu lateral (shell.html), conferida aqui também pra quem tentar abrir
+// o arquivo direto pela URL sem passar pelo menu não conseguir entrar.
+// Client-side (dá pra editar localStorage no console) — a proteção que
+// realmente importa continua sendo o backend, que já só libera os cards
+// de cada empresa pra quem tem a permissão daquele quadro Kanban
+// especificamente; isso aqui é só pra a TELA em si não abrir à toa.
+function temPermissaoMapaOperacoes() {
+  try {
+    var perms = JSON.parse(localStorage.getItem('barretos_permissoes') || '[]');
+    return Array.isArray(perms) && perms.includes('mapa_operacoes');
+  } catch (e) { return false; }
+}
+
+function mostrarTelaSemPermissao() {
+  var el = document.createElement('div');
+  el.id = 'sem-permissao-overlay';
+  el.style.cssText = 'position:fixed;inset:0;background:#0F1117;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#E8E9F0;text-align:center;padding:24px';
+  el.innerHTML = '<div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Sem permissão pra esta tela</div>' +
+    '<div style="font-size:13px;color:#9CA3AF">Fale com o administrador do sistema se acha que deveria ter acesso ao Mapa das Operações.</div></div>';
+  document.body.appendChild(el);
+}
+
 function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
 /* ── Cores: vendedor = matiz, status = tonalidade da mesma matiz ── */
@@ -407,6 +430,7 @@ async function carregarTudo(){
 
 document.addEventListener('DOMContentLoaded', function(){
   if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
+  if (!temPermissaoMapaOperacoes()) { mostrarTelaSemPermissao(); return; }
   carregarTudo();
 });
 </script>
