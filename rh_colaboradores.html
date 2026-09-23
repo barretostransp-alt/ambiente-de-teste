@@ -260,6 +260,9 @@ tr:hover td{background:rgba(245,184,0,.04);}
       <div class="campo"><label>Contato de Emergência — Telefone</label><input id="col-emerg-tel"></div>
     </div>
     <div class="campo"><label>Supervisor(a)</label><select id="col-supervisor"><option value="">(nenhum)</option></select></div>
+    <div class="campo"><label>Usuário do Sistema (login)</label><select id="col-usuario"><option value="">(sem login vinculado)</option></select>
+      <span style="display:block;font-size:10px;color:var(--txt-dim);margin-top:4px">Vincula esse colaborador ao login dele (o mesmo da tela Configuração de Acessos) — é isso que libera o Meu Espelho de Ponto e outros recursos pessoais no Início.</span>
+    </div>
     <div class="campo"><label>Observações</label><textarea id="col-obs"></textarea></div>
     <div class="modal-footer">
       <button class="btn secundario" onclick="fecharModal('modal-colaborador')">Cancelar</button>
@@ -492,6 +495,17 @@ function selectColaboradoresHTML(incluirVazio, valorAtual){
 }
 function nomeColaborador(id){ var c = colaboradores.find(function(x){ return x.id===id; }); return c ? c.nome : '(colaborador removido)'; }
 
+/* ── Usuários do sistema (pra vincular colaborador ao login — mesma lista da tela Configuração de Acessos) ── */
+var usuariosSistema = [];
+async function carregarUsuariosSistema(){
+  var r = await apiFetch(API_BASE+'/usuarios');
+  usuariosSistema = (await r.json()).sort(function(a,b){ return a.nome.localeCompare(b.nome); });
+}
+function popularSelectUsuarios(valorAtual){
+  document.getElementById('col-usuario').innerHTML = '<option value="">(sem login vinculado)</option>' +
+    usuariosSistema.map(function(u){ return '<option value="'+u.id+'"'+(u.id===valorAtual?' selected':'')+'>'+e(u.nome)+' ('+e(u.login)+')</option>'; }).join('');
+}
+
 /* ── Colaboradores ── */
 async function carregarColaboradores(){
   var r = await apiFetch(API_BASE+'/colaboradores');
@@ -547,6 +561,7 @@ function abrirModalColaborador(id){
   document.getElementById('col-emerg-nome').value = c ? (c.contato_emergencia_nome||'') : '';
   document.getElementById('col-emerg-tel').value = c ? (c.contato_emergencia_telefone||'') : '';
   document.getElementById('col-supervisor').value = c ? (c.supervisor_id||'') : '';
+  popularSelectUsuarios(c ? (c.usuario_id||'') : '');
   document.getElementById('col-obs').value = c ? (c.observacoes||'') : '';
   document.getElementById('modal-colaborador').classList.add('open');
 }
@@ -573,6 +588,7 @@ async function salvarColaborador(){
     contato_emergencia_nome: document.getElementById('col-emerg-nome').value.trim() || null,
     contato_emergencia_telefone: document.getElementById('col-emerg-tel').value.trim() || null,
     supervisor_id: document.getElementById('col-supervisor').value || null,
+    usuario_id: document.getElementById('col-usuario').value || null,
     observacoes: document.getElementById('col-obs').value.trim() || null,
   };
   var url = API_BASE+'/colaboradores'+(id?'/'+id:'');
@@ -1005,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', async function(){
   if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
   document.getElementById('f-ponto-mes').value = new Date().toISOString().slice(0,7);
   await carregarColaboradores();
-  await Promise.all([carregarDocumentos(), carregarAusencias(), carregarAvaliacoes(), carregarPonto()]);
+  await Promise.all([carregarDocumentos(), carregarAusencias(), carregarAvaliacoes(), carregarPonto(), carregarUsuariosSistema()]);
 });
 </script>
 
