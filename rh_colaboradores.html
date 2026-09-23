@@ -50,6 +50,9 @@ tr:hover td{background:rgba(245,184,0,.04);}
 .badge.venc-ok{background:rgba(34,197,94,.12);color:var(--green);}
 .badge.venc-perto{background:rgba(245,184,0,.12);color:var(--gold);}
 .badge.venc-estourado{background:rgba(239,68,68,.12);color:var(--red);}
+.badge.aval-baixo{background:rgba(239,68,68,.12);color:var(--red);}
+.badge.aval-medio{background:rgba(245,184,0,.12);color:var(--gold);}
+.badge.aval-alto{background:rgba(34,197,94,.12);color:var(--green);}
 .acoes{display:flex;gap:6px;}
 .acoes button{background:none;border:none;color:var(--txt-dim);cursor:pointer;font-size:14px;padding:2px 4px;}
 .acoes button:hover{color:var(--gold);}
@@ -71,6 +74,17 @@ tr:hover td{background:rgba(245,184,0,.04);}
 .campo textarea{resize:vertical;min-height:56px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+
+/* Avaliação de Desempenho — categorias e critérios */
+.crit-categoria{margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.crit-categoria-hd{background:var(--card);padding:8px 12px;}
+.crit-categoria-hd b{font-size:11.5px;color:var(--txt);}
+.crit-categoria-hd span{display:block;font-size:10px;color:var(--txt-dim);margin-top:2px;}
+.crit-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--border);}
+.crit-item-txt{flex:1;}
+.crit-item-txt b{font-size:11.5px;color:var(--txt);display:block;}
+.crit-item-txt span{font-size:10px;color:var(--txt-dim);}
+.crit-item select{width:220px;flex-shrink:0;}
 
 /* Organograma */
 /* Organograma — árvore com caixas conectadas por linha (técnica clássica
@@ -164,7 +178,7 @@ tr:hover td{background:rgba(245,184,0,.04);}
       <button class="btn" onclick="abrirModalAvaliacao()"><i class="ti ti-plus"></i> Nova Avaliação</button>
     </div>
     <table>
-      <thead><tr><th>Colaborador</th><th>Data</th><th>Avaliador</th><th>Nota</th><th></th></tr></thead>
+      <thead><tr><th>Colaborador</th><th>Semestre / Ano</th><th>Avaliador</th><th>Resultado</th><th></th></tr></thead>
       <tbody id="tbody-avaliacoes"></tbody>
     </table>
   </div>
@@ -267,17 +281,32 @@ tr:hover td{background:rgba(245,184,0,.04);}
 
 <!-- MODAL: Avaliação -->
 <div class="overlay" id="modal-avaliacao">
-  <div class="modal">
-    <h3>Nova Avaliação de Desempenho</h3>
+  <div class="modal" style="max-width:760px">
+    <h3>Avaliação de Desempenho</h3>
+    <p style="font-size:11px;color:var(--txt-dim);margin:-10px 0 14px">Baseado no formulário oficial de avaliação — 7 competências, 3 critérios cada, nota de -2 a +2.</p>
     <input type="hidden" id="aval-id">
-    <div class="campo"><label>Colaborador *</label><select id="aval-colaborador"></select></div>
     <div class="grid2">
-      <div class="campo"><label>Data</label><input type="date" id="aval-data"></div>
-      <div class="campo"><label>Nota (0 a 10)</label><input type="number" step="0.1" min="0" max="10" id="aval-nota"></div>
+      <div class="campo"><label>Colaborador *</label><select id="aval-colaborador"></select></div>
+      <div class="campo"><label>Avaliador</label><input id="aval-avaliador"></div>
     </div>
-    <div class="campo"><label>Avaliador</label><input id="aval-avaliador"></div>
-    <div class="campo"><label>Pontos Fortes</label><textarea id="aval-fortes"></textarea></div>
-    <div class="campo"><label>Pontos a Melhorar</label><textarea id="aval-melhoria"></textarea></div>
+    <div class="campo" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Semestre</label>
+        <select id="aval-semestre"><option>1º Semestre</option><option>2º Semestre</option></select></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Ano</label>
+        <input type="number" id="aval-ano"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Data da Avaliação</label>
+        <input type="date" id="aval-data"></div>
+    </div>
+
+    <div id="aval-criterios"></div>
+
+    <div class="campo" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <span style="font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;font-weight:700">Média Geral</span>
+      <span id="aval-media-resultado" style="font-size:15px;font-weight:800;color:var(--gold);font-family:'Montserrat',sans-serif"></span>
+    </div>
+
+    <div class="campo" style="margin-top:12px"><label>Principais Pontos Fortes</label><textarea id="aval-fortes"></textarea></div>
+    <div class="campo"><label>Principais Pontos de Melhoria</label><textarea id="aval-melhoria"></textarea></div>
     <div class="modal-footer">
       <button class="btn secundario" onclick="fecharModal('modal-avaliacao')">Cancelar</button>
       <button class="btn" onclick="salvarAvaliacao()">Salvar</button>
@@ -604,6 +633,88 @@ async function excluirAusencia(id){
 }
 
 /* ── Avaliações ── */
+var CRITERIOS_AVALIACAO = [
+  { categoria:'Resultados e Entregas', desc:'Avalia o quanto a pessoa entrega resultados alinhados aos objetivos.', itens:[
+    { chave:'cumprimento_metas', nome:'Cumprimento de metas', desc:'Entrega resultados no prazo e conforme o esperado' },
+    { chave:'qualidade_entregas', nome:'Qualidade das entregas', desc:'Precisão, consistência e baixo retrabalho' },
+    { chave:'foco_resultados', nome:'Foco em resultados', desc:'Prioriza atividades que geram valor' },
+  ]},
+  { categoria:'Competência Técnica', desc:'Avalia o domínio técnico necessário para a função.', itens:[
+    { chave:'conhecimento_tecnico', nome:'Conhecimento técnico', desc:'Domínio das habilidades exigidas' },
+    { chave:'aprendizado_continuo', nome:'Aprendizado contínuo', desc:'Busca atualização e novos conhecimentos' },
+    { chave:'aplicacao_pratica', nome:'Aplicação prática', desc:'Consegue aplicar o conhecimento no dia a dia' },
+  ]},
+  { categoria:'Comportamento e Atitudes (Soft Skills)', desc:'Avalia postura profissional e relacionamento.', itens:[
+    { chave:'responsabilidade', nome:'Responsabilidade', desc:'Cumpre compromissos e assume consequências' },
+    { chave:'etica_profissionalismo', nome:'Ética e profissionalismo', desc:'Age com integridade e respeito' },
+    { chave:'trabalho_equipe', nome:'Trabalho em equipe', desc:'Cooperação e relacionamento interpessoal' },
+  ]},
+  { categoria:'Comunicação', desc:'Avalia clareza e eficácia ao se comunicar.', itens:[
+    { chave:'clareza', nome:'Clareza', desc:'Transmite ideias de forma compreensível' },
+    { chave:'escuta_ativa', nome:'Escuta ativa', desc:'Ouve com atenção e abertura' },
+    { chave:'comunicacao_assertiva', nome:'Comunicação assertiva', desc:'Expressa opiniões com respeito' },
+  ]},
+  { categoria:'Proatividade e Iniciativa', desc:'Avalia capacidade de agir sem depender de ordens constantes.', itens:[
+    { chave:'antecipacao_problemas', nome:'Antecipação de problemas', desc:'Identifica riscos antes que ocorram' },
+    { chave:'proposicao_melhorias', nome:'Proposição de melhorias', desc:'Sugere soluções e inovações' },
+    { chave:'autonomia', nome:'Autonomia', desc:'Atua com independência e responsabilidade' },
+  ]},
+  { categoria:'Organização e Gestão do Tempo', desc:'Avalia eficiência na execução do trabalho.', itens:[
+    { chave:'planejamento', nome:'Planejamento', desc:'Organiza tarefas e prioridades' },
+    { chave:'gestao_prazos', nome:'Gestão de prazos', desc:'Cumpre prazos de forma consistente' },
+    { chave:'produtividade', nome:'Produtividade', desc:'Usa bem o tempo disponível' },
+  ]},
+  { categoria:'Adaptabilidade e Resiliência', desc:'Avalia reação a mudanças e desafios.', itens:[
+    { chave:'flexibilidade', nome:'Flexibilidade', desc:'Adapta-se a mudanças com facilidade' },
+    { chave:'resiliencia', nome:'Resiliência', desc:'Lida bem com pressão e adversidades' },
+    { chave:'abertura_feedback', nome:'Abertura a feedback', desc:'Aceita críticas e aprende com elas' },
+  ]},
+];
+var ESCALA_AVALIACAO = [
+  { v:-2, label:'-2 · Insatisfatório' },
+  { v:-1, label:'-1 · Abaixo do esperado' },
+  { v:0, label:'0 · Adequado / dentro do esperado' },
+  { v:1, label:'1 · Acima do esperado' },
+  { v:2, label:'2 · Satisfatório' },
+];
+function significadoMedia(media){
+  if (media <= -1.5) return 'Insatisfatório';
+  if (media <= -0.5) return 'Abaixo do esperado';
+  if (media < 0.5) return 'Adequado / dentro do esperado';
+  if (media < 1.5) return 'Acima do esperado';
+  return 'Satisfatório';
+}
+function renderCriteriosAvaliacao(valores){
+  valores = valores || {};
+  document.getElementById('aval-criterios').innerHTML = CRITERIOS_AVALIACAO.map(function(cat){
+    return '<div class="crit-categoria"><div class="crit-categoria-hd"><b>'+e(cat.categoria)+'</b><span>'+e(cat.desc)+'</span></div>'+
+      cat.itens.map(function(it){
+        var vAtual = valores[it.chave];
+        var opts = ESCALA_AVALIACAO.map(function(op){
+          return '<option value="'+op.v+'"'+(String(vAtual)===String(op.v)?' selected':'')+'>'+op.label+'</option>';
+        }).join('');
+        return '<div class="crit-item"><div class="crit-item-txt"><b>'+e(it.nome)+'</b><span>'+e(it.desc)+'</span></div>'+
+          '<select data-chave="'+it.chave+'" onchange="atualizarMediaCalculada()"><option value="">—</option>'+opts+'</select></div>';
+      }).join('') + '</div>';
+  }).join('');
+  atualizarMediaCalculada();
+}
+function atualizarMediaCalculada(){
+  var selects = document.querySelectorAll('#aval-criterios select[data-chave]');
+  var soma = 0, qtd = 0;
+  selects.forEach(function(s){ if (s.value !== '') { soma += Number(s.value); qtd++; } });
+  var el = document.getElementById('aval-media-resultado');
+  if (!qtd) { el.textContent = '—'; return; }
+  var media = soma / qtd;
+  el.textContent = media.toFixed(2)+' — '+significadoMedia(media)+(qtd<21?' (parcial, '+qtd+'/21)':'');
+}
+function coletarNotasCriterios(){
+  var notas = {};
+  document.querySelectorAll('#aval-criterios select[data-chave]').forEach(function(s){
+    if (s.value !== '') notas[s.dataset.chave] = Number(s.value);
+  });
+  return notas;
+}
 async function carregarAvaliacoes(){
   var r = await apiFetch(API_BASE+'/colaborador-avaliacoes');
   avaliacoes = await r.json();
@@ -614,31 +725,44 @@ function renderAvaliacoes(){
   var linhas = avaliacoes.filter(function(a){ return !filtroColab || a.colaborador_id===filtroColab; });
   var tbody = document.getElementById('tbody-avaliacoes');
   tbody.innerHTML = linhas.length ? linhas.map(function(a){
-    return '<tr><td>'+e(nomeColaborador(a.colaborador_id))+'</td><td>'+fmtDataBR(a.data_avaliacao)+'</td>'+
-      '<td>'+e(a.avaliador||'—')+'</td><td>'+(a.nota!=null?a.nota:'—')+'</td>'+
+    var periodo = a.semestre || a.ano ? [a.semestre,a.ano].filter(Boolean).join(' / ') : '—';
+    var media = a.nota!=null ? Number(a.nota) : null;
+    var badgeCls = media==null ? '' : (media<-0.5?'aval-baixo':(media<0.5?'aval-medio':'aval-alto'));
+    var badge = media!=null ? '<span class="badge '+badgeCls+'">'+media.toFixed(2)+' · '+significadoMedia(media)+'</span>' : '—';
+    return '<tr><td>'+e(nomeColaborador(a.colaborador_id))+'</td><td>'+e(periodo)+'</td>'+
+      '<td>'+e(a.avaliador||'—')+'</td><td>'+badge+'</td>'+
       '<td class="acoes"><button onclick="abrirModalAvaliacao(\''+a.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
       '<button class="excluir" onclick="excluirAvaliacao(\''+a.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
   }).join('') : '<tr><td colspan="5" class="vazio">Nenhuma avaliação registrada.</td></tr>';
 }
 function abrirModalAvaliacao(id){
   var a = id ? avaliacoes.find(function(x){ return x.id===id; }) : null;
+  var hoje = new Date();
   document.getElementById('aval-id').value = a ? a.id : '';
   document.getElementById('aval-colaborador').innerHTML = selectColaboradoresHTML(false, a?a.colaborador_id:null);
-  document.getElementById('aval-data').value = a ? a.data_avaliacao : new Date().toISOString().slice(0,10);
-  document.getElementById('aval-nota').value = a ? (a.nota||'') : '';
+  document.getElementById('aval-data').value = a ? (a.data_avaliacao||new Date().toISOString().slice(0,10)) : new Date().toISOString().slice(0,10);
+  document.getElementById('aval-semestre').value = a ? (a.semestre||'1º Semestre') : (hoje.getMonth()<6?'1º Semestre':'2º Semestre');
+  document.getElementById('aval-ano').value = a ? (a.ano||hoje.getFullYear()) : hoje.getFullYear();
   document.getElementById('aval-avaliador').value = a ? (a.avaliador||'') : '';
   document.getElementById('aval-fortes').value = a ? (a.pontos_fortes||'') : '';
   document.getElementById('aval-melhoria').value = a ? (a.pontos_melhoria||'') : '';
+  renderCriteriosAvaliacao(a ? a.notas_criterios : null);
   document.getElementById('modal-avaliacao').classList.add('open');
 }
 async function salvarAvaliacao(){
   var id = document.getElementById('aval-id').value;
   var colaborador_id = document.getElementById('aval-colaborador').value;
   if (!colaborador_id) { alert('Selecione o colaborador.'); return; }
+  var notas_criterios = coletarNotasCriterios();
+  var chaves = Object.keys(notas_criterios);
+  var media = chaves.length ? chaves.reduce(function(s,k){ return s+notas_criterios[k]; },0)/chaves.length : null;
   var payload = {
     colaborador_id: colaborador_id,
     data_avaliacao: document.getElementById('aval-data').value || null,
-    nota: document.getElementById('aval-nota').value || null,
+    semestre: document.getElementById('aval-semestre').value || null,
+    ano: document.getElementById('aval-ano').value ? Number(document.getElementById('aval-ano').value) : null,
+    nota: media,
+    notas_criterios: notas_criterios,
     avaliador: document.getElementById('aval-avaliador').value.trim() || null,
     pontos_fortes: document.getElementById('aval-fortes').value.trim() || null,
     pontos_melhoria: document.getElementById('aval-melhoria').value.trim() || null,
