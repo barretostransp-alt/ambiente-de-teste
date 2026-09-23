@@ -189,33 +189,16 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
         </div>
       </div>
 
-      <!-- COLUNA DIREITA: TOP 5 CLIENTES + MEU ESPELHO DE PONTO -->
-      <div style="display:grid;grid-template-rows:auto 1fr;gap:16px;overflow:hidden;min-height:0">
-
-        <!-- TOP 5 CLIENTES -->
-        <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
-          <div class="card-hd">
-            <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-award"></i></div>
-            <div class="card-hd-title">Top 5 Clientes</div>
-          </div>
-          <div style="padding:10px 14px;overflow-y:auto" id="top5-body">
-            <div class="skel shimmer"></div>
-            <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
-          </div>
+      <!-- TOP 5 CLIENTES -->
+      <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+        <div class="card-hd">
+          <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-award"></i></div>
+          <div class="card-hd-title">Top 5 Clientes</div>
         </div>
-
-        <!-- MEU ESPELHO DE PONTO -->
-        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;min-height:0">
-          <div class="card-hd">
-            <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-clock"></i></div>
-            <div class="card-hd-title">Meu Espelho de Ponto</div>
-          </div>
-          <div style="padding:10px 14px;overflow-y:auto;flex:1;min-height:0" id="ponto-body">
-            <div class="skel shimmer"></div>
-            <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
-          </div>
+        <div style="padding:10px 14px;overflow-y:auto;flex:1;min-height:0" id="top5-body">
+          <div class="skel shimmer"></div>
+          <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
         </div>
-
       </div>
 
     </div>
@@ -250,7 +233,7 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
     </div>
 
     <!-- HELPDESK -->
-    <div class="side-section">
+    <div class="side-section" style="flex-shrink:0">
       <div class="side-hd">
         <span class="side-hd-ico">🎧</span>
         <span class="side-hd-title">Helpdesk</span>
@@ -259,6 +242,18 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
       <div class="side-body" id="hd-body">
         <div class="skel shimmer"></div>
         <div class="skel shimmer" style="width:75%"></div>
+      </div>
+    </div>
+
+    <!-- MEU ESPELHO DE PONTO -->
+    <div class="side-section" style="display:flex;flex-direction:column;flex:1;min-height:120px">
+      <div class="side-hd" style="flex-shrink:0">
+        <span class="side-hd-ico">🕒</span>
+        <span class="side-hd-title">Meu Espelho de Ponto</span>
+      </div>
+      <div id="ponto-body" style="padding:10px 12px;overflow-y:auto;flex:1;min-height:0">
+        <div class="skel shimmer"></div>
+        <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
       </div>
     </div>
 
