@@ -127,6 +127,7 @@ tr:hover td{background:rgba(245,184,0,.04);}
   <button class="tab-btn ativo" data-tab="colaboradores" onclick="mudarAba('colaboradores')"><i class="ti ti-users"></i> Colaboradores</button>
   <button class="tab-btn" data-tab="documentos" onclick="mudarAba('documentos')"><i class="ti ti-file-certificate"></i> Documentos e Vencimentos</button>
   <button class="tab-btn" data-tab="ausencias" onclick="mudarAba('ausencias')"><i class="ti ti-calendar-off"></i> Férias, Afastamentos e Frequência</button>
+  <button class="tab-btn" data-tab="ponto" onclick="mudarAba('ponto')"><i class="ti ti-clock"></i> Registro de Ponto</button>
   <button class="tab-btn" data-tab="avaliacoes" onclick="mudarAba('avaliacoes')"><i class="ti ti-star"></i> Avaliação de Desempenho</button>
   <button class="tab-btn" data-tab="organograma" onclick="mudarAba('organograma')"><i class="ti ti-sitemap"></i> Organograma</button>
 </div>
@@ -181,6 +182,19 @@ tr:hover td{background:rgba(245,184,0,.04);}
     </table>
   </div>
 
+  <!-- REGISTRO DE PONTO -->
+  <div class="painel" id="painel-ponto">
+    <div class="toolbar">
+      <select id="f-ponto-colab" onchange="renderPonto()"><option value="">Todos os colaboradores</option></select>
+      <input type="month" id="f-ponto-mes" onchange="renderPonto()">
+      <button class="btn" onclick="abrirModalPonto()"><i class="ti ti-plus"></i> Novo Registro</button>
+    </div>
+    <table>
+      <thead><tr><th>Colaborador</th><th>Data</th><th>Entrada</th><th>Saída Almoço</th><th>Retorno</th><th>Saída</th><th>Horas Trabalhadas</th><th>Saldo</th><th></th></tr></thead>
+      <tbody id="tbody-ponto"></tbody>
+    </table>
+  </div>
+
   <!-- AVALIAÇÕES -->
   <div class="painel" id="painel-avaliacoes">
     <div class="toolbar">
@@ -222,6 +236,7 @@ tr:hover td{background:rgba(245,184,0,.04);}
       <div class="campo"><label>Salário (R$)</label><input type="number" step="0.01" id="col-salario"></div>
       <div class="campo"><label>Status</label><select id="col-status"><option>Ativo</option><option>Afastado</option><option>Desligado</option></select></div>
     </div>
+    <div class="campo" style="max-width:200px"><label>Jornada Diária (horas)</label><input type="number" step="0.5" min="0" id="col-jornada" placeholder="8"></div>
     <div class="grid2">
       <div class="campo"><label>Telefone</label><input id="col-telefone"></div>
       <div class="campo"><label>E-mail</label><input type="email" id="col-email"></div>
@@ -285,6 +300,37 @@ tr:hover td{background:rgba(245,184,0,.04);}
     <div class="modal-footer">
       <button class="btn secundario" onclick="fecharModal('modal-ausencia')">Cancelar</button>
       <button class="btn" onclick="salvarAusencia()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Registro de Ponto -->
+<div class="overlay" id="modal-ponto">
+  <div class="modal">
+    <h3>Registro de Ponto</h3>
+    <input type="hidden" id="ponto-id">
+    <div class="grid2">
+      <div class="campo"><label>Colaborador *</label><select id="ponto-colaborador"></select></div>
+      <div class="campo"><label>Data *</label><input type="date" id="ponto-data"></div>
+    </div>
+    <div class="campo" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Entrada</label>
+        <input type="time" id="ponto-entrada" oninput="atualizarHorasCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída Almoço</label>
+        <input type="time" id="ponto-saida-almoco" oninput="atualizarHorasCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Retorno</label>
+        <input type="time" id="ponto-retorno-almoco" oninput="atualizarHorasCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída</label>
+        <input type="time" id="ponto-saida" oninput="atualizarHorasCalculadas()"></div>
+    </div>
+    <div class="campo" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;font-weight:700">Horas Trabalhadas</span>
+      <span id="ponto-horas-resultado" style="font-size:15px;font-weight:800;color:var(--gold);font-family:'Montserrat',sans-serif">—</span>
+    </div>
+    <div class="campo" style="margin-top:12px"><label>Observação</label><textarea id="ponto-obs"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-ponto')">Cancelar</button>
+      <button class="btn" onclick="salvarPonto()">Salvar</button>
     </div>
   </div>
 </div>
@@ -424,7 +470,7 @@ function mudarAba(nome){
 function fecharModal(id){ document.getElementById(id).classList.remove('open'); }
 
 /* ── Estado ── */
-var colaboradores = [], documentos = [], ausencias = [], avaliacoes = [];
+var colaboradores = [], documentos = [], ausencias = [], avaliacoes = [], ponto = [];
 
 function selectColaboradoresHTML(incluirVazio, valorAtual){
   var opts = (incluirVazio ? '<option value="">Todos os colaboradores</option>' : '<option value="">Selecione...</option>');
@@ -437,7 +483,7 @@ function nomeColaborador(id){ var c = colaboradores.find(function(x){ return x.i
 async function carregarColaboradores(){
   var r = await apiFetch(API_BASE+'/colaboradores');
   colaboradores = await r.json();
-  ['f-doc-colab','doc-colaborador','f-aus-colab','aus-colaborador','f-aval-colab','aval-colaborador'].forEach(function(id){
+  ['f-doc-colab','doc-colaborador','f-aus-colab','aus-colaborador','f-ponto-colab','ponto-colaborador','f-aval-colab','aval-colaborador'].forEach(function(id){
     var incluirVazio = id.indexOf('f-')===0;
     document.getElementById(id).innerHTML = selectColaboradoresHTML(incluirVazio);
   });
@@ -477,6 +523,7 @@ function abrirModalColaborador(id){
   document.getElementById('col-demissao').value = c ? (c.data_demissao||'') : '';
   document.getElementById('col-salario').value = c ? (c.salario||'') : '';
   document.getElementById('col-status').value = c ? c.status : 'Ativo';
+  document.getElementById('col-jornada').value = c ? (c.jornada_horas_diarias!=null?c.jornada_horas_diarias:8) : 8;
   document.getElementById('col-telefone').value = c ? (c.telefone||'') : '';
   document.getElementById('col-email').value = c ? (c.email||'') : '';
   document.getElementById('col-endereco').value = c ? (c.endereco||'') : '';
@@ -499,6 +546,7 @@ async function salvarColaborador(){
     data_demissao: document.getElementById('col-demissao').value || null,
     salario: document.getElementById('col-salario').value || null,
     status: document.getElementById('col-status').value,
+    jornada_horas_diarias: document.getElementById('col-jornada').value || 8,
     telefone: document.getElementById('col-telefone').value.trim() || null,
     email: document.getElementById('col-email').value.trim() || null,
     endereco: document.getElementById('col-endereco').value.trim() || null,
@@ -514,11 +562,11 @@ async function salvarColaborador(){
   await carregarColaboradores();
 }
 async function excluirColaborador(id){
-  if (!confirm('Excluir este colaborador? Isso também apaga documentos, ausências e avaliações ligados a ele.')) return;
+  if (!confirm('Excluir este colaborador? Isso também apaga documentos, ausências, registros de ponto e avaliações ligados a ele.')) return;
   var res = await apiFetch(API_BASE+'/colaboradores/'+id, { method:'DELETE' });
   if (!res.ok) { alert('Erro ao excluir.'); return; }
   await carregarColaboradores();
-  await Promise.all([carregarDocumentos(), carregarAusencias(), carregarAvaliacoes()]);
+  await Promise.all([carregarDocumentos(), carregarAusencias(), carregarAvaliacoes(), carregarPonto()]);
 }
 
 /* ── Documentos ── */
@@ -640,6 +688,106 @@ async function excluirAusencia(id){
   if (!confirm('Excluir este registro?')) return;
   await apiFetch(API_BASE+'/colaborador-ausencias/'+id, { method:'DELETE' });
   await carregarAusencias();
+}
+
+/* ── Registro de Ponto ── */
+function minutosDeHora(hhmm){
+  if (!hhmm) return null;
+  var p = hhmm.split(':');
+  return Number(p[0])*60 + Number(p[1]);
+}
+function formatMinutos(min){
+  if (min==null) return '—';
+  var sinal = min<0 ? '-' : '';
+  min = Math.abs(Math.round(min));
+  return sinal+Math.floor(min/60)+'h'+String(min%60).padStart(2,'0');
+}
+function calcularMinutosTrabalhados(p){
+  var entrada = minutosDeHora(p.entrada), saida = minutosDeHora(p.saida);
+  if (entrada==null || saida==null) return null;
+  var total = saida - entrada;
+  var saidaAlmoco = minutosDeHora(p.saida_almoco), retornoAlmoco = minutosDeHora(p.retorno_almoco);
+  if (saidaAlmoco!=null && retornoAlmoco!=null) total -= (retornoAlmoco - saidaAlmoco);
+  return total;
+}
+function jornadaDoColaborador(colaboradorId){
+  var c = colaboradores.find(function(x){ return x.id===colaboradorId; });
+  return c && c.jornada_horas_diarias!=null ? Number(c.jornada_horas_diarias) : 8;
+}
+function atualizarHorasCalculadas(){
+  var p = {
+    entrada: document.getElementById('ponto-entrada').value,
+    saida_almoco: document.getElementById('ponto-saida-almoco').value,
+    retorno_almoco: document.getElementById('ponto-retorno-almoco').value,
+    saida: document.getElementById('ponto-saida').value,
+  };
+  var min = calcularMinutosTrabalhados(p);
+  document.getElementById('ponto-horas-resultado').textContent = min==null ? '—' : formatMinutos(min);
+}
+async function carregarPonto(){
+  var r = await apiFetch(API_BASE+'/colaborador-ponto');
+  ponto = await r.json();
+  renderPonto();
+}
+function renderPonto(){
+  var filtroColab = document.getElementById('f-ponto-colab').value;
+  var filtroMes = document.getElementById('f-ponto-mes').value;
+  var linhas = ponto.filter(function(p){
+    if (filtroColab && p.colaborador_id!==filtroColab) return false;
+    if (filtroMes && p.data.slice(0,7)!==filtroMes) return false;
+    return true;
+  }).sort(function(a,b){ return a.data<b.data?1:-1; });
+  var tbody = document.getElementById('tbody-ponto');
+  tbody.innerHTML = linhas.length ? linhas.map(function(p){
+    var min = calcularMinutosTrabalhados(p);
+    var jornadaMin = jornadaDoColaborador(p.colaborador_id)*60;
+    var saldo = min==null ? null : (min - jornadaMin);
+    var saldoCls = saldo==null ? '' : (saldo<-15?'aval-baixo':(saldo>15?'aval-alto':'aval-medio'));
+    var saldoTxt = saldo==null ? '—' : (saldo>=0?'+':'')+formatMinutos(saldo);
+    return '<tr><td>'+e(nomeColaborador(p.colaborador_id))+'</td><td>'+fmtDataBR(p.data)+'</td>'+
+      '<td>'+(p.entrada||'—')+'</td><td>'+(p.saida_almoco||'—')+'</td><td>'+(p.retorno_almoco||'—')+'</td><td>'+(p.saida||'—')+'</td>'+
+      '<td>'+formatMinutos(min)+'</td><td>'+(saldo==null?'—':'<span class="badge '+saldoCls+'">'+saldoTxt+'</span>')+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalPonto(\''+p.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirPonto(\''+p.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="9" class="vazio">Nenhum registro de ponto neste período.</td></tr>';
+}
+function abrirModalPonto(id){
+  var p = id ? ponto.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('ponto-id').value = p ? p.id : '';
+  document.getElementById('ponto-colaborador').innerHTML = selectColaboradoresHTML(false, p?p.colaborador_id:null);
+  document.getElementById('ponto-data').value = p ? p.data : new Date().toISOString().slice(0,10);
+  document.getElementById('ponto-entrada').value = p ? (p.entrada||'') : '';
+  document.getElementById('ponto-saida-almoco').value = p ? (p.saida_almoco||'') : '';
+  document.getElementById('ponto-retorno-almoco').value = p ? (p.retorno_almoco||'') : '';
+  document.getElementById('ponto-saida').value = p ? (p.saida||'') : '';
+  document.getElementById('ponto-obs').value = p ? (p.observacao||'') : '';
+  atualizarHorasCalculadas();
+  document.getElementById('modal-ponto').classList.add('open');
+}
+async function salvarPonto(){
+  var id = document.getElementById('ponto-id').value;
+  var colaborador_id = document.getElementById('ponto-colaborador').value;
+  var data = document.getElementById('ponto-data').value;
+  if (!colaborador_id || !data) { alert('Selecione o colaborador e a data.'); return; }
+  var payload = {
+    colaborador_id: colaborador_id,
+    data: data,
+    entrada: document.getElementById('ponto-entrada').value || null,
+    saida_almoco: document.getElementById('ponto-saida-almoco').value || null,
+    retorno_almoco: document.getElementById('ponto-retorno-almoco').value || null,
+    saida: document.getElementById('ponto-saida').value || null,
+    observacao: document.getElementById('ponto-obs').value.trim() || null,
+  };
+  var url = API_BASE+'/colaborador-ponto'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar registro de ponto (verifique se já existe um registro para esse colaborador nessa data).'); return; }
+  fecharModal('modal-ponto');
+  await carregarPonto();
+}
+async function excluirPonto(id){
+  if (!confirm('Excluir este registro de ponto?')) return;
+  await apiFetch(API_BASE+'/colaborador-ponto/'+id, { method:'DELETE' });
+  await carregarPonto();
 }
 
 /* ── Avaliações ── */
@@ -806,8 +954,9 @@ function renderNoOrganograma(c){
 /* ── Boot ── */
 document.addEventListener('DOMContentLoaded', async function(){
   if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
+  document.getElementById('f-ponto-mes').value = new Date().toISOString().slice(0,7);
   await carregarColaboradores();
-  await Promise.all([carregarDocumentos(), carregarAusencias(), carregarAvaliacoes()]);
+  await Promise.all([carregarDocumentos(), carregarAusencias(), carregarAvaliacoes(), carregarPonto()]);
 });
 </script>
 
