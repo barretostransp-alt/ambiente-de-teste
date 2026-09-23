@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RH — Benefícios e Custos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#090A0D;--surface:#0F1117;--card:#151820;--border:#1E2130;
+  --gold:#F5B800;--gold-dim:rgba(245,184,0,.12);--gold-b:rgba(245,184,0,.28);
+  --txt:#E8EAF0;--txt-dim:#6B7280;--txt-mid:#9CA3AF;
+  --green:#22C55E;--red:#EF4444;--blue:#3B82F6;--orange:#F97316;--r:8px;
+}
+body.tema-claro{
+  --bg:#F0F2F5;--surface:#FFFFFF;--card:#FFFFFF;--border:#E2E6ED;
+  --gold:#D97706;--gold-dim:rgba(217,119,6,.10);--gold-b:rgba(217,119,6,.28);
+  --txt:#111827;--txt-dim:#6B7280;--txt-mid:#4B5563;
+  --green:#059669;--red:#DC2626;--blue:#2563EB;--orange:#EA580C;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;}
+.tb-logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--gold);white-space:nowrap;}
+.tabs{display:flex;gap:4px;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;overflow-x:auto;}
+.tab-btn{background:none;border:none;color:var(--txt-dim);padding:12px 14px;font-size:12.5px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:'DM Sans',sans-serif;}
+.tab-btn:hover{color:var(--txt);}
+.tab-btn.ativo{color:var(--gold);border-bottom-color:var(--gold);}
+.conteudo{padding:18px 20px;max-width:1400px;margin:0 auto;}
+.painel{display:none;}
+.painel.ativo{display:block;}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.toolbar select,.toolbar input{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;}
+.btn{background:var(--gold);color:#111;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;}
+.btn:hover{opacity:.9;}
+.btn.secundario{background:transparent;border:1px solid var(--border);color:var(--txt-dim);font-weight:600;}
+.btn.secundario:hover{border-color:var(--gold);color:var(--gold);}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px;}
+th{background:var(--surface);color:var(--txt-dim);text-align:left;padding:9px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;border-bottom:1px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--txt);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(245,184,0,.04);}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:10.5px;font-weight:700;}
+.badge.ativo{background:rgba(34,197,94,.12);color:var(--green);}
+.badge.suspenso{background:rgba(245,184,0,.12);color:var(--gold);}
+.badge.encerrado{background:rgba(239,68,68,.12);color:var(--red);}
+.acoes{display:flex;gap:6px;}
+.acoes button{background:none;border:none;color:var(--txt-dim);cursor:pointer;font-size:14px;padding:2px 4px;}
+.acoes button:hover{color:var(--gold);}
+.acoes button.excluir:hover{color:var(--red);}
+.vazio{text-align:center;padding:40px;color:var(--txt-dim);font-size:12.5px;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.kpi .n{font-size:22px;font-weight:800;color:var(--gold);font-family:'Syne',sans-serif;}
+.kpi .l{font-size:10.5px;color:var(--txt-dim);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.chart-card h4{font-size:11.5px;color:var(--txt-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em;}
+.chart-wrap{position:relative;height:220px;}
+@media (max-width:800px){ .charts{grid-template-columns:1fr;} }
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:520px;padding:20px;}
+.modal h3{font-size:14px;margin-bottom:16px;color:var(--txt);}
+.campo{margin-bottom:12px;}
+.campo label{display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em;}
+.campo input,.campo select,.campo textarea{width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);padding:8px 10px;font-size:12.5px;font-family:'DM Sans',sans-serif;}
+.campo textarea{resize:vertical;min-height:56px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+</style>
+</head>
+<body>
+
+<div class="topbar"><span class="tb-logo">RH — Benefícios e Custos</span></div>
+
+<div class="tabs">
+  <button class="tab-btn ativo" data-tab="beneficios" onclick="mudarAba('beneficios')"><i class="ti ti-gift"></i> Benefícios</button>
+  <button class="tab-btn" data-tab="atribuicao" onclick="mudarAba('atribuicao')"><i class="ti ti-user-check"></i> Atribuição por Colaborador</button>
+  <button class="tab-btn" data-tab="custos" onclick="mudarAba('custos')"><i class="ti ti-report-money"></i> Custos de RH</button>
+</div>
+
+<div class="conteudo">
+
+  <!-- BENEFÍCIOS (catálogo) -->
+  <div class="painel ativo" id="painel-beneficios">
+    <div class="toolbar"><button class="btn" onclick="abrirModalBeneficio()"><i class="ti ti-plus"></i> Novo Benefício</button></div>
+    <table>
+      <thead><tr><th>Nome</th><th>Tipo</th><th>Valor Padrão</th><th>Ativo</th><th></th></tr></thead>
+      <tbody id="tbody-beneficios"></tbody>
+    </table>
+  </div>
+
+  <!-- ATRIBUIÇÃO POR COLABORADOR -->
+  <div class="painel" id="painel-atribuicao">
+    <div class="toolbar">
+      <select id="f-atrib-colab" onchange="renderAtribuicoes()"><option value="">Todos os colaboradores</option></select>
+      <button class="btn" onclick="abrirModalAtribuicao()"><i class="ti ti-plus"></i> Atribuir Benefício</button>
+    </div>
+    <table>
+      <thead><tr><th>Colaborador</th><th>Benefício</th><th>Valor</th><th>Início</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tbody-atribuicoes"></tbody>
+    </table>
+  </div>
+
+  <!-- CUSTOS DE RH -->
+  <div class="painel" id="painel-custos">
+    <div class="kpis">
+      <div class="kpi"><div class="n" id="kpi-colaboradores">0</div><div class="l">Colaboradores Ativos</div></div>
+      <div class="kpi"><div class="n" id="kpi-salarios">R$ 0</div><div class="l">Total em Salários</div></div>
+      <div class="kpi"><div class="n" id="kpi-beneficios">R$ 0</div><div class="l">Total em Benefícios</div></div>
+      <div class="kpi"><div class="n" id="kpi-extras">R$ 0</div><div class="l">Custos Extras (mês)</div></div>
+      <div class="kpi"><div class="n" id="kpi-total">R$ 0</div><div class="l">Custo Total Estimado/Mês</div></div>
+    </div>
+    <div class="charts">
+      <div class="chart-card"><h4>Salário por Departamento</h4><div class="chart-wrap"><canvas id="chart-departamento"></canvas></div></div>
+      <div class="chart-card"><h4>Custos Extras por Tipo (mês atual)</h4><div class="chart-wrap"><canvas id="chart-extras"></canvas></div></div>
+    </div>
+    <div class="toolbar"><button class="btn" onclick="abrirModalCustoExtra()"><i class="ti ti-plus"></i> Novo Custo Extra</button></div>
+    <table>
+      <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Colaborador</th><th>Valor</th><th></th></tr></thead>
+      <tbody id="tbody-custos-extras"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- MODAL: Benefício -->
+<div class="overlay" id="modal-beneficio">
+  <div class="modal">
+    <h3 id="modal-beneficio-titulo">Novo Benefício</h3>
+    <input type="hidden" id="ben-id">
+    <div class="campo"><label>Nome *</label><input id="ben-nome" placeholder="Ex: Vale Alimentação"></div>
+    <div class="grid2">
+      <div class="campo"><label>Tipo</label><input id="ben-tipo" placeholder="Ex: Alimentação, Saúde, Transporte"></div>
+      <div class="campo"><label>Valor Padrão (R$)</label><input type="number" step="0.01" id="ben-valor"></div>
+    </div>
+    <div class="campo"><label><input type="checkbox" id="ben-ativo" checked style="width:auto;margin-right:6px"> Ativo</label></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-beneficio')">Cancelar</button>
+      <button class="btn" onclick="salvarBeneficio()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Atribuição -->
+<div class="overlay" id="modal-atribuicao">
+  <div class="modal">
+    <h3>Atribuir Benefício</h3>
+    <input type="hidden" id="atrib-id">
+    <div class="campo"><label>Colaborador *</label><select id="atrib-colaborador"></select></div>
+    <div class="campo"><label>Benefício *</label><select id="atrib-beneficio" onchange="preencherValorPadrao()"></select></div>
+    <div class="grid2">
+      <div class="campo"><label>Valor (R$)</label><input type="number" step="0.01" id="atrib-valor"></div>
+      <div class="campo"><label>Status</label><select id="atrib-status"><option>Ativo</option><option>Suspenso</option><option>Encerrado</option></select></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Data de Início</label><input type="date" id="atrib-inicio"></div>
+      <div class="campo"><label>Data de Fim</label><input type="date" id="atrib-fim"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-atribuicao')">Cancelar</button>
+      <button class="btn" onclick="salvarAtribuicao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Custo Extra -->
+<div class="overlay" id="modal-custo-extra">
+  <div class="modal">
+    <h3>Novo Custo Extra de RH</h3>
+    <input type="hidden" id="custo-id">
+    <div class="grid2">
+      <div class="campo"><label>Tipo *</label><select id="custo-tipo">
+        <option>Treinamento</option><option>Rescisão</option><option>Processo Seletivo</option>
+        <option>Uniforme/EPI</option><option>Multa Trabalhista</option><option>Outro</option>
+      </select></div>
+      <div class="campo"><label>Valor (R$) *</label><input type="number" step="0.01" id="custo-valor"></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Data</label><input type="date" id="custo-data"></div>
+      <div class="campo"><label>Colaborador (opcional)</label><select id="custo-colaborador"><option value="">—</option></select></div>
+    </div>
+    <div class="campo"><label>Descrição</label><textarea id="custo-descricao"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-custo-extra')">Cancelar</button>
+      <button class="btn" onclick="salvarCustoExtra()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API_BASE = 'https://barretos-backend.onrender.com/api';
+var SUPABASE_URL      = 'https://qjwobkpgqmaqisphwonl.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_c4MrJXB6nTHY0a5ShAFRaQ_Jc4qDdPr';
+
+function getAuthToken()    { return localStorage.getItem('barretos_auth_token'); }
+function getRefreshToken() { return localStorage.getItem('barretos_auth_refresh'); }
+
+async function tentarRenovarToken() {
+  var refresh = getRefreshToken();
+  if (!refresh) return false;
+  var agora = Date.now();
+  var ultimaRenovacao = parseInt(localStorage.getItem('barretos_auth_renovado_em') || '0', 10);
+  if (agora - ultimaRenovacao < 5000) return !!getAuthToken();
+  try {
+    var r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: refresh }),
+    });
+    if (!r.ok) return false;
+    var j = await r.json();
+    localStorage.setItem('barretos_auth_token', j.access_token);
+    localStorage.setItem('barretos_auth_refresh', j.refresh_token);
+    localStorage.setItem('barretos_auth_renovado_em', String(Date.now()));
+    return true;
+  } catch (e) { return false; }
+}
+
+async function apiFetch(url, options) {
+  options = options || {};
+  var headers = Object.assign({}, options.headers, { Authorization: 'Bearer ' + getAuthToken() });
+  var res = await fetch(url, Object.assign({}, options, { headers: headers }));
+  if (res.status === 401) {
+    if (await tentarRenovarToken()) {
+      headers.Authorization = 'Bearer ' + getAuthToken();
+      res = await fetch(url, Object.assign({}, options, { headers: headers }));
+    }
+    if (res.status === 401) { mostrarTelaSemAcesso(); throw new Error('Sessão expirada'); }
+  }
+  return res;
+}
+function mostrarTelaSemAcesso() {
+  var el = document.getElementById('sem-acesso-overlay');
+  if (el) { el.style.display = 'flex'; return; }
+  el = document.createElement('div');
+  el.id = 'sem-acesso-overlay';
+  el.style.cssText = 'position:fixed;inset:0;background:#0F1117;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#E8E9F0;text-align:center;padding:24px';
+  el.innerHTML = '<div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Sessão não encontrada</div>' +
+    '<div style="font-size:13px;color:#9CA3AF">Acesse esta tela pelo menu principal do sistema.</div></div>';
+  document.body.appendChild(el);
+}
+function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function fmtBRL(v){ return (Number(v)||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+function fmtDataBR(iso){ if(!iso) return ''; var p = iso.split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : iso; }
+
+function mudarAba(nome){
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('ativo', b.dataset.tab===nome); });
+  document.querySelectorAll('.painel').forEach(function(p){ p.classList.toggle('ativo', p.id==='painel-'+nome); });
+  if (nome==='custos') carregarResumoCustos();
+}
+function fecharModal(id){ document.getElementById(id).classList.remove('open'); }
+
+var colaboradores = [], beneficios = [], atribuicoes = [], custosExtras = [];
+var chartDepto = null, chartExtras = null;
+
+function selectColaboradoresHTML(incluirVazio, valorAtual){
+  var opts = (incluirVazio ? '<option value="">Todos os colaboradores</option>' : '<option value="">Selecione...</option>');
+  opts += colaboradores.map(function(c){ return '<option value="'+c.id+'"'+(c.id===valorAtual?' selected':'')+'>'+e(c.nome)+'</option>'; }).join('');
+  return opts;
+}
+function nomeColaborador(id){ if(!id) return '—'; var c = colaboradores.find(function(x){ return x.id===id; }); return c ? c.nome : '(removido)'; }
+function nomeBeneficio(id){ var b = beneficios.find(function(x){ return x.id===id; }); return b ? b.nome : '(removido)'; }
+
+// Essa tela também busca /api/colaboradores pra montar os selects — quem
+// tiver a permissão "rh_beneficios" mas não "rh_colaboradores" recebe 403
+// aqui. Por enquanto liberar as duas permissões juntas é o esperado
+// (ver shell.html); dá pra separar isso melhor mais pra frente se fizer
+// sentido ter alguém só com uma das duas.
+async function carregarColaboradores(){
+  var r = await apiFetch(API_BASE+'/colaboradores');
+  colaboradores = await r.json();
+  ['f-atrib-colab','atrib-colaborador','custo-colaborador'].forEach(function(id){
+    var incluirVazio = id.indexOf('f-')===0 || id==='custo-colaborador';
+    document.getElementById(id).innerHTML = (id==='custo-colaborador' ? '<option value="">—</option>' : '') +
+      colaboradores.map(function(c){ return '<option value="'+c.id+'">'+e(c.nome)+'</option>'; }).join('');
+    if (incluirVazio && id==='f-atrib-colab') document.getElementById(id).innerHTML = '<option value="">Todos os colaboradores</option>' + document.getElementById(id).innerHTML;
+  });
+}
+
+/* ── Benefícios (catálogo) ── */
+async function carregarBeneficios(){
+  var r = await apiFetch(API_BASE+'/rh-beneficios');
+  beneficios = await r.json();
+  renderBeneficios();
+}
+function renderBeneficios(){
+  var tbody = document.getElementById('tbody-beneficios');
+  tbody.innerHTML = beneficios.length ? beneficios.map(function(b){
+    return '<tr><td>'+e(b.nome)+'</td><td>'+e(b.tipo||'—')+'</td><td>'+fmtBRL(b.valor_padrao)+'</td>'+
+      '<td>'+(b.ativo?'<span class="badge ativo">Sim</span>':'<span class="badge encerrado">Não</span>')+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalBeneficio(\''+b.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirBeneficio(\''+b.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="5" class="vazio">Nenhum benefício cadastrado.</td></tr>';
+}
+function abrirModalBeneficio(id){
+  var b = id ? beneficios.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('modal-beneficio-titulo').textContent = b ? 'Editar Benefício' : 'Novo Benefício';
+  document.getElementById('ben-id').value = b ? b.id : '';
+  document.getElementById('ben-nome').value = b ? b.nome : '';
+  document.getElementById('ben-tipo').value = b ? (b.tipo||'') : '';
+  document.getElementById('ben-valor').value = b ? (b.valor_padrao||'') : '';
+  document.getElementById('ben-ativo').checked = b ? !!b.ativo : true;
+  document.getElementById('modal-beneficio').classList.add('open');
+}
+async function salvarBeneficio(){
+  var id = document.getElementById('ben-id').value;
+  var nome = document.getElementById('ben-nome').value.trim();
+  if (!nome) { alert('Informe o nome do benefício.'); return; }
+  var payload = {
+    nome: nome,
+    tipo: document.getElementById('ben-tipo').value.trim() || null,
+    valor_padrao: document.getElementById('ben-valor').value || null,
+    ativo: document.getElementById('ben-ativo').checked,
+  };
+  var url = API_BASE+'/rh-beneficios'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar benefício.'); return; }
+  fecharModal('modal-beneficio');
+  await carregarBeneficios();
+}
+async function excluirBeneficio(id){
+  if (!confirm('Excluir este benefício?')) return;
+  await apiFetch(API_BASE+'/rh-beneficios/'+id, { method:'DELETE' });
+  await carregarBeneficios();
+}
+
+/* ── Atribuição por colaborador ── */
+async function carregarAtribuicoes(){
+  var r = await apiFetch(API_BASE+'/colaborador-beneficios');
+  atribuicoes = await r.json();
+  renderAtribuicoes();
+}
+function renderAtribuicoes(){
+  var filtro = document.getElementById('f-atrib-colab').value;
+  var linhas = atribuicoes.filter(function(a){ return !filtro || a.colaborador_id===filtro; });
+  var tbody = document.getElementById('tbody-atribuicoes');
+  tbody.innerHTML = linhas.length ? linhas.map(function(a){
+    var badgeCls = a.status==='Ativo'?'ativo':(a.status==='Suspenso'?'suspenso':'encerrado');
+    return '<tr><td>'+e(nomeColaborador(a.colaborador_id))+'</td><td>'+e(nomeBeneficio(a.beneficio_id))+'</td>'+
+      '<td>'+fmtBRL(a.valor)+'</td><td>'+fmtDataBR(a.data_inicio)+'</td><td><span class="badge '+badgeCls+'">'+e(a.status)+'</span></td>'+
+      '<td class="acoes"><button onclick="abrirModalAtribuicao(\''+a.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirAtribuicao(\''+a.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="vazio">Nenhuma atribuição encontrada.</td></tr>';
+}
+function opcoesBeneficiosHTML(valorAtual){
+  return beneficios.map(function(b){ return '<option value="'+b.id+'"'+(b.id===valorAtual?' selected':'')+'>'+e(b.nome)+'</option>'; }).join('');
+}
+function preencherValorPadrao(){
+  var b = beneficios.find(function(x){ return x.id===document.getElementById('atrib-beneficio').value; });
+  if (b && !document.getElementById('atrib-valor').value) document.getElementById('atrib-valor').value = b.valor_padrao || '';
+}
+function abrirModalAtribuicao(id){
+  var a = id ? atribuicoes.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('atrib-id').value = a ? a.id : '';
+  document.getElementById('atrib-colaborador').innerHTML = selectColaboradoresHTML(false, a?a.colaborador_id:null);
+  document.getElementById('atrib-beneficio').innerHTML = opcoesBeneficiosHTML(a?a.beneficio_id:null);
+  document.getElementById('atrib-valor').value = a ? (a.valor||'') : '';
+  document.getElementById('atrib-status').value = a ? a.status : 'Ativo';
+  document.getElementById('atrib-inicio').value = a ? a.data_inicio : new Date().toISOString().slice(0,10);
+  document.getElementById('atrib-fim').value = a ? (a.data_fim||'') : '';
+  document.getElementById('modal-atribuicao').classList.add('open');
+}
+async function salvarAtribuicao(){
+  var id = document.getElementById('atrib-id').value;
+  var colaborador_id = document.getElementById('atrib-colaborador').value;
+  var beneficio_id = document.getElementById('atrib-beneficio').value;
+  if (!colaborador_id || !beneficio_id) { alert('Selecione o colaborador e o benefício.'); return; }
+  var payload = {
+    colaborador_id: colaborador_id, beneficio_id: beneficio_id,
+    valor: document.getElementById('atrib-valor').value || null,
+    status: document.getElementById('atrib-status').value,
+    data_inicio: document.getElementById('atrib-inicio').value || null,
+    data_fim: document.getElementById('atrib-fim').value || null,
+  };
+  var url = API_BASE+'/colaborador-beneficios'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar atribuição.'); return; }
+  fecharModal('modal-atribuicao');
+  await carregarAtribuicoes();
+}
+async function excluirAtribuicao(id){
+  if (!confirm('Excluir esta atribuição?')) return;
+  await apiFetch(API_BASE+'/colaborador-beneficios/'+id, { method:'DELETE' });
+  await carregarAtribuicoes();
+}
+
+/* ── Custos de RH ── */
+async function carregarResumoCustos(){
+  var r = await apiFetch(API_BASE+'/rh-analise/resumo-custos');
+  var resumo = await r.json();
+  document.getElementById('kpi-colaboradores').textContent = resumo.colaboradoresAtivos;
+  document.getElementById('kpi-salarios').textContent = fmtBRL(resumo.totalSalarios);
+  document.getElementById('kpi-beneficios').textContent = fmtBRL(resumo.totalBeneficios);
+  document.getElementById('kpi-extras').textContent = fmtBRL(resumo.totalCustosExtrasMes);
+  document.getElementById('kpi-total').textContent = fmtBRL(resumo.custoTotalMensalEstimado);
+
+  if (chartDepto) chartDepto.destroy();
+  chartDepto = new Chart(document.getElementById('chart-departamento'), {
+    type: 'bar',
+    data: { labels: resumo.porDepartamento.labels, datasets: [{ data: resumo.porDepartamento.data, backgroundColor: '#F5B800' }] },
+    options: { indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:function(v){return fmtBRL(v);}}}} }
+  });
+  if (chartExtras) chartExtras.destroy();
+  chartExtras = new Chart(document.getElementById('chart-extras'), {
+    type: 'doughnut',
+    data: { labels: resumo.porTipoExtra.labels, datasets: [{ data: resumo.porTipoExtra.data, backgroundColor: ['#F5B800','#22C55E','#3B82F6','#EF4444','#A855F7','#F97316'] }] },
+    options: { maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{boxWidth:10,font:{size:10}}}} }
+  });
+}
+async function carregarCustosExtras(){
+  var r = await apiFetch(API_BASE+'/rh-custos-extras');
+  custosExtras = await r.json();
+  renderCustosExtras();
+}
+function renderCustosExtras(){
+  var tbody = document.getElementById('tbody-custos-extras');
+  tbody.innerHTML = custosExtras.length ? custosExtras.map(function(c){
+    return '<tr><td>'+fmtDataBR(c.data)+'</td><td>'+e(c.tipo)+'</td><td>'+e(c.descricao||'—')+'</td>'+
+      '<td>'+nomeColaborador(c.colaborador_id)+'</td><td>'+fmtBRL(c.valor)+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalCustoExtra(\''+c.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirCustoExtra(\''+c.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="vazio">Nenhum custo extra lançado.</td></tr>';
+}
+function abrirModalCustoExtra(id){
+  var c = id ? custosExtras.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('custo-id').value = c ? c.id : '';
+  document.getElementById('custo-tipo').value = c ? c.tipo : 'Treinamento';
+  document.getElementById('custo-valor').value = c ? c.valor : '';
+  document.getElementById('custo-data').value = c ? c.data : new Date().toISOString().slice(0,10);
+  document.getElementById('custo-colaborador').value = c ? (c.colaborador_id||'') : '';
+  document.getElementById('custo-descricao').value = c ? (c.descricao||'') : '';
+  document.getElementById('modal-custo-extra').classList.add('open');
+}
+async function salvarCustoExtra(){
+  var id = document.getElementById('custo-id').value;
+  var valor = document.getElementById('custo-valor').value;
+  if (!valor) { alert('Informe o valor.'); return; }
+  var payload = {
+    tipo: document.getElementById('custo-tipo').value,
+    valor: valor,
+    data: document.getElementById('custo-data').value || null,
+    colaborador_id: document.getElementById('custo-colaborador').value || null,
+    descricao: document.getElementById('custo-descricao').value.trim() || null,
+  };
+  var url = API_BASE+'/rh-custos-extras'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar custo extra.'); return; }
+  fecharModal('modal-custo-extra');
+  await carregarCustosExtras();
+  await carregarResumoCustos();
+}
+async function excluirCustoExtra(id){
+  if (!confirm('Excluir este custo extra?')) return;
+  await apiFetch(API_BASE+'/rh-custos-extras/'+id, { method:'DELETE' });
+  await carregarCustosExtras();
+  await carregarResumoCustos();
+}
+
+/* ── Boot ── */
+document.addEventListener('DOMContentLoaded', async function(){
+  if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
+  await carregarColaboradores();
+  await carregarBeneficios();
+  await carregarAtribuicoes();
+  await carregarCustosExtras();
+  await carregarResumoCustos();
+});
+</script>
+
+<script>
+/* ── SISTEMA DE TEMA (injetado) ──────────────────────────── */
+(function(){
+  function applyTema(t){
+    document.body.classList.remove('tema-claro','tema-escuro');
+    if(t==='claro') document.body.classList.add('tema-claro');
+  }
+  var t=localStorage.getItem('barretos_tema')||'escuro';
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){ applyTema(t); });
+  } else { applyTema(t); }
+  window.addEventListener('message',function(ev){
+    if(ev.data && ev.data.type==='barretos_tema'){
+      localStorage.setItem('barretos_tema', ev.data.tema);
+      applyTema(ev.data.tema);
+    }
+  });
+})();
+/* ─────────────────────────────────────────────────────────── */
+</script>
+</body>
+</html>
