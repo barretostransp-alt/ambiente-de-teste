@@ -190,10 +190,10 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
       </div>
 
       <!-- COLUNA DIREITA: TOP 5 CLIENTES + MEU ESPELHO DE PONTO -->
-      <div style="display:flex;flex-direction:column;gap:16px;overflow:hidden;min-height:0">
+      <div style="display:grid;grid-template-rows:auto 1fr;gap:16px;overflow:hidden;min-height:0">
 
         <!-- TOP 5 CLIENTES -->
-        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;flex-shrink:0">
+        <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
           <div class="card-hd">
             <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-award"></i></div>
             <div class="card-hd-title">Top 5 Clientes</div>
@@ -205,12 +205,12 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
         </div>
 
         <!-- MEU ESPELHO DE PONTO -->
-        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;flex:1;min-height:0">
+        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;min-height:0">
           <div class="card-hd">
             <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-clock"></i></div>
             <div class="card-hd-title">Meu Espelho de Ponto</div>
           </div>
-          <div style="padding:10px 14px;overflow-y:auto;flex:1" id="ponto-body">
+          <div style="padding:10px 14px;overflow-y:auto;flex:1;min-height:0" id="ponto-body">
             <div class="skel shimmer"></div>
             <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
           </div>
