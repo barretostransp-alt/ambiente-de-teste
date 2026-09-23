@@ -189,30 +189,35 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
         </div>
       </div>
 
-      <!-- TOP 5 CLIENTES -->
-      <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
-        <div class="card-hd">
-          <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-award"></i></div>
-          <div class="card-hd-title">Top 5 Clientes</div>
+      <!-- COLUNA DIREITA: TOP 5 CLIENTES + MEU ESPELHO DE PONTO -->
+      <div style="display:grid;grid-template-rows:auto 1fr;gap:16px;overflow:hidden;min-height:0">
+
+        <!-- TOP 5 CLIENTES -->
+        <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+          <div class="card-hd">
+            <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-award"></i></div>
+            <div class="card-hd-title">Top 5 Clientes</div>
+          </div>
+          <div style="padding:10px 14px;overflow-y:auto" id="top5-body">
+            <div class="skel shimmer"></div>
+            <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
+          </div>
         </div>
-        <div style="padding:10px 14px;overflow-y:auto;flex:1;min-height:0" id="top5-body">
-          <div class="skel shimmer"></div>
-          <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
+
+        <!-- MEU ESPELHO DE PONTO -->
+        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;min-height:0">
+          <div class="card-hd">
+            <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-clock"></i></div>
+            <div class="card-hd-title">Meu Espelho de Ponto</div>
+          </div>
+          <div style="padding:10px 14px;overflow-y:auto;flex:1;min-height:0" id="ponto-body">
+            <div class="skel shimmer"></div>
+            <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
+          </div>
         </div>
+
       </div>
 
-    </div>
-
-    <!-- MEU ESPELHO DE PONTO (faixa larga, dias lado a lado) -->
-    <div class="card" style="display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;height:172px">
-      <div class="card-hd">
-        <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-clock"></i></div>
-        <div class="card-hd-title">Meu Espelho de Ponto</div>
-      </div>
-      <div style="padding:12px 14px;overflow-x:auto;overflow-y:hidden;flex:1;display:flex;gap:10px" id="ponto-body">
-        <div class="skel shimmer" style="width:120px;height:100%;flex-shrink:0"></div>
-        <div class="skel shimmer" style="width:120px;height:100%;flex-shrink:0"></div>
-      </div>
     </div>
   </div>
 
@@ -543,13 +548,12 @@ async function carregarEspelhoPonto(user) {
 }
 function renderEspelhoPonto(resp) {
   var el = document.getElementById('ponto-body');
-  el.style.display = 'flex';
   if (!resp.colaborador) {
-    el.innerHTML = '<div class="side-empty" style="margin:auto">Seu usuário ainda não está vinculado a um cadastro de colaborador no RH.</div>';
+    el.innerHTML = '<div class="side-empty">Seu usuário ainda não está vinculado a um cadastro de colaborador no RH.</div>';
     return;
   }
   if (!resp.registros.length) {
-    el.innerHTML = '<div class="side-empty" style="margin:auto">Nenhum registro de ponto ainda.</div>';
+    el.innerHTML = '<div class="side-empty">Nenhum registro de ponto ainda.</div>';
     return;
   }
   var diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -561,18 +565,14 @@ function renderEspelhoPonto(resp) {
     var partes = p.data.split('-');
     var diaSemana = diasSemana[new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2])).getDay()];
     var dataLabel = diaSemana + ', ' + partes[2] + '/' + partes[1];
-    var entrada = p.entrada ? p.entrada.slice(0, 5) : '--:--';
-    var saidaAlmoco = p.saida_almoco ? p.saida_almoco.slice(0, 5) : '--:--';
-    var retornoAlmoco = p.retorno_almoco ? p.retorno_almoco.slice(0, 5) : '--:--';
-    var saida = p.saida ? p.saida.slice(0, 5) : '--:--';
-    return '<div style="min-width:132px;flex-shrink:0;border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px">' +
-      '<div style="font-size:11px;font-weight:700;color:var(--txt)">' + esc(dataLabel) + '</div>' +
-      '<div style="font-size:9.5px;color:var(--txt-dim)">' + esc(entrada) + ' → ' + esc(saidaAlmoco) + '</div>' +
-      '<div style="font-size:9.5px;color:var(--txt-dim)">' + esc(retornoAlmoco) + ' → ' + esc(saida) + '</div>' +
-      '<div style="margin-top:auto;padding-top:4px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">' +
-        '<span style="font-size:10px;color:var(--txt-dim)">' + esc(formatMinutosPonto_(min)) + '</span>' +
+    var horarios = (p.entrada ? p.entrada.slice(0, 5) : '--:--') + ' → ' + (p.saida_almoco ? p.saida_almoco.slice(0, 5) : '--:--') +
+      ' · ' + (p.retorno_almoco ? p.retorno_almoco.slice(0, 5) : '--:--') + ' → ' + (p.saida ? p.saida.slice(0, 5) : '--:--');
+    return '<div style="padding:8px 0;border-bottom:1px solid rgba(30,33,48,.5)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">' +
+        '<span style="font-size:11px;font-weight:600;color:var(--txt)">' + esc(dataLabel) + '</span>' +
         '<span style="font-size:10px;font-weight:700;color:' + cor + '">' + esc(saldoTxt) + '</span>' +
       '</div>' +
+      '<div style="font-size:10px;color:var(--txt-dim)">' + esc(horarios) + ' · ' + esc(formatMinutosPonto_(min)) + '</div>' +
     '</div>';
   }).join('');
 }
