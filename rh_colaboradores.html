@@ -78,13 +78,23 @@ tr:hover td{background:rgba(245,184,0,.04);}
 /* Avaliação de Desempenho — categorias e critérios */
 .crit-categoria{margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
 .crit-categoria-hd{background:var(--card);padding:8px 12px;}
-.crit-categoria-hd b{font-size:11.5px;color:var(--txt);}
+.crit-categoria-hd b{font-size:12px;color:var(--gold);}
 .crit-categoria-hd span{display:block;font-size:10px;color:var(--txt-dim);margin-top:2px;}
 .crit-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--border);}
 .crit-item-txt{flex:1;}
 .crit-item-txt b{font-size:11.5px;color:var(--txt);display:block;}
 .crit-item-txt span{font-size:10px;color:var(--txt-dim);}
-.crit-item select{width:220px;flex-shrink:0;}
+.crit-item select{
+  width:250px;flex-shrink:0;cursor:pointer;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  background:var(--card) url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%239CA3AF%22/></svg>') no-repeat right 12px center;
+  background-size:10px 6px;
+  border:1px solid var(--border);border-radius:20px;color:var(--txt);
+  padding:8px 30px 8px 14px;font-size:11.5px;font-family:'DM Sans',sans-serif;
+  transition:border-color .15s,box-shadow .15s;
+}
+.crit-item select:hover{border-color:var(--gold-b);}
+.crit-item select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim);}
 
 /* Organograma */
 /* Organograma — árvore com caixas conectadas por linha (técnica clássica
@@ -673,7 +683,7 @@ var CRITERIOS_AVALIACAO = [
 var ESCALA_AVALIACAO = [
   { v:-2, label:'-2 · Insatisfatório' },
   { v:-1, label:'-1 · Abaixo do esperado' },
-  { v:0, label:'0 · Adequado / dentro do esperado' },
+  { v:0, label:'0 · Adequado / esperado' },
   { v:1, label:'1 · Acima do esperado' },
   { v:2, label:'2 · Satisfatório' },
 ];
