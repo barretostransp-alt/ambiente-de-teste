@@ -236,7 +236,20 @@ tr:hover td{background:rgba(245,184,0,.04);}
       <div class="campo"><label>Salário (R$)</label><input type="number" step="0.01" id="col-salario"></div>
       <div class="campo"><label>Status</label><select id="col-status"><option>Ativo</option><option>Afastado</option><option>Desligado</option></select></div>
     </div>
-    <div class="campo" style="max-width:200px"><label>Jornada Diária (horas)</label><input type="number" step="0.5" min="0" id="col-jornada" placeholder="8"></div>
+    <div class="campo" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Entrada</label>
+        <input type="time" id="col-jornada-entrada" oninput="atualizarHorasColaboradorCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída Almoço</label>
+        <input type="time" id="col-jornada-saida-almoco" oninput="atualizarHorasColaboradorCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Retorno</label>
+        <input type="time" id="col-jornada-retorno-almoco" oninput="atualizarHorasColaboradorCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída</label>
+        <input type="time" id="col-jornada-saida" oninput="atualizarHorasColaboradorCalculadas()"></div>
+    </div>
+    <div class="campo" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;font-weight:700">Horas Diárias (padrão)</span>
+      <span id="col-jornada-horas-resultado" style="font-size:15px;font-weight:800;color:var(--gold);font-family:'Montserrat',sans-serif">—</span>
+    </div>
     <div class="grid2">
       <div class="campo"><label>Telefone</label><input id="col-telefone"></div>
       <div class="campo"><label>E-mail</label><input type="email" id="col-email"></div>
@@ -310,7 +323,7 @@ tr:hover td{background:rgba(245,184,0,.04);}
     <h3>Registro de Ponto</h3>
     <input type="hidden" id="ponto-id">
     <div class="grid2">
-      <div class="campo"><label>Colaborador *</label><select id="ponto-colaborador"></select></div>
+      <div class="campo"><label>Colaborador *</label><select id="ponto-colaborador" onchange="atualizarHorasCalculadas()"></select></div>
       <div class="campo"><label>Data *</label><input type="date" id="ponto-data"></div>
     </div>
     <div class="campo" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
@@ -523,7 +536,11 @@ function abrirModalColaborador(id){
   document.getElementById('col-demissao').value = c ? (c.data_demissao||'') : '';
   document.getElementById('col-salario').value = c ? (c.salario||'') : '';
   document.getElementById('col-status').value = c ? c.status : 'Ativo';
-  document.getElementById('col-jornada').value = c ? (c.jornada_horas_diarias!=null?c.jornada_horas_diarias:8) : 8;
+  document.getElementById('col-jornada-entrada').value = c ? (c.jornada_entrada||'08:00') : '08:00';
+  document.getElementById('col-jornada-saida-almoco').value = c ? (c.jornada_saida_almoco||'12:00') : '12:00';
+  document.getElementById('col-jornada-retorno-almoco').value = c ? (c.jornada_retorno_almoco||'13:00') : '13:00';
+  document.getElementById('col-jornada-saida').value = c ? (c.jornada_saida||'18:00') : '18:00';
+  atualizarHorasColaboradorCalculadas();
   document.getElementById('col-telefone').value = c ? (c.telefone||'') : '';
   document.getElementById('col-email').value = c ? (c.email||'') : '';
   document.getElementById('col-endereco').value = c ? (c.endereco||'') : '';
@@ -546,7 +563,10 @@ async function salvarColaborador(){
     data_demissao: document.getElementById('col-demissao').value || null,
     salario: document.getElementById('col-salario').value || null,
     status: document.getElementById('col-status').value,
-    jornada_horas_diarias: document.getElementById('col-jornada').value || 8,
+    jornada_entrada: document.getElementById('col-jornada-entrada').value || null,
+    jornada_saida_almoco: document.getElementById('col-jornada-saida-almoco').value || null,
+    jornada_retorno_almoco: document.getElementById('col-jornada-retorno-almoco').value || null,
+    jornada_saida: document.getElementById('col-jornada-saida').value || null,
     telefone: document.getElementById('col-telefone').value.trim() || null,
     email: document.getElementById('col-email').value.trim() || null,
     endereco: document.getElementById('col-endereco').value.trim() || null,
@@ -702,27 +722,56 @@ function formatMinutos(min){
   min = Math.abs(Math.round(min));
   return sinal+Math.floor(min/60)+'h'+String(min%60).padStart(2,'0');
 }
-function calcularMinutosTrabalhados(p){
-  var entrada = minutosDeHora(p.entrada), saida = minutosDeHora(p.saida);
+var TOLERANCIA_PONTO_MIN = 5; // CLT: ate 5min de variacao por batida nao conta como hora extra/atraso
+function ajustarPontoComTolerancia(realHHMM, esperadoHHMM){
+  var real = minutosDeHora(realHHMM);
+  if (real==null) return null;
+  var esperado = minutosDeHora(esperadoHHMM);
+  if (esperado!=null && Math.abs(real-esperado) <= TOLERANCIA_PONTO_MIN) return esperado;
+  return real;
+}
+function calcularMinutosTrabalhados(p, jornada){
+  jornada = jornada || {};
+  var entrada = ajustarPontoComTolerancia(p.entrada, jornada.jornada_entrada);
+  var saida = ajustarPontoComTolerancia(p.saida, jornada.jornada_saida);
   if (entrada==null || saida==null) return null;
   var total = saida - entrada;
-  var saidaAlmoco = minutosDeHora(p.saida_almoco), retornoAlmoco = minutosDeHora(p.retorno_almoco);
+  var saidaAlmoco = ajustarPontoComTolerancia(p.saida_almoco, jornada.jornada_saida_almoco);
+  var retornoAlmoco = ajustarPontoComTolerancia(p.retorno_almoco, jornada.jornada_retorno_almoco);
   if (saidaAlmoco!=null && retornoAlmoco!=null) total -= (retornoAlmoco - saidaAlmoco);
   return total;
 }
 function jornadaDoColaborador(colaboradorId){
   var c = colaboradores.find(function(x){ return x.id===colaboradorId; });
-  return c && c.jornada_horas_diarias!=null ? Number(c.jornada_horas_diarias) : 8;
+  return c ? { jornada_entrada:c.jornada_entrada, jornada_saida_almoco:c.jornada_saida_almoco, jornada_retorno_almoco:c.jornada_retorno_almoco, jornada_saida:c.jornada_saida } : {};
+}
+function jornadaEsperadaMinutos(jornada){
+  var entrada = minutosDeHora(jornada.jornada_entrada), saida = minutosDeHora(jornada.jornada_saida);
+  if (entrada==null || saida==null) return 480;
+  var total = saida - entrada;
+  var saidaAlmoco = minutosDeHora(jornada.jornada_saida_almoco), retornoAlmoco = minutosDeHora(jornada.jornada_retorno_almoco);
+  if (saidaAlmoco!=null && retornoAlmoco!=null) total -= (retornoAlmoco - saidaAlmoco);
+  return total;
 }
 function atualizarHorasCalculadas(){
+  var colaboradorId = document.getElementById('ponto-colaborador').value;
   var p = {
     entrada: document.getElementById('ponto-entrada').value,
     saida_almoco: document.getElementById('ponto-saida-almoco').value,
     retorno_almoco: document.getElementById('ponto-retorno-almoco').value,
     saida: document.getElementById('ponto-saida').value,
   };
-  var min = calcularMinutosTrabalhados(p);
+  var min = calcularMinutosTrabalhados(p, jornadaDoColaborador(colaboradorId));
   document.getElementById('ponto-horas-resultado').textContent = min==null ? '—' : formatMinutos(min);
+}
+function atualizarHorasColaboradorCalculadas(){
+  var jornada = {
+    jornada_entrada: document.getElementById('col-jornada-entrada').value,
+    jornada_saida_almoco: document.getElementById('col-jornada-saida-almoco').value,
+    jornada_retorno_almoco: document.getElementById('col-jornada-retorno-almoco').value,
+    jornada_saida: document.getElementById('col-jornada-saida').value,
+  };
+  document.getElementById('col-jornada-horas-resultado').textContent = formatMinutos(jornadaEsperadaMinutos(jornada));
 }
 async function carregarPonto(){
   var r = await apiFetch(API_BASE+'/colaborador-ponto');
@@ -739,9 +788,9 @@ function renderPonto(){
   }).sort(function(a,b){ return a.data<b.data?1:-1; });
   var tbody = document.getElementById('tbody-ponto');
   tbody.innerHTML = linhas.length ? linhas.map(function(p){
-    var min = calcularMinutosTrabalhados(p);
-    var jornadaMin = jornadaDoColaborador(p.colaborador_id)*60;
-    var saldo = min==null ? null : (min - jornadaMin);
+    var jornada = jornadaDoColaborador(p.colaborador_id);
+    var min = calcularMinutosTrabalhados(p, jornada);
+    var saldo = min==null ? null : (min - jornadaEsperadaMinutos(jornada));
     var saldoCls = saldo==null ? '' : (saldo<-15?'aval-baixo':(saldo>15?'aval-alto':'aval-medio'));
     var saldoTxt = saldo==null ? '—' : (saldo>=0?'+':'')+formatMinutos(saldo);
     return '<tr><td>'+e(nomeColaborador(p.colaborador_id))+'</td><td>'+fmtDataBR(p.data)+'</td>'+
