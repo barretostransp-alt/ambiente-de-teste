@@ -189,16 +189,33 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
         </div>
       </div>
 
-      <!-- TOP 5 CLIENTES -->
-      <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
-        <div class="card-hd">
-          <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-award"></i></div>
-          <div class="card-hd-title">Top 5 Clientes</div>
+      <!-- COLUNA DIREITA: TOP 5 CLIENTES + MEU ESPELHO DE PONTO -->
+      <div style="display:flex;flex-direction:column;gap:16px;overflow:hidden;min-height:0">
+
+        <!-- TOP 5 CLIENTES -->
+        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;flex-shrink:0">
+          <div class="card-hd">
+            <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-award"></i></div>
+            <div class="card-hd-title">Top 5 Clientes</div>
+          </div>
+          <div style="padding:10px 14px;overflow-y:auto" id="top5-body">
+            <div class="skel shimmer"></div>
+            <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
+          </div>
         </div>
-        <div style="padding:10px 14px;overflow-y:auto;flex:1" id="top5-body">
-          <div class="skel shimmer"></div>
-          <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
+
+        <!-- MEU ESPELHO DE PONTO -->
+        <div class="card" style="display:flex;flex-direction:column;overflow:hidden;flex:1;min-height:0">
+          <div class="card-hd">
+            <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-clock"></i></div>
+            <div class="card-hd-title">Meu Espelho de Ponto</div>
+          </div>
+          <div style="padding:10px 14px;overflow-y:auto;flex:1" id="ponto-body">
+            <div class="skel shimmer"></div>
+            <div class="skel shimmer" style="width:75%;margin-top:8px"></div>
+          </div>
         </div>
+
       </div>
 
     </div>
@@ -344,7 +361,8 @@ document.addEventListener('DOMContentLoaded', function() {
     carregarFaturamento(user),
     carregarAgenda(user),
     carregarLab(user),
-    carregarHelpdesk(user)
+    carregarHelpdesk(user),
+    carregarEspelhoPonto(user)
   ]);
 });
 
@@ -474,6 +492,90 @@ function renderTop5(top5) {
   }).join('');
 }
 
+
+// ══════════════════════════════════════════════════
+//  MEU ESPELHO DE PONTO
+// ══════════════════════════════════════════════════
+// Reflexo, em miniatura, da mesma regra de calculo do modulo RH — Registro
+// de Ponto (tolerancia de 5min da CLT por batida). Cada colaborador só vê
+// o próprio registro; o backend filtra pelo usuário logado.
+function minutosDeHoraPonto_(hhmm) {
+  if (!hhmm) return null;
+  var p = String(hhmm).slice(0, 5).split(':');
+  return Number(p[0]) * 60 + Number(p[1]);
+}
+function formatMinutosPonto_(min) {
+  if (min == null) return '—';
+  var sinal = min < 0 ? '-' : '';
+  min = Math.abs(Math.round(min));
+  return sinal + Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0');
+}
+function ajustarComTolerancia_(realHHMM, esperadoHHMM) {
+  var real = minutosDeHoraPonto_(realHHMM);
+  if (real == null) return null;
+  var esperado = minutosDeHoraPonto_(esperadoHHMM);
+  if (esperado != null && Math.abs(real - esperado) <= 5) return esperado;
+  return real;
+}
+function calcularMinutosPonto_(p, jornada) {
+  var entrada = ajustarComTolerancia_(p.entrada, jornada.jornada_entrada);
+  var saida = ajustarComTolerancia_(p.saida, jornada.jornada_saida);
+  if (entrada == null || saida == null) return null;
+  var total = saida - entrada;
+  var saidaAlmoco = ajustarComTolerancia_(p.saida_almoco, jornada.jornada_saida_almoco);
+  var retornoAlmoco = ajustarComTolerancia_(p.retorno_almoco, jornada.jornada_retorno_almoco);
+  if (saidaAlmoco != null && retornoAlmoco != null) total -= (retornoAlmoco - saidaAlmoco);
+  return total;
+}
+function jornadaEsperadaMinutosPonto_(jornada) {
+  var entrada = minutosDeHoraPonto_(jornada.jornada_entrada), saida = minutosDeHoraPonto_(jornada.jornada_saida);
+  if (entrada == null || saida == null) return 480;
+  var total = saida - entrada;
+  var saidaAlmoco = minutosDeHoraPonto_(jornada.jornada_saida_almoco), retornoAlmoco = minutosDeHoraPonto_(jornada.jornada_retorno_almoco);
+  if (saidaAlmoco != null && retornoAlmoco != null) total -= (retornoAlmoco - saidaAlmoco);
+  return total;
+}
+async function carregarEspelhoPonto(user) {
+  var el = document.getElementById('ponto-body');
+  try {
+    var r = await apiFetch(API_BASE + '/meu-ponto');
+    var resp = await r.json();
+    if (!r.ok) throw new Error(resp.error || 'Erro ao carregar');
+    renderEspelhoPonto(resp);
+  } catch (e) {
+    el.innerHTML = '<div class="side-empty">Erro ao carregar seu ponto.</div>';
+  }
+}
+function renderEspelhoPonto(resp) {
+  var el = document.getElementById('ponto-body');
+  if (!resp.colaborador) {
+    el.innerHTML = '<div class="side-empty">Seu usuário ainda não está vinculado a um cadastro de colaborador no RH.</div>';
+    return;
+  }
+  if (!resp.registros.length) {
+    el.innerHTML = '<div class="side-empty">Nenhum registro de ponto ainda.</div>';
+    return;
+  }
+  var diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  el.innerHTML = resp.registros.map(function(p) {
+    var min = calcularMinutosPonto_(p, resp.colaborador);
+    var saldo = min == null ? null : (min - jornadaEsperadaMinutosPonto_(resp.colaborador));
+    var cor = saldo == null ? 'var(--txt-dim)' : (saldo < -15 ? 'var(--red)' : (saldo > 15 ? 'var(--green)' : 'var(--gold)'));
+    var saldoTxt = saldo == null ? '—' : (saldo >= 0 ? '+' : '') + formatMinutosPonto_(saldo);
+    var partes = p.data.split('-');
+    var diaSemana = diasSemana[new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2])).getDay()];
+    var dataLabel = diaSemana + ', ' + partes[2] + '/' + partes[1];
+    var horarios = (p.entrada ? p.entrada.slice(0, 5) : '--:--') + ' → ' + (p.saida_almoco ? p.saida_almoco.slice(0, 5) : '--:--') +
+      ' · ' + (p.retorno_almoco ? p.retorno_almoco.slice(0, 5) : '--:--') + ' → ' + (p.saida ? p.saida.slice(0, 5) : '--:--');
+    return '<div style="padding:8px 0;border-bottom:1px solid rgba(30,33,48,.5)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">' +
+        '<span style="font-size:11px;font-weight:600;color:var(--txt)">' + esc(dataLabel) + '</span>' +
+        '<span style="font-size:10px;font-weight:700;color:' + cor + '">' + esc(saldoTxt) + '</span>' +
+      '</div>' +
+      '<div style="font-size:10px;color:var(--txt-dim)">' + esc(horarios) + ' · ' + esc(formatMinutosPonto_(min)) + '</div>' +
+    '</div>';
+  }).join('');
+}
 
 async function carregarAgenda(user) {
   var el = document.getElementById('agenda-body');
