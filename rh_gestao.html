@@ -1,0 +1,2610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de RH</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Montserrat:wght@700;800&family=DM+Sans:wght@300;400;500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- Recrutamento: leitura de currículos (PDF / Word / OCR) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth.js/1.7.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+<style>
+:root{
+  --bg:#090A0D;--surface:#0F1117;--card:#151820;--border:#1E2130;
+  --gold:#F5B800;--gold-dim:rgba(245,184,0,.12);--gold-b:rgba(245,184,0,.28);
+  --txt:#E8EAF0;--txt-dim:#6B7280;--txt-mid:#9CA3AF;
+  --green:#22C55E;--red:#EF4444;--blue:#3B82F6;--orange:#F97316;--r:8px;
+  --radius:8px;--radius-lg:12px;--sidebar-w:220px;
+}
+body.tema-claro{
+  --bg:#F0F2F5;--surface:#FFFFFF;--card:#FFFFFF;--border:#E2E6ED;
+  --gold:#D97706;--gold-dim:rgba(217,119,6,.10);--gold-b:rgba(217,119,6,.28);
+  --txt:#111827;--txt-dim:#6B7280;--txt-mid:#4B5563;
+  --green:#059669;--red:#DC2626;--blue:#2563EB;--orange:#EA580C;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;}
+body{display:flex;height:100vh;overflow:hidden;}
+[hidden]{display:none!important;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+
+/* ══ SHELL (mesmo padrão da Gestão da Frota) ══ */
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow-y:auto;padding-bottom:14px;}
+.sidebar-logo{padding:18px 14px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-logo-text{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;letter-spacing:.04em;line-height:1.2;color:var(--gold);}
+.sidebar-logo-sub{font-size:9px;color:var(--txt-dim);font-weight:400;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+.sidebar-section{padding:14px 14px 4px;font-size:9px;font-weight:700;color:var(--txt-dim);letter-spacing:.1em;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 12px;margin:1px 6px;border:1px solid transparent;
+  border-radius:7px;cursor:pointer;color:var(--txt-mid);font-size:12px;font-weight:500;line-height:1.3;
+  transition:all .15s;position:relative;user-select:none;}
+.nav-item i{font-size:16px;flex-shrink:0;}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--txt);}
+body.tema-claro .nav-item:hover{background:rgba(0,0,0,.04);}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-b);}
+.nav-item.active i{color:var(--gold);}
+.sidebar-divider{height:1px;background:var(--border);margin:8px 14px;}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;height:100vh;}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.topbar-title i{color:var(--gold);font-size:18px;}
+.topbar-sub{font-size:11px;color:var(--txt-dim);margin-left:4px;font-weight:500;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.content{flex:1;overflow-y:auto;padding:20px 24px;}
+.view{display:none;}
+.view.active{display:block;}
+
+/* ══ COMPONENTES COMUNS (RH — Colaboradores / Benefícios e Custos) ══ */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.toolbar input,.toolbar select{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;}
+.btn{background:var(--gold);color:#111;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;}
+.btn:hover{opacity:.9;}
+.btn.secundario{background:transparent;border:1px solid var(--border);color:var(--txt-dim);font-weight:600;}
+.btn.secundario:hover{border-color:var(--gold);color:var(--gold);}
+.btn.perigo{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px;}
+th{background:var(--surface);color:var(--txt-dim);text-align:left;padding:9px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;border-bottom:1px solid var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--txt);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(245,184,0,.04);}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:10.5px;font-weight:700;}
+.badge.ativo{background:rgba(34,197,94,.12);color:var(--green);}
+.badge.afastado{background:rgba(245,184,0,.12);color:var(--gold);}
+.badge.desligado{background:rgba(239,68,68,.12);color:var(--red);}
+.badge.suspenso{background:rgba(245,184,0,.12);color:var(--gold);}
+.badge.encerrado{background:rgba(239,68,68,.12);color:var(--red);}
+.badge.venc-ok{background:rgba(34,197,94,.12);color:var(--green);}
+.badge.venc-perto{background:rgba(245,184,0,.12);color:var(--gold);}
+.badge.venc-estourado{background:rgba(239,68,68,.12);color:var(--red);}
+.badge.aval-baixo{background:rgba(239,68,68,.12);color:var(--red);}
+.badge.aval-medio{background:rgba(245,184,0,.12);color:var(--gold);}
+.badge.aval-alto{background:rgba(34,197,94,.12);color:var(--green);}
+.acoes{display:flex;gap:6px;}
+.acoes button{background:none;border:none;color:var(--txt-dim);cursor:pointer;font-size:14px;padding:2px 4px;}
+.acoes button:hover{color:var(--gold);}
+.acoes button.excluir:hover{color:var(--red);}
+.vazio{text-align:center;padding:40px;color:var(--txt-dim);font-size:12.5px;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.kpi .n{font-size:22px;font-weight:800;color:var(--gold);font-family:'Montserrat',sans-serif;}
+.kpi .l{font-size:10.5px;color:var(--txt-dim);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.chart-card h4{font-size:11.5px;color:var(--txt-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em;}
+.chart-wrap{position:relative;height:220px;}
+@media (max-width:800px){ .charts{grid-template-columns:1fr;} }
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:560px;padding:20px;}
+.modal h3{font-size:14px;margin-bottom:16px;color:var(--txt);}
+.campo{margin-bottom:12px;}
+.campo label{display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em;}
+.campo input,.campo select,.campo textarea{width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);padding:8px 10px;font-size:12.5px;font-family:'DM Sans',sans-serif;}
+.campo textarea{resize:vertical;min-height:56px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+
+/* Avaliação de Desempenho — categorias e critérios */
+.crit-categoria{margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.crit-categoria-hd{background:var(--card);padding:8px 12px;}
+.crit-categoria-hd b{font-size:12px;color:var(--gold);}
+.crit-categoria-hd span{display:block;font-size:10px;color:var(--txt-dim);margin-top:2px;}
+.crit-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--border);}
+.crit-item-txt{flex:1;}
+.crit-item-txt b{font-size:11.5px;color:var(--txt);display:block;}
+.crit-item-txt span{font-size:10px;color:var(--txt-dim);}
+.crit-item select{
+  width:250px;flex-shrink:0;cursor:pointer;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  background:var(--card) url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%239CA3AF%22/></svg>') no-repeat right 12px center;
+  background-size:10px 6px;
+  border:1px solid var(--border);border-radius:20px;color:var(--txt);
+  padding:8px 30px 8px 14px;font-size:11.5px;font-family:'DM Sans',sans-serif;
+  transition:border-color .15s,box-shadow .15s;
+}
+.crit-item select:hover{border-color:var(--gold-b);}
+.crit-item select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim);}
+
+/* Organograma — árvore com caixas conectadas por linha (técnica clássica
+   de "CSS org chart": cada <li> desenha a linha até o pai via ::before/
+   ::after, e a <ul> dos filhos desenha a linha vertical descendo). */
+.org-wrap{overflow-x:auto;padding:10px 0 20px;}
+.org-chart, .org-chart ul{display:flex;justify-content:center;padding-top:26px;position:relative;}
+.org-chart ul{padding-top:26px;}
+.org-chart li{display:flex;flex-direction:column;align-items:center;list-style:none;position:relative;padding:26px 12px 0 12px;}
+.org-chart li::before, .org-chart li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid var(--border);width:50%;height:26px;}
+.org-chart li::after{right:auto;left:50%;border-left:2px solid var(--border);}
+.org-chart li:only-child{padding-top:0;}
+.org-chart li:only-child::before, .org-chart li:only-child::after{display:none;}
+.org-chart li:first-child::before{border:none;}
+.org-chart li:last-child::after{border:none;}
+.org-chart li:last-child::before{border-right:2px solid var(--border);border-radius:0 6px 0 0;}
+.org-chart li:first-child::after{border-radius:6px 0 0 0;}
+.org-chart > li{padding-top:0;}
+.org-chart > li::before, .org-chart > li::after{display:none;}
+.org-chart ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid var(--border);width:0;height:26px;}
+.org-box{background:var(--gold);color:#111;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);text-align:center;}
+.org-box .org-cargo{display:block;font-size:10px;font-weight:600;opacity:.75;margin-top:2px;text-transform:none;}
+
+/* ══ RECRUTAMENTO E SELEÇÃO ══
+   Classes que colidiam com as do resto do RH ganharam prefixo rec-
+   (.rec-btn, .rec-badge, .rec-modal, .rec-overlay, .rec-sub). Cores usam a
+   paleta compartilhada (--txt/--txt-mid/--txt-dim/--surface/--card). */
+.mono,.kpi-num,.score-num{font-family:'Barlow',sans-serif;}
+.rec-sub{font-size:12px;color:var(--txt-dim);margin-top:2px;}
+
+.sidebar-sublabel{padding:12px 14px 4px;font-size:9px;font-weight:700;color:var(--txt-dim);letter-spacing:.08em;text-transform:uppercase;opacity:.8;}
+.vagas-list{margin:2px 6px 0;}
+.vaga-mini{padding:8px 10px;border-radius:7px;cursor:pointer;margin-bottom:3px;transition:.15s;border:1px solid transparent;}
+.vaga-mini:hover{background:var(--card);}
+.vaga-mini.active{background:var(--gold-dim);border-color:var(--gold-b);}
+.vaga-mini-title{font-size:11.5px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vaga-mini-meta{font-size:10px;color:var(--txt-dim);margin-top:2px;display:flex;justify-content:space-between;}
+.vaga-mini-badge{font-size:9.5px;padding:1px 6px;border-radius:20px;font-weight:700;}
+
+.select-empresa{
+  background:var(--card);border:1px solid var(--border);color:var(--txt);
+  padding:6px 10px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;
+}
+.rec-btn{
+  border:none;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:7px;transition:.15s;font-family:'DM Sans',sans-serif;
+}
+.rec-btn-gold{background:var(--gold);color:#111;}
+.rec-btn-gold:hover{opacity:.9;}
+.rec-btn-ghost{background:var(--card);color:var(--txt);border:1px solid var(--border);}
+.rec-btn-ghost:hover{border-color:var(--gold);}
+.rec-btn-sm{padding:6px 11px;font-size:12px;}
+body.tema-claro .rec-btn-gold{color:#1A1200;}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;}
+.kpi-label{font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.kpi-num{font-size:28px;font-weight:700;margin-top:6px;}
+.kpi-foot{font-size:11px;color:var(--txt-mid);margin-top:4px;}
+.kpi-gold{color:var(--gold);}
+.kpi-green{color:var(--green);}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:18px;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.panel-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.panel-title i{color:var(--gold);}
+
+.funnel{display:flex;gap:8px;flex-wrap:wrap;}
+.funnel-stage{flex:1;min-width:110px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.funnel-num{font-size:20px;font-weight:700;font-family:'Barlow',sans-serif;}
+.funnel-label{font-size:10.5px;color:var(--txt-dim);margin-top:3px;text-transform:uppercase;letter-spacing:.3px;}
+
+.vagas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.vaga-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;cursor:pointer;transition:.15s;}
+.vaga-card:hover{border-color:var(--gold);transform:translateY(-1px);}
+.vaga-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.vaga-card-title{font-size:14.5px;font-weight:700;}
+.vaga-card-dept{font-size:11.5px;color:var(--txt-dim);margin-top:2px;}
+.rec-badge{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.2px;white-space:nowrap;}
+.rec-badge-aberta{background:rgba(34,197,94,0.15);color:var(--green);}
+.rec-badge-pausada{background:rgba(245,184,0,0.15);color:var(--gold);}
+.rec-badge-fechada{background:rgba(239,68,68,0.15);color:var(--red);}
+.vaga-card-mid{display:flex;gap:14px;margin:12px 0;font-size:11.5px;color:var(--txt-mid);}
+.vaga-card-mid span{display:flex;align-items:center;gap:5px;}
+.vaga-card-bar{height:5px;border-radius:4px;background:var(--card);overflow:hidden;margin-top:4px;}
+.vaga-card-bar div{height:100%;background:var(--gold);}
+
+.detail-grid{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start;}
+.req-list{list-style:none;margin-top:10px;}
+.req-list li{font-size:12.5px;color:var(--txt-mid);padding:7px 0;border-bottom:1px dashed var(--border);display:flex;align-items:center;gap:8px;}
+.req-list li i{color:var(--gold);font-size:14px;}
+.textarea-field{
+  width:100%;background:var(--card);border:1px solid var(--border);color:var(--txt);
+  border-radius:9px;padding:10px 12px;font-size:12.5px;font-family:'DM Sans',sans-serif;resize:vertical;
+}
+
+.upload-zone{border:1.5px dashed var(--border);border-radius:12px;padding:26px 18px;text-align:center;cursor:pointer;transition:.15s;background:var(--card);}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--gold);background:rgba(245,184,0,0.05);}
+.upload-zone i{font-size:30px;color:var(--gold);}
+.upload-zone p{font-size:12.5px;color:var(--txt-mid);margin-top:8px;}
+.upload-zone .hint{font-size:11px;color:var(--txt-dim);margin-top:2px;}
+
+.cand-table{width:100%;border-collapse:collapse;margin-top:14px;background:transparent;border:none;border-radius:0;}
+.cand-table th{text-align:left;font-size:10.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;background:transparent;}
+.cand-table td{padding:11px 10px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:middle;}
+.cand-table tr{cursor:pointer;transition:.15s;}
+.cand-table tbody tr:hover{background:var(--card);}
+.cand-name{font-weight:600;}
+.cand-file{font-size:10.5px;color:var(--txt-dim);margin-top:2px;}
+
+.score-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-weight:700;font-size:12.5px;font-family:'Barlow',sans-serif;}
+.score-alta{background:rgba(34,197,94,0.15);color:var(--green);}
+.score-media{background:rgba(245,184,0,0.15);color:var(--gold);}
+.score-baixa{background:rgba(239,68,68,0.15);color:var(--red);}
+
+.status-sel{background:var(--card);border:1px solid var(--border);color:var(--txt);padding:5px 9px;border-radius:7px;font-size:11.5px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--txt-dim);}
+.empty-state i{font-size:38px;color:var(--border);margin-bottom:10px;display:block;}
+.empty-state p{font-size:13px;}
+
+/* painel lateral do candidato */
+.rec-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:40;opacity:0;pointer-events:none;transition:.2s;}
+.rec-overlay.open{opacity:1;pointer-events:auto;}
+.side-panel{position:fixed;top:0;right:-460px;width:440px;max-width:92vw;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:50;transition:right .25s ease;overflow-y:auto;}
+.side-panel.open{right:0;}
+.side-panel-head{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:var(--surface);z-index:2;}
+.side-panel-body{padding:20px 22px;}
+.close-btn{background:none;border:none;color:var(--txt-mid);font-size:20px;cursor:pointer;}
+.close-btn:hover{color:var(--txt);}
+
+.score-ring-wrap{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
+.score-ring{position:relative;width:88px;height:88px;flex-shrink:0;}
+.score-ring svg{transform:rotate(-90deg);}
+.score-ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:'Barlow',sans-serif;}
+
+.sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--txt-dim);font-weight:700;margin:18px 0 8px;}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{font-size:11.5px;padding:4px 10px;border-radius:20px;font-weight:600;}
+.tag-forte{background:rgba(34,197,94,0.12);color:var(--green);}
+.tag-atencao{background:rgba(239,68,68,0.12);color:var(--red);}
+.resumo-ia{font-size:12.5px;line-height:1.6;color:var(--txt-mid);background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border);}
+.cv-preview{font-size:11px;line-height:1.55;color:var(--txt-dim);background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border);max-height:180px;overflow-y:auto;white-space:pre-wrap;font-family:'Barlow',sans-serif;}
+
+/* modal nova vaga */
+.rec-modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);padding:20px;}
+.rec-modal.open{display:flex;}
+.rec-modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:560px;max-width:100%;max-height:90vh;overflow-y:auto;padding:24px;}
+.rec-modal-box h2{font-size:18px;margin-bottom:16px;font-family:'Syne',sans-serif;}
+.field{margin-bottom:14px;}
+.field label{font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.3px;font-weight:700;display:block;margin-bottom:6px;}
+.field input,.field select,.field textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--txt);padding:9px 12px;border-radius:9px;font-size:13px;font-family:'DM Sans',sans-serif;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+
+.loading-inline{display:flex;align-items:center;gap:8px;color:var(--gold);font-size:12.5px;padding:10px 0;}
+.spin{width:14px;height:14px;border:2px solid rgba(245,184,0,.25);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.solides-note{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--txt-dim);background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-top:14px;}
+.solides-note i{color:var(--gold);font-size:15px;}
+
+@media(max-width:1000px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .detail-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div>
+      <div class="sidebar-logo-text">Gestão de RH</div>
+      <div class="sidebar-logo-sub">Pessoas · Benefícios · Recrutamento</div>
+    </div>
+  </div>
+
+  <div style="height:8px"></div>
+  <div class="nav-item active" data-view="indicadores" onclick="showView('indicadores')"><i class="ti ti-chart-bar"></i>Indicadores</div>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">Colaboradores</div>
+  <div class="nav-item" data-view="colaboradores" onclick="showView('colaboradores')"><i class="ti ti-users"></i>Colaboradores</div>
+  <div class="nav-item" data-view="documentos" onclick="showView('documentos')"><i class="ti ti-file-certificate"></i>Documentos e Vencimentos</div>
+  <div class="nav-item" data-view="ausencias" onclick="showView('ausencias')"><i class="ti ti-calendar-off"></i>Férias, Afastamentos e Frequência</div>
+  <div class="nav-item" data-view="ponto" onclick="showView('ponto')"><i class="ti ti-clock"></i>Registro de Ponto</div>
+  <div class="nav-item" data-view="avaliacoes" onclick="showView('avaliacoes')"><i class="ti ti-star"></i>Avaliação de Desempenho</div>
+  <div class="nav-item" data-view="organograma" onclick="showView('organograma')"><i class="ti ti-sitemap"></i>Organograma</div>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">Benefícios</div>
+  <div class="nav-item" data-view="beneficios" onclick="showView('beneficios')"><i class="ti ti-gift"></i>Catálogo de Benefícios</div>
+  <div class="nav-item" data-view="atribuicao" onclick="showView('atribuicao')"><i class="ti ti-user-check"></i>Atribuição por Colaborador</div>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">Recrutamento</div>
+  <div class="nav-item" data-view="recPainel" onclick="showView('recPainel')"><i class="ti ti-layout-dashboard"></i>Painel de Recrutamento</div>
+  <div class="nav-item" data-view="vagas" onclick="showView('vagas')"><i class="ti ti-briefcase"></i>Vagas</div>
+  <div class="nav-item" data-view="talentos" onclick="showView('talentos')"><i class="ti ti-user-search"></i>Talentos</div>
+  <div class="sidebar-sublabel">Vagas em andamento</div>
+  <div class="vagas-list" id="sidebarVagasList"></div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">
+      <i class="ti ti-chart-bar" id="topbar-icon"></i>
+      <span id="topbar-title">Indicadores</span>
+      <span class="topbar-sub" id="topbar-sub">/ Custos de RH</span>
+    </div>
+    <!-- Ações do Recrutamento (só aparecem nas telas de Recrutamento) -->
+    <div class="topbar-right" id="topbar-rec-acoes" hidden>
+      <select class="select-empresa" id="filtroEmpresa">
+        <option value="todas">Todas as empresas</option>
+        <option value="barretos">Barreto's Transportes e Serviços</option>
+        <option value="infra">Barreto's Sites e Infraestrutura</option>
+        <option value="goncalves">Gonçalves Soluções em Logística</option>
+        <option value="pinheiro">Pinheiro Transportes e Serviços</option>
+      </select>
+      <button class="rec-btn rec-btn-gold rec-btn-sm" id="btnNovaVaga"><i class="ti ti-plus"></i> Nova Vaga</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ INDICADORES (antiga aba "Custos de RH") ═══ -->
+    <div class="view active" id="view-indicadores">
+      <div class="kpis">
+        <div class="kpi"><div class="n" id="kpi-colaboradores">0</div><div class="l">Colaboradores Ativos</div></div>
+        <div class="kpi"><div class="n" id="kpi-salarios">R$ 0</div><div class="l">Total em Salários</div></div>
+        <div class="kpi"><div class="n" id="kpi-beneficios">R$ 0</div><div class="l">Total em Benefícios</div></div>
+        <div class="kpi"><div class="n" id="kpi-extras">R$ 0</div><div class="l">Custos Extras (mês)</div></div>
+        <div class="kpi"><div class="n" id="kpi-total">R$ 0</div><div class="l">Custo Total Estimado/Mês</div></div>
+      </div>
+      <div class="charts">
+        <div class="chart-card"><h4>Salário por Departamento</h4><div class="chart-wrap"><canvas id="chart-departamento"></canvas></div></div>
+        <div class="chart-card"><h4>Custos Extras por Tipo (mês atual)</h4><div class="chart-wrap"><canvas id="chart-extras"></canvas></div></div>
+      </div>
+      <div class="toolbar"><button class="btn" onclick="abrirModalCustoExtra()"><i class="ti ti-plus"></i> Novo Custo Extra</button></div>
+      <table>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Colaborador</th><th>Valor</th><th></th></tr></thead>
+        <tbody id="tbody-custos-extras"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ COLABORADORES ═══ -->
+    <div class="view" id="view-colaboradores">
+      <div class="toolbar">
+        <input type="text" id="f-colab-busca" placeholder="Buscar por nome, cargo, departamento..." style="width:260px" oninput="renderColaboradores()">
+        <select id="f-colab-status" onchange="renderColaboradores()">
+          <option value="">Todos status</option>
+          <option value="Ativo" selected>Ativo</option>
+          <option value="Afastado">Afastado</option>
+          <option value="Desligado">Desligado</option>
+        </select>
+        <button class="btn" onclick="abrirModalColaborador()"><i class="ti ti-plus"></i> Novo Colaborador</button>
+      </div>
+      <table>
+        <thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Admissão</th><th>Status</th><th></th></tr></thead>
+        <tbody id="tbody-colaboradores"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ DOCUMENTOS ═══ -->
+    <div class="view" id="view-documentos">
+      <div class="toolbar">
+        <select id="f-doc-colab" onchange="renderDocumentos()"><option value="">Todos os colaboradores</option></select>
+        <button class="btn" onclick="abrirModalDocumento()"><i class="ti ti-plus"></i> Novo Documento</button>
+      </div>
+      <table>
+        <thead><tr><th>Colaborador</th><th>Tipo</th><th>Número</th><th>Validade</th><th>Situação</th><th></th></tr></thead>
+        <tbody id="tbody-documentos"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ AUSÊNCIAS ═══ -->
+    <div class="view" id="view-ausencias">
+      <div class="toolbar">
+        <select id="f-aus-colab" onchange="renderAusencias()"><option value="">Todos os colaboradores</option></select>
+        <select id="f-aus-tipo" onchange="renderAusencias()">
+          <option value="">Todos os tipos</option>
+          <option>Férias</option><option>Atestado Médico</option><option>Licença Maternidade</option>
+          <option>Licença Paternidade</option><option>Suspensão</option><option>Falta Justificada</option>
+          <option>Falta Não Justificada</option><option>Atraso</option><option>Outro</option>
+        </select>
+        <button class="btn" onclick="abrirModalAusencia()"><i class="ti ti-plus"></i> Novo Registro</button>
+      </div>
+      <table>
+        <thead><tr><th>Colaborador</th><th>Tipo</th><th>Início</th><th>Fim</th><th>Status</th><th></th></tr></thead>
+        <tbody id="tbody-ausencias"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ REGISTRO DE PONTO ═══ -->
+    <div class="view" id="view-ponto">
+      <div class="toolbar">
+        <select id="f-ponto-colab" onchange="renderPonto()"><option value="">Todos os colaboradores</option></select>
+        <input type="month" id="f-ponto-mes" onchange="renderPonto()">
+        <button class="btn" onclick="abrirModalPonto()"><i class="ti ti-plus"></i> Novo Registro</button>
+      </div>
+      <table>
+        <thead><tr><th>Colaborador</th><th>Data</th><th>Entrada</th><th>Saída Almoço</th><th>Retorno</th><th>Saída</th><th>Horas Trabalhadas</th><th>Saldo</th><th></th></tr></thead>
+        <tbody id="tbody-ponto"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ AVALIAÇÕES ═══ -->
+    <div class="view" id="view-avaliacoes">
+      <div class="toolbar">
+        <select id="f-aval-colab" onchange="renderAvaliacoes()"><option value="">Todos os colaboradores</option></select>
+        <button class="btn" onclick="abrirModalAvaliacao()"><i class="ti ti-plus"></i> Nova Avaliação</button>
+      </div>
+      <table>
+        <thead><tr><th>Colaborador</th><th>Semestre / Ano</th><th>Avaliador</th><th>Resultado</th><th></th></tr></thead>
+        <tbody id="tbody-avaliacoes"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ ORGANOGRAMA ═══ -->
+    <div class="view" id="view-organograma">
+      <p style="color:var(--txt-dim);font-size:12px;margin-bottom:14px">Baseado no campo "Supervisor(a)" de cada colaborador.</p>
+      <div class="org-wrap"><ul class="org-chart" id="org-tree"></ul></div>
+    </div>
+
+    <!-- ═══ BENEFÍCIOS (catálogo) ═══ -->
+    <div class="view" id="view-beneficios">
+      <div class="toolbar"><button class="btn" onclick="abrirModalBeneficio()"><i class="ti ti-plus"></i> Novo Benefício</button></div>
+      <table>
+        <thead><tr><th>Nome</th><th>Tipo</th><th>Valor Padrão</th><th>Ativo</th><th></th></tr></thead>
+        <tbody id="tbody-beneficios"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ ATRIBUIÇÃO POR COLABORADOR ═══ -->
+    <div class="view" id="view-atribuicao">
+      <div class="toolbar">
+        <select id="f-atrib-colab" onchange="renderAtribuicoes()"><option value="">Todos os colaboradores</option></select>
+        <button class="btn" onclick="abrirModalAtribuicao()"><i class="ti ti-plus"></i> Atribuir Benefício</button>
+      </div>
+      <table>
+        <thead><tr><th>Colaborador</th><th>Benefício</th><th>Valor</th><th>Início</th><th>Status</th><th></th></tr></thead>
+        <tbody id="tbody-atribuicoes"></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ RECRUTAMENTO — PAINEL ═══ -->
+    <div class="view" id="view-recPainel">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Vagas Abertas</div>
+          <div class="kpi-num" id="kpiVagas">0</div>
+          <div class="kpi-foot">em processo seletivo ativo</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Candidatos Triados</div>
+          <div class="kpi-num kpi-gold" id="kpiCandidatos">0</div>
+          <div class="kpi-foot">currículos analisados por IA</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Aderência Média</div>
+          <div class="kpi-num kpi-green" id="kpiAderencia">—</div>
+          <div class="kpi-foot">score médio de compatibilidade</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Aprovados p/ Entrevista</div>
+          <div class="kpi-num" id="kpiAprovados">0</div>
+          <div class="kpi-foot">candidatos com aderência ≥ 75%</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="ti ti-filter"></i> Funil de Seleção</div>
+        </div>
+        <div class="funnel" id="funnelWrap"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="ti ti-briefcase"></i> Vagas em Andamento</div>
+          <button class="rec-btn rec-btn-ghost rec-btn-sm" onclick="showView('vagas')">Ver todas <i class="ti ti-arrow-right"></i></button>
+        </div>
+        <div class="vagas-grid" id="dashVagasGrid"></div>
+      </div>
+
+      <div class="solides-note">
+        <i class="ti ti-plug-connected"></i>
+        Estrutura de etapas e triagem preparada no padrão Sólides RH (Triagem → Entrevista RH → Entrevista Gestor → Proposta → Contratado). Integração direta com a conta Sólides pode ser conectada depois, junto ao Apps Script.
+      </div>
+    </div>
+
+    <!-- ═══ RECRUTAMENTO — LISTA DE VAGAS ═══ -->
+    <div class="view" id="view-vagas">
+      <div class="vagas-grid" id="vagasGridFull"></div>
+    </div>
+
+    <!-- ═══ RECRUTAMENTO — BANCO DE TALENTOS ═══ -->
+    <div class="view" id="view-talentos">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="ti ti-users"></i> Banco de Talentos</div>
+        </div>
+        <table class="cand-table">
+          <thead><tr><th>Candidato</th><th>Vaga de origem</th><th>Aderência</th><th>Status</th><th>Recebido em</th></tr></thead>
+          <tbody id="talentosBody"></tbody>
+        </table>
+        <div class="empty-state" id="talentosEmpty" style="display:none;">
+          <i class="ti ti-mailbox"></i><p>Nenhum candidato no banco de talentos ainda.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RECRUTAMENTO — DETALHE DA VAGA (drill-down de "Vagas", sem item próprio no menu) ═══ -->
+    <div class="view" id="view-detalhe">
+      <button class="rec-btn rec-btn-ghost rec-btn-sm" style="margin-bottom:16px;" onclick="showView('vagas')"><i class="ti ti-arrow-left"></i> Voltar às vagas</button>
+
+      <div class="detail-grid">
+        <!-- coluna esquerda: dados da vaga -->
+        <div>
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title" id="detalheTitulo"><i class="ti ti-briefcase"></i> —</div>
+              <span class="rec-badge" id="detalheBadge"></span>
+            </div>
+            <div class="rec-sub" id="detalheMeta" style="margin-bottom:12px;"></div>
+
+            <div class="sec-title">Descrição da vaga</div>
+            <textarea class="textarea-field" id="detalheDescricao" rows="4" placeholder="Descreva as responsabilidades e o contexto da vaga..."></textarea>
+
+            <div class="sec-title">Requisitos e competências desejadas</div>
+            <textarea class="textarea-field" id="detalheRequisitos" rows="5" placeholder="Ex: CNH categoria E, experiência com roteirização, Excel avançado..."></textarea>
+            <button class="rec-btn rec-btn-gold rec-btn-sm" style="margin-top:10px;width:100%;justify-content:center;" onclick="salvarVaga()"><i class="ti ti-device-floppy"></i> Salvar alterações</button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title"><i class="ti ti-file-upload"></i> Enviar Currículo</div></div>
+            <div class="upload-zone" id="uploadZone">
+              <i class="ti ti-cloud-upload"></i>
+              <p>Arraste o currículo aqui ou clique para selecionar</p>
+              <div class="hint">PDF ou Word (.pdf, .doc, .docx) · leitura e avaliação automática de aderência</div>
+              <input type="file" id="fileInput" accept=".pdf,.doc,.docx" hidden multiple>
+            </div>
+            <div id="uploadStatus"></div>
+          </div>
+        </div>
+
+        <!-- coluna direita: candidatos -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title"><i class="ti ti-users"></i> Candidatos Triados</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="rec-sub" id="countCandidatos">0 candidatos</span>
+              <button class="rec-btn rec-btn-ghost rec-btn-sm" onclick="limparCandidatosVagaAtual()" title="Remove todos os candidatos desta vaga, para reenviar os currículos do zero">
+                <i class="ti ti-trash"></i> Limpar candidatos
+              </button>
+            </div>
+          </div>
+          <table class="cand-table" id="candTable" style="display:none;">
+            <thead>
+              <tr><th>Candidato</th><th>Aderência</th><th>Etapa</th><th></th></tr>
+            </thead>
+            <tbody id="candTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="candEmpty">
+            <i class="ti ti-file-search"></i>
+            <p>Nenhum currículo enviado para esta vaga ainda.<br>Envie um PDF ou Word para avaliar a aderência automaticamente.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAIS — COLABORADORES ═══════════════════ -->
+
+<!-- MODAL: Colaborador -->
+<div class="overlay" id="modal-colaborador">
+  <div class="modal">
+    <h3 id="modal-colaborador-titulo">Novo Colaborador</h3>
+    <input type="hidden" id="col-id">
+    <div class="grid2">
+      <div class="campo"><label>Nome *</label><input id="col-nome"></div>
+      <div class="campo"><label>CPF</label><input id="col-cpf"></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Cargo</label><input id="col-cargo" list="dl-cargo"><datalist id="dl-cargo"></datalist></div>
+      <div class="campo"><label>Departamento</label><input id="col-departamento" list="dl-departamento"><datalist id="dl-departamento"></datalist></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Data de Admissão</label><input type="date" id="col-admissao"></div>
+      <div class="campo"><label>Data de Desligamento</label><input type="date" id="col-demissao"></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Salário (R$)</label><input type="number" step="0.01" id="col-salario"></div>
+      <div class="campo"><label>Status</label><select id="col-status"><option>Ativo</option><option>Afastado</option><option>Desligado</option></select></div>
+    </div>
+    <div class="campo" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Entrada</label>
+        <input type="time" id="col-jornada-entrada" oninput="atualizarHorasColaboradorCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída Almoço</label>
+        <input type="time" id="col-jornada-saida-almoco" oninput="atualizarHorasColaboradorCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Retorno</label>
+        <input type="time" id="col-jornada-retorno-almoco" oninput="atualizarHorasColaboradorCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída</label>
+        <input type="time" id="col-jornada-saida" oninput="atualizarHorasColaboradorCalculadas()"></div>
+    </div>
+    <div class="campo" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;font-weight:700">Horas Diárias (padrão)</span>
+      <span id="col-jornada-horas-resultado" style="font-size:15px;font-weight:800;color:var(--gold);font-family:'Montserrat',sans-serif">—</span>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Telefone</label><input id="col-telefone"></div>
+      <div class="campo"><label>E-mail</label><input type="email" id="col-email"></div>
+    </div>
+    <div class="campo"><label>Endereço</label><input id="col-endereco"></div>
+    <div class="grid2">
+      <div class="campo"><label>Contato de Emergência — Nome</label><input id="col-emerg-nome"></div>
+      <div class="campo"><label>Contato de Emergência — Telefone</label><input id="col-emerg-tel"></div>
+    </div>
+    <div class="campo"><label>Supervisor(a)</label><select id="col-supervisor"><option value="">(nenhum)</option></select></div>
+    <div class="campo"><label>Usuário do Sistema (login)</label><select id="col-usuario"><option value="">(sem login vinculado)</option></select>
+      <span style="display:block;font-size:10px;color:var(--txt-dim);margin-top:4px">Vincula esse colaborador ao login dele (o mesmo da tela Configuração de Acessos) — é isso que libera o Meu Espelho de Ponto e outros recursos pessoais no Início.</span>
+    </div>
+    <div class="campo"><label>Observações</label><textarea id="col-obs"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-colaborador')">Cancelar</button>
+      <button class="btn" onclick="salvarColaborador()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Documento -->
+<div class="overlay" id="modal-documento">
+  <div class="modal">
+    <h3>Novo Documento</h3>
+    <input type="hidden" id="doc-id">
+    <div class="campo"><label>Colaborador *</label><select id="doc-colaborador"></select></div>
+    <div class="grid2">
+      <div class="campo"><label>Tipo *</label><input id="doc-tipo" list="dl-doc-tipo" placeholder="Ex: ASO, Contrato, Certificação"><datalist id="dl-doc-tipo"></datalist></div>
+      <div class="campo"><label>Número</label><input id="doc-numero"></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Data de Emissão</label><input type="date" id="doc-emissao"></div>
+      <div class="campo"><label>Data de Validade</label><input type="date" id="doc-validade"></div>
+    </div>
+    <div class="campo"><label>Link do Arquivo (Drive)</label><input id="doc-arquivo"></div>
+    <div class="campo"><label>Observações</label><textarea id="doc-obs"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-documento')">Cancelar</button>
+      <button class="btn" onclick="salvarDocumento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ausência -->
+<div class="overlay" id="modal-ausencia">
+  <div class="modal">
+    <h3>Novo Registro de Ausência</h3>
+    <input type="hidden" id="aus-id">
+    <div class="campo"><label>Colaborador *</label><select id="aus-colaborador"></select></div>
+    <div class="grid2">
+      <div class="campo"><label>Tipo *</label><select id="aus-tipo">
+        <option>Férias</option><option>Atestado Médico</option><option>Licença Maternidade</option>
+        <option>Licença Paternidade</option><option>Suspensão</option><option>Falta Justificada</option>
+        <option>Falta Não Justificada</option><option>Atraso</option><option>Outro</option>
+      </select></div>
+      <div class="campo"><label>Status</label><select id="aus-status"><option>Solicitado</option><option>Aprovado</option><option>Recusado</option><option>Concluído</option></select></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Data de Início *</label><input type="date" id="aus-inicio"></div>
+      <div class="campo"><label>Data de Fim</label><input type="date" id="aus-fim"></div>
+    </div>
+    <div class="campo"><label>Observação</label><textarea id="aus-obs"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-ausencia')">Cancelar</button>
+      <button class="btn" onclick="salvarAusencia()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Registro de Ponto -->
+<div class="overlay" id="modal-ponto">
+  <div class="modal">
+    <h3>Registro de Ponto</h3>
+    <input type="hidden" id="ponto-id">
+    <div class="grid2">
+      <div class="campo"><label>Colaborador *</label><select id="ponto-colaborador" onchange="atualizarHorasCalculadas()"></select></div>
+      <div class="campo"><label>Data *</label><input type="date" id="ponto-data"></div>
+    </div>
+    <div class="campo" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Entrada</label>
+        <input type="time" id="ponto-entrada" oninput="atualizarHorasCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída Almoço</label>
+        <input type="time" id="ponto-saida-almoco" oninput="atualizarHorasCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Retorno</label>
+        <input type="time" id="ponto-retorno-almoco" oninput="atualizarHorasCalculadas()"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Saída</label>
+        <input type="time" id="ponto-saida" oninput="atualizarHorasCalculadas()"></div>
+    </div>
+    <div class="campo" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;font-weight:700">Horas Trabalhadas</span>
+      <span id="ponto-horas-resultado" style="font-size:15px;font-weight:800;color:var(--gold);font-family:'Montserrat',sans-serif">—</span>
+    </div>
+    <div class="campo" style="margin-top:12px"><label>Observação</label><textarea id="ponto-obs"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-ponto')">Cancelar</button>
+      <button class="btn" onclick="salvarPonto()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Avaliação -->
+<div class="overlay" id="modal-avaliacao">
+  <div class="modal" style="max-width:760px">
+    <h3>Avaliação de Desempenho</h3>
+    <p style="font-size:11px;color:var(--txt-dim);margin:-10px 0 14px">Baseado no formulário oficial de avaliação — 7 competências, 3 critérios cada, nota de -2 a +2.</p>
+    <input type="hidden" id="aval-id">
+    <div class="grid2">
+      <div class="campo"><label>Colaborador *</label><select id="aval-colaborador"></select></div>
+      <div class="campo"><label>Avaliador</label><input id="aval-avaliador"></div>
+    </div>
+    <div class="campo" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Semestre</label>
+        <select id="aval-semestre"><option>1º Semestre</option><option>2º Semestre</option></select></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Ano</label>
+        <input type="number" id="aval-ano"></div>
+      <div><label style="display:block;font-size:10.5px;color:var(--txt-dim);margin-bottom:4px;text-transform:uppercase">Data da Avaliação</label>
+        <input type="date" id="aval-data"></div>
+    </div>
+
+    <div id="aval-criterios"></div>
+
+    <div class="campo" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <span style="font-size:11.5px;color:var(--txt-dim);text-transform:uppercase;font-weight:700">Média Geral</span>
+      <span id="aval-media-resultado" style="font-size:15px;font-weight:800;color:var(--gold);font-family:'Montserrat',sans-serif"></span>
+    </div>
+
+    <div class="campo" style="margin-top:12px"><label>Principais Pontos Fortes</label><textarea id="aval-fortes"></textarea></div>
+    <div class="campo"><label>Principais Pontos de Melhoria</label><textarea id="aval-melhoria"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-avaliacao')">Cancelar</button>
+      <button class="btn" onclick="salvarAvaliacao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAIS — BENEFÍCIOS / CUSTOS ═══════════════════ -->
+
+<!-- MODAL: Benefício -->
+<div class="overlay" id="modal-beneficio">
+  <div class="modal">
+    <h3 id="modal-beneficio-titulo">Novo Benefício</h3>
+    <input type="hidden" id="ben-id">
+    <div class="campo"><label>Nome *</label><input id="ben-nome" placeholder="Ex: Vale Alimentação"></div>
+    <div class="grid2">
+      <div class="campo"><label>Tipo</label><input id="ben-tipo" placeholder="Ex: Alimentação, Saúde, Transporte"></div>
+      <div class="campo"><label>Valor Padrão (R$)</label><input type="number" step="0.01" id="ben-valor"></div>
+    </div>
+    <div class="campo"><label><input type="checkbox" id="ben-ativo" checked style="width:auto;margin-right:6px"> Ativo</label></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-beneficio')">Cancelar</button>
+      <button class="btn" onclick="salvarBeneficio()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Atribuição -->
+<div class="overlay" id="modal-atribuicao">
+  <div class="modal">
+    <h3>Atribuir Benefício</h3>
+    <input type="hidden" id="atrib-id">
+    <div class="campo"><label>Colaborador *</label><select id="atrib-colaborador"></select></div>
+    <div class="campo"><label>Benefício *</label><select id="atrib-beneficio" onchange="preencherValorPadrao()"></select></div>
+    <div class="grid2">
+      <div class="campo"><label>Valor (R$)</label><input type="number" step="0.01" id="atrib-valor"></div>
+      <div class="campo"><label>Status</label><select id="atrib-status"><option>Ativo</option><option>Suspenso</option><option>Encerrado</option></select></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Data de Início</label><input type="date" id="atrib-inicio"></div>
+      <div class="campo"><label>Data de Fim</label><input type="date" id="atrib-fim"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-atribuicao')">Cancelar</button>
+      <button class="btn" onclick="salvarAtribuicao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Custo Extra -->
+<div class="overlay" id="modal-custo-extra">
+  <div class="modal">
+    <h3>Novo Custo Extra de RH</h3>
+    <input type="hidden" id="custo-id">
+    <div class="grid2">
+      <div class="campo"><label>Tipo *</label><select id="custo-tipo">
+        <option>Treinamento</option><option>Rescisão</option><option>Processo Seletivo</option>
+        <option>Uniforme/EPI</option><option>Multa Trabalhista</option><option>Outro</option>
+      </select></div>
+      <div class="campo"><label>Valor (R$) *</label><input type="number" step="0.01" id="custo-valor"></div>
+    </div>
+    <div class="grid2">
+      <div class="campo"><label>Data</label><input type="date" id="custo-data"></div>
+      <div class="campo"><label>Colaborador (opcional)</label><select id="custo-colaborador"><option value="">—</option></select></div>
+    </div>
+    <div class="campo"><label>Descrição</label><textarea id="custo-descricao"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn secundario" onclick="fecharModal('modal-custo-extra')">Cancelar</button>
+      <button class="btn" onclick="salvarCustoExtra()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ RECRUTAMENTO — PAINEL LATERAL DO CANDIDATO ═══════════════════ -->
+<div class="rec-overlay" id="overlay"></div>
+<div class="side-panel" id="candPanel">
+  <div class="side-panel-head">
+    <div>
+      <div style="font-size:16px;font-weight:700;" id="cpNome">—</div>
+      <div class="rec-sub" id="cpVaga">—</div>
+    </div>
+    <button class="close-btn" onclick="closeCandPanel()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="side-panel-body">
+    <div class="score-ring-wrap">
+      <div class="score-ring">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="38" stroke="var(--border)" stroke-width="8" fill="none"/>
+          <circle id="cpRingProgress" cx="44" cy="44" r="38" stroke="#F5B800" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="238.7" stroke-dashoffset="238.7"/>
+        </svg>
+        <div class="score-ring-num" id="cpScoreNum">0%</div>
+      </div>
+      <div>
+        <div class="sec-title" style="margin-top:0;">Etapa atual</div>
+        <select class="status-sel" id="cpStatus" onchange="atualizarStatusCandidato()">
+          <option>Triagem</option>
+          <option>Entrevista RH</option>
+          <option>Entrevista Gestor</option>
+          <option>Proposta</option>
+          <option>Contratado</option>
+          <option>Reprovado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sec-title">Resumo da Análise</div>
+    <div class="resumo-ia" id="cpResumo">—</div>
+
+    <div class="sec-title">Pontos fortes</div>
+    <div class="tag-list" id="cpFortes"></div>
+
+    <div class="sec-title">Pontos de atenção / lacunas</div>
+    <div class="tag-list" id="cpAtencao"></div>
+
+    <div class="sec-title">Arquivo · <span id="cpArquivo" style="color:var(--txt-dim);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+    <div class="cv-preview" id="cpTexto">—</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ RECRUTAMENTO — MODAL NOVA VAGA ═══════════════════ -->
+<div class="rec-modal" id="modalVaga">
+  <div class="rec-modal-box">
+    <h2><i class="ti ti-briefcase" style="color:var(--gold)"></i> Nova Vaga</h2>
+    <div class="field-row">
+      <div class="field"><label>Título da vaga</label><input id="nvTitulo" placeholder="Ex: Motorista Carreteiro"></div>
+      <div class="field"><label>Departamento</label><input id="nvDepto" placeholder="Ex: Operação"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Empresa</label>
+        <select id="nvEmpresa">
+          <option value="barretos">Barreto's Transportes e Serviços</option>
+          <option value="infra">Barreto's Sites e Infraestrutura</option>
+          <option value="goncalves">Gonçalves Soluções em Logística</option>
+          <option value="pinheiro">Pinheiro Transportes e Serviços</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tipo de contratação</label>
+        <select id="nvTipo"><option>CLT</option><option>PJ</option><option>Temporário</option><option>Estágio</option></select>
+      </div>
+    </div>
+    <div class="field"><label>Local</label><input id="nvLocal" placeholder="Ex: Arujá/SP"></div>
+    <div class="field"><label>Descrição da vaga</label><textarea id="nvDescricao" rows="3" placeholder="Responsabilidades e contexto do dia a dia..."></textarea></div>
+    <div class="field"><label>Requisitos e competências desejadas</label><textarea id="nvRequisitos" rows="4" placeholder="Um requisito por linha, ex:&#10;CNH categoria E&#10;Experiência mínima de 2 anos&#10;Disponibilidade para viagens"></textarea></div>
+    <div class="modal-actions">
+      <button class="rec-btn rec-btn-ghost" onclick="fecharModalVaga()">Cancelar</button>
+      <button class="rec-btn rec-btn-gold" onclick="criarVaga()"><i class="ti ti-check"></i> Criar Vaga</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   BASE COMPARTILHADA — auth, fetch, utilitários
+════════════════════════════════════════════════════════════ */
+var API_BASE = 'https://barretos-backend.onrender.com/api';
+var SUPABASE_URL      = 'https://qjwobkpgqmaqisphwonl.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_c4MrJXB6nTHY0a5ShAFRaQ_Jc4qDdPr';
+
+function getAuthToken()    { return localStorage.getItem('barretos_auth_token'); }
+function getRefreshToken() { return localStorage.getItem('barretos_auth_refresh'); }
+
+async function tentarRenovarToken() {
+  var refresh = getRefreshToken();
+  if (!refresh) return false;
+  // Evita duas abas/telas tentarem renovar ao mesmo tempo: se alguem ja
+  // renovou nos ultimos 5s, usa o token que ja foi salvo.
+  var agora = Date.now();
+  var ultimaRenovacao = parseInt(localStorage.getItem('barretos_auth_renovado_em') || '0', 10);
+  if (agora - ultimaRenovacao < 5000) return !!getAuthToken();
+  try {
+    var r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: refresh }),
+    });
+    if (!r.ok) return false;
+    var j = await r.json();
+    localStorage.setItem('barretos_auth_token', j.access_token);
+    localStorage.setItem('barretos_auth_refresh', j.refresh_token);
+    localStorage.setItem('barretos_auth_renovado_em', String(Date.now()));
+    return true;
+  } catch (e) { return false; }
+}
+
+async function apiFetch(url, options) {
+  options = options || {};
+  var headers = Object.assign({}, options.headers, { Authorization: 'Bearer ' + getAuthToken() });
+  var res = await fetch(url, Object.assign({}, options, { headers: headers }));
+  if (res.status === 401) {
+    if (await tentarRenovarToken()) {
+      headers.Authorization = 'Bearer ' + getAuthToken();
+      res = await fetch(url, Object.assign({}, options, { headers: headers }));
+    }
+    if (res.status === 401) { mostrarTelaSemAcesso(); throw new Error('Sessão expirada'); }
+  }
+  return res;
+}
+function mostrarTelaSemAcesso() {
+  var el = document.getElementById('sem-acesso-overlay');
+  if (el) { el.style.display = 'flex'; return; }
+  el = document.createElement('div');
+  el.id = 'sem-acesso-overlay';
+  el.style.cssText = 'position:fixed;inset:0;background:#0F1117;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#E8E9F0;text-align:center;padding:24px';
+  el.innerHTML = '<div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Sessão não encontrada</div>' +
+    '<div style="font-size:13px;color:#9CA3AF">Acesse esta tela pelo menu principal do sistema.</div></div>';
+  document.body.appendChild(el);
+}
+function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function fmtBRL(v){ return (Number(v)||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+// Aceita data pura ("2026-01-31") e também timestamp ISO ("2026-01-31T13:45:00+00:00",
+// usado nos criado_em do Recrutamento — nesse caso converte pro dia local, como fazia
+// o antigo fmtDataBR_ do Recrutamento).
+function fmtDataBR(iso){
+  if(!iso) return '';
+  var s = String(iso);
+  if (/^\d{4}-\d{2}-\d{2}[T ]/.test(s)) {
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      var p2 = function(n){ return String(n).padStart(2,'0'); };
+      return p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear();
+    }
+  }
+  var p = s.split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : s;
+}
+function fecharModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ════════════════════════════════════════════════════════════
+   NAVEGAÇÃO (sidebar + views, mesmo padrão da Gestão da Frota)
+════════════════════════════════════════════════════════════ */
+var VIEWS = {
+  indicadores:   { title:'Indicadores',                        icon:'ti-chart-bar',        sub:'Custos de RH' },
+  colaboradores: { title:'Colaboradores',                      icon:'ti-users',            sub:'Colaboradores' },
+  documentos:    { title:'Documentos e Vencimentos',           icon:'ti-file-certificate', sub:'Colaboradores' },
+  ausencias:     { title:'Férias, Afastamentos e Frequência',  icon:'ti-calendar-off',     sub:'Colaboradores' },
+  ponto:         { title:'Registro de Ponto',                  icon:'ti-clock',            sub:'Colaboradores' },
+  avaliacoes:    { title:'Avaliação de Desempenho',            icon:'ti-star',             sub:'Colaboradores' },
+  organograma:   { title:'Organograma',                        icon:'ti-sitemap',          sub:'Colaboradores' },
+  beneficios:    { title:'Catálogo de Benefícios',             icon:'ti-gift',             sub:'Benefícios' },
+  atribuicao:    { title:'Atribuição por Colaborador',         icon:'ti-user-check',       sub:'Benefícios' },
+  recPainel:     { title:'Painel de Recrutamento',             icon:'ti-layout-dashboard', sub:'Recrutamento', rec:true },
+  vagas:         { title:'Vagas Abertas',                      icon:'ti-briefcase',        sub:'Recrutamento', rec:true },
+  talentos:      { title:'Banco de Talentos',                  icon:'ti-user-search',      sub:'Recrutamento', rec:true },
+  // drill-down de uma vaga: sem item próprio no menu, destaca "Vagas"
+  detalhe:       { title:'Detalhe da Vaga',                    icon:'ti-briefcase',        sub:'Recrutamento', rec:true, nav:'vagas' },
+};
+var currentView = 'indicadores';
+
+// Cada seção busca seus dados só na primeira vez que é aberta. Guarda a
+// promise (truthy) — se a carga falhar, limpa pra tentar de novo na próxima.
+var carregado = {};
+function carregarUmaVez(chave, fn){
+  if (!carregado[chave]) {
+    carregado[chave] = Promise.resolve().then(fn).catch(function(err){
+      console.error('Falha ao carregar "'+chave+'":', err);
+      carregado[chave] = null;
+    });
+  }
+  return carregado[chave];
+}
+// Resolvida quando /api/colaboradores chegou (quase toda tela usa pra mostrar nomes)
+var colaboradoresProntos = Promise.resolve();
+
+function atualizarTopbarSub(){
+  var cfg = VIEWS[currentView] || {};
+  document.getElementById('topbar-sub').textContent = cfg.sub ? '/ '+cfg.sub : '';
+}
+
+function showView(key){
+  var painel = document.getElementById('view-'+key);
+  if (!painel) return;
+  var cfg = VIEWS[key] || {};
+  document.querySelectorAll('.view').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.nav-item[data-view]').forEach(function(el){ el.classList.remove('active'); });
+  painel.classList.add('active');
+  var nav = document.querySelector('.nav-item[data-view="'+(cfg.nav||key)+'"]');
+  if (nav) nav.classList.add('active');
+  currentView = key;
+
+  document.getElementById('topbar-title').textContent = cfg.title || '';
+  document.getElementById('topbar-icon').className = 'ti '+(cfg.icon||'ti-point');
+  atualizarTopbarSub();
+  document.getElementById('topbar-rec-acoes').hidden = !cfg.rec;
+  var content = document.querySelector('.content');
+  if (content) content.scrollTop = 0;
+
+  // efeitos colaterais de cada tela (antigos mudarAba/switchView)
+  if (key==='indicadores') {
+    carregarUmaVez('custosExtras', async function(){ await colaboradoresProntos; await carregarCustosExtras(); });
+    carregarResumoCustos().catch(function(err){ console.error('Falha ao carregar resumo de custos:', err); });
+  } else if (key==='colaboradores') {
+    carregarUmaVez('usuarios', carregarUsuariosSistema);
+  } else if (key==='documentos') {
+    carregarUmaVez('documentos', async function(){ await colaboradoresProntos; await carregarDocumentos(); });
+  } else if (key==='ausencias') {
+    carregarUmaVez('ausencias', async function(){ await colaboradoresProntos; await carregarAusencias(); });
+  } else if (key==='ponto') {
+    carregarUmaVez('ponto', async function(){ await colaboradoresProntos; await carregarPonto(); });
+  } else if (key==='avaliacoes') {
+    carregarUmaVez('avaliacoes', async function(){ await colaboradoresProntos; await carregarAvaliacoes(); });
+  } else if (key==='organograma') {
+    colaboradoresProntos.then(renderOrganograma);
+  } else if (key==='beneficios') {
+    carregarUmaVez('beneficios', carregarBeneficios);
+  } else if (key==='atribuicao') {
+    carregarUmaVez('beneficios', carregarBeneficios).then(function(){
+      return carregarUmaVez('atribuicoes', async function(){ await colaboradoresProntos; await carregarAtribuicoes(); });
+    });
+  } else if (cfg.rec) {
+    renderAll();
+    carregarUmaVez('recrutamento', async function(){
+      await loadAllData(true);
+      iniciarAutoRefresh();
+    }).then(function(){ renderAll(); });
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   COLABORADORES
+════════════════════════════════════════════════════════════ */
+
+/* ── Autocomplete simples (mesmo padrão da Gestão da Frota) ── */
+var AC_DEFAULTS = {
+  cargo: ['Gerente', 'Coordenador(a)', 'Analista', 'Assistente', 'Auxiliar', 'Motorista', 'Diretor(a)'],
+  departamento: ['Comercial', 'Financeiro', 'Operacional', 'RH', 'TI', 'Diretoria'],
+  'doc-tipo': ['ASO', 'Contrato de Trabalho', 'Certificação', 'Exame Periódico', 'Termo de Confidencialidade'],
+};
+function getACItems(key){
+  try {
+    var saved = JSON.parse(localStorage.getItem('rh_ac_'+key) || '[]');
+    var merged = AC_DEFAULTS[key].slice();
+    saved.forEach(function(v){ if (v && !merged.includes(v)) merged.push(v); });
+    return merged;
+  } catch(e){ return AC_DEFAULTS[key] || []; }
+}
+function saveCustomAC(key, value){
+  if (!value || value.length < 2) return;
+  try {
+    var saved = JSON.parse(localStorage.getItem('rh_ac_'+key) || '[]');
+    if (!saved.includes(value) && !AC_DEFAULTS[key].includes(value)) {
+      saved.unshift(value);
+      if (saved.length > 30) saved.pop();
+      localStorage.setItem('rh_ac_'+key, JSON.stringify(saved));
+      populateDatalist(key);
+    }
+  } catch(e){}
+}
+function populateDatalist(key){
+  var dl = document.getElementById('dl-'+key);
+  if (!dl) return;
+  dl.innerHTML = getACItems(key).map(function(v){ return '<option value="'+e(v)+'"></option>'; }).join('');
+}
+['cargo','departamento','doc-tipo'].forEach(populateDatalist);
+document.getElementById('col-cargo').addEventListener('input', function(){ saveCustomAC('cargo', this.value); });
+document.getElementById('col-departamento').addEventListener('input', function(){ saveCustomAC('departamento', this.value); });
+document.getElementById('doc-tipo').addEventListener('input', function(){ saveCustomAC('doc-tipo', this.value); });
+
+/* ── Estado (colaboradores é compartilhado por todas as seções) ── */
+var colaboradores = [], documentos = [], ausencias = [], avaliacoes = [], ponto = [];
+var beneficios = [], atribuicoes = [], custosExtras = [];
+var chartDepto = null, chartExtras = null;
+
+function selectColaboradoresHTML(incluirVazio, valorAtual){
+  var opts = (incluirVazio ? '<option value="">Todos os colaboradores</option>' : '<option value="">Selecione...</option>');
+  opts += colaboradores.map(function(c){ return '<option value="'+c.id+'"'+(c.id===valorAtual?' selected':'')+'>'+e(c.nome)+'</option>'; }).join('');
+  return opts;
+}
+function nomeColaborador(id){ if(!id) return '—'; var c = colaboradores.find(function(x){ return x.id===id; }); return c ? c.nome : '(colaborador removido)'; }
+
+/* ── Usuários do sistema (pra vincular colaborador ao login — mesma lista da tela Configuração de Acessos) ── */
+var usuariosSistema = [];
+async function carregarUsuariosSistema(){
+  var r = await apiFetch(API_BASE+'/usuarios');
+  usuariosSistema = (await r.json()).sort(function(a,b){ return a.nome.localeCompare(b.nome); });
+}
+function popularSelectUsuarios(valorAtual){
+  document.getElementById('col-usuario').innerHTML = '<option value="">(sem login vinculado)</option>' +
+    usuariosSistema.map(function(u){ return '<option value="'+u.id+'"'+(u.id===valorAtual?' selected':'')+'>'+e(u.nome)+' ('+e(u.login)+')</option>'; }).join('');
+}
+
+/* ── Colaboradores ──
+   Uma busca só de /api/colaboradores alimenta os selects de TODAS as seções
+   (Colaboradores, Benefícios e Custos Extras). */
+async function carregarColaboradores(){
+  var r = await apiFetch(API_BASE+'/colaboradores');
+  colaboradores = await r.json();
+  ['f-doc-colab','doc-colaborador','f-aus-colab','aus-colaborador','f-ponto-colab','ponto-colaborador',
+   'f-aval-colab','aval-colaborador','f-atrib-colab','atrib-colaborador'].forEach(function(id){
+    var el = document.getElementById(id);
+    var incluirVazio = id.indexOf('f-')===0;
+    // filtros mantêm a seleção atual ao recarregar a lista
+    el.innerHTML = selectColaboradoresHTML(incluirVazio, incluirVazio ? el.value : null);
+  });
+  document.getElementById('col-supervisor').innerHTML = '<option value="">(nenhum)</option>' +
+    colaboradores.map(function(c){ return '<option value="'+c.id+'">'+e(c.nome)+'</option>'; }).join('');
+  document.getElementById('custo-colaborador').innerHTML = '<option value="">—</option>' +
+    colaboradores.map(function(c){ return '<option value="'+c.id+'">'+e(c.nome)+'</option>'; }).join('');
+  renderColaboradores();
+  // nomes podem ter mudado — re-renderiza o que já estiver carregado
+  if (carregado.documentos) renderDocumentos();
+  if (carregado.ausencias) renderAusencias();
+  if (carregado.ponto) renderPonto();
+  if (carregado.avaliacoes) renderAvaliacoes();
+  if (carregado.atribuicoes) renderAtribuicoes();
+  if (carregado.custosExtras) renderCustosExtras();
+  if (currentView==='organograma') renderOrganograma();
+}
+function renderColaboradores(){
+  var busca = (document.getElementById('f-colab-busca').value||'').toLowerCase();
+  var status = document.getElementById('f-colab-status').value;
+  var linhas = colaboradores.filter(function(c){
+    if (status && c.status!==status) return false;
+    if (busca) {
+      var alvo = (c.nome+' '+(c.cargo||'')+' '+(c.departamento||'')).toLowerCase();
+      if (alvo.indexOf(busca)===-1) return false;
+    }
+    return true;
+  });
+  var tbody = document.getElementById('tbody-colaboradores');
+  tbody.innerHTML = linhas.length ? linhas.map(function(c){
+    var badgeCls = c.status==='Ativo'?'ativo':(c.status==='Afastado'?'afastado':'desligado');
+    return '<tr><td>'+e(c.nome)+'</td><td>'+e(c.cargo||'—')+'</td><td>'+e(c.departamento||'—')+'</td>'+
+      '<td>'+fmtDataBR(c.data_admissao)+'</td><td><span class="badge '+badgeCls+'">'+e(c.status)+'</span></td>'+
+      '<td class="acoes"><button onclick="abrirModalColaborador(\''+c.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirColaborador(\''+c.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="vazio">Nenhum colaborador encontrado.</td></tr>';
+}
+function abrirModalColaborador(id){
+  var c = id ? colaboradores.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('modal-colaborador-titulo').textContent = c ? 'Editar Colaborador' : 'Novo Colaborador';
+  document.getElementById('col-id').value = c ? c.id : '';
+  document.getElementById('col-nome').value = c ? c.nome : '';
+  document.getElementById('col-cpf').value = c ? (c.cpf||'') : '';
+  document.getElementById('col-cargo').value = c ? (c.cargo||'') : '';
+  document.getElementById('col-departamento').value = c ? (c.departamento||'') : '';
+  document.getElementById('col-admissao').value = c ? (c.data_admissao||'') : '';
+  document.getElementById('col-demissao').value = c ? (c.data_demissao||'') : '';
+  document.getElementById('col-salario').value = c ? (c.salario||'') : '';
+  document.getElementById('col-status').value = c ? c.status : 'Ativo';
+  document.getElementById('col-jornada-entrada').value = c ? (c.jornada_entrada||'08:00') : '08:00';
+  document.getElementById('col-jornada-saida-almoco').value = c ? (c.jornada_saida_almoco||'12:00') : '12:00';
+  document.getElementById('col-jornada-retorno-almoco').value = c ? (c.jornada_retorno_almoco||'13:00') : '13:00';
+  document.getElementById('col-jornada-saida').value = c ? (c.jornada_saida||'18:00') : '18:00';
+  atualizarHorasColaboradorCalculadas();
+  document.getElementById('col-telefone').value = c ? (c.telefone||'') : '';
+  document.getElementById('col-email').value = c ? (c.email||'') : '';
+  document.getElementById('col-endereco').value = c ? (c.endereco||'') : '';
+  document.getElementById('col-emerg-nome').value = c ? (c.contato_emergencia_nome||'') : '';
+  document.getElementById('col-emerg-tel').value = c ? (c.contato_emergencia_telefone||'') : '';
+  document.getElementById('col-supervisor').value = c ? (c.supervisor_id||'') : '';
+  popularSelectUsuarios(c ? (c.usuario_id||'') : '');
+  document.getElementById('col-obs').value = c ? (c.observacoes||'') : '';
+  document.getElementById('modal-colaborador').classList.add('open');
+}
+async function salvarColaborador(){
+  var id = document.getElementById('col-id').value;
+  var nome = document.getElementById('col-nome').value.trim();
+  if (!nome) { alert('Informe o nome.'); return; }
+  var payload = {
+    nome: nome,
+    cpf: document.getElementById('col-cpf').value.trim() || null,
+    cargo: document.getElementById('col-cargo').value.trim() || null,
+    departamento: document.getElementById('col-departamento').value.trim() || null,
+    data_admissao: document.getElementById('col-admissao').value || null,
+    data_demissao: document.getElementById('col-demissao').value || null,
+    salario: document.getElementById('col-salario').value || null,
+    status: document.getElementById('col-status').value,
+    jornada_entrada: document.getElementById('col-jornada-entrada').value || null,
+    jornada_saida_almoco: document.getElementById('col-jornada-saida-almoco').value || null,
+    jornada_retorno_almoco: document.getElementById('col-jornada-retorno-almoco').value || null,
+    jornada_saida: document.getElementById('col-jornada-saida').value || null,
+    telefone: document.getElementById('col-telefone').value.trim() || null,
+    email: document.getElementById('col-email').value.trim() || null,
+    endereco: document.getElementById('col-endereco').value.trim() || null,
+    contato_emergencia_nome: document.getElementById('col-emerg-nome').value.trim() || null,
+    contato_emergencia_telefone: document.getElementById('col-emerg-tel').value.trim() || null,
+    supervisor_id: document.getElementById('col-supervisor').value || null,
+    usuario_id: document.getElementById('col-usuario').value || null,
+    observacoes: document.getElementById('col-obs').value.trim() || null,
+  };
+  var url = API_BASE+'/colaboradores'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method: id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar colaborador.'); return; }
+  fecharModal('modal-colaborador');
+  await carregarColaboradores();
+}
+async function excluirColaborador(id){
+  if (!confirm('Excluir este colaborador? Isso também apaga documentos, ausências, registros de ponto e avaliações ligados a ele.')) return;
+  var res = await apiFetch(API_BASE+'/colaboradores/'+id, { method:'DELETE' });
+  if (!res.ok) { alert('Erro ao excluir.'); return; }
+  await carregarColaboradores();
+  // recarrega só as seções que já foram abertas nesta sessão
+  var recarregar = [];
+  if (carregado.documentos) recarregar.push(carregarDocumentos());
+  if (carregado.ausencias) recarregar.push(carregarAusencias());
+  if (carregado.avaliacoes) recarregar.push(carregarAvaliacoes());
+  if (carregado.ponto) recarregar.push(carregarPonto());
+  if (carregado.atribuicoes) recarregar.push(carregarAtribuicoes());
+  if (carregado.custosExtras) recarregar.push(carregarCustosExtras());
+  await Promise.all(recarregar);
+}
+
+/* ── Documentos ── */
+function situacaoDocumento(validade){
+  if (!validade) return { texto:'Sem validade', cls:'venc-ok' };
+  var hoje = new Date().toISOString().slice(0,10);
+  var diffDias = (new Date(validade) - new Date(hoje)) / 86400000;
+  if (diffDias < 0) return { texto:'Vencido', cls:'venc-estourado' };
+  if (diffDias <= 30) return { texto:'Vence em '+Math.ceil(diffDias)+'d', cls:'venc-perto' };
+  return { texto:'Em dia', cls:'venc-ok' };
+}
+async function carregarDocumentos(){
+  var r = await apiFetch(API_BASE+'/colaborador-documentos');
+  documentos = await r.json();
+  renderDocumentos();
+}
+function renderDocumentos(){
+  var filtroColab = document.getElementById('f-doc-colab').value;
+  var linhas = documentos.filter(function(d){ return !filtroColab || d.colaborador_id===filtroColab; });
+  var tbody = document.getElementById('tbody-documentos');
+  tbody.innerHTML = linhas.length ? linhas.map(function(d){
+    var sit = situacaoDocumento(d.data_validade);
+    return '<tr><td>'+e(nomeColaborador(d.colaborador_id))+'</td><td>'+e(d.tipo)+'</td><td>'+e(d.numero||'—')+'</td>'+
+      '<td>'+fmtDataBR(d.data_validade)+'</td><td><span class="badge '+sit.cls+'">'+sit.texto+'</span></td>'+
+      '<td class="acoes"><button onclick="abrirModalDocumento(\''+d.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirDocumento(\''+d.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="vazio">Nenhum documento cadastrado.</td></tr>';
+}
+function abrirModalDocumento(id){
+  var d = id ? documentos.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('doc-id').value = d ? d.id : '';
+  document.getElementById('doc-colaborador').innerHTML = selectColaboradoresHTML(false, d?d.colaborador_id:null);
+  document.getElementById('doc-tipo').value = d ? d.tipo : '';
+  document.getElementById('doc-numero').value = d ? (d.numero||'') : '';
+  document.getElementById('doc-emissao').value = d ? (d.data_emissao||'') : '';
+  document.getElementById('doc-validade').value = d ? (d.data_validade||'') : '';
+  document.getElementById('doc-arquivo').value = d ? (d.arquivo_url||'') : '';
+  document.getElementById('doc-obs').value = d ? (d.observacoes||'') : '';
+  document.getElementById('modal-documento').classList.add('open');
+}
+async function salvarDocumento(){
+  var id = document.getElementById('doc-id').value;
+  var colaborador_id = document.getElementById('doc-colaborador').value;
+  var tipo = document.getElementById('doc-tipo').value.trim();
+  if (!colaborador_id || !tipo) { alert('Selecione o colaborador e informe o tipo.'); return; }
+  var payload = {
+    colaborador_id: colaborador_id, tipo: tipo,
+    numero: document.getElementById('doc-numero').value.trim() || null,
+    data_emissao: document.getElementById('doc-emissao').value || null,
+    data_validade: document.getElementById('doc-validade').value || null,
+    arquivo_url: document.getElementById('doc-arquivo').value.trim() || null,
+    observacoes: document.getElementById('doc-obs').value.trim() || null,
+  };
+  var url = API_BASE+'/colaborador-documentos'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar documento.'); return; }
+  fecharModal('modal-documento');
+  await carregarDocumentos();
+}
+async function excluirDocumento(id){
+  if (!confirm('Excluir este documento?')) return;
+  await apiFetch(API_BASE+'/colaborador-documentos/'+id, { method:'DELETE' });
+  await carregarDocumentos();
+}
+
+/* ── Ausências / Férias / Frequência ── */
+async function carregarAusencias(){
+  var r = await apiFetch(API_BASE+'/colaborador-ausencias');
+  ausencias = await r.json();
+  renderAusencias();
+}
+function renderAusencias(){
+  var filtroColab = document.getElementById('f-aus-colab').value;
+  var filtroTipo = document.getElementById('f-aus-tipo').value;
+  var linhas = ausencias.filter(function(a){
+    if (filtroColab && a.colaborador_id!==filtroColab) return false;
+    if (filtroTipo && a.tipo!==filtroTipo) return false;
+    return true;
+  });
+  var tbody = document.getElementById('tbody-ausencias');
+  tbody.innerHTML = linhas.length ? linhas.map(function(a){
+    return '<tr><td>'+e(nomeColaborador(a.colaborador_id))+'</td><td>'+e(a.tipo)+'</td>'+
+      '<td>'+fmtDataBR(a.data_inicio)+'</td><td>'+fmtDataBR(a.data_fim)+'</td><td>'+e(a.status)+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalAusencia(\''+a.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirAusencia(\''+a.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="vazio">Nenhum registro encontrado.</td></tr>';
+}
+function abrirModalAusencia(id){
+  var a = id ? ausencias.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('aus-id').value = a ? a.id : '';
+  document.getElementById('aus-colaborador').innerHTML = selectColaboradoresHTML(false, a?a.colaborador_id:null);
+  document.getElementById('aus-tipo').value = a ? a.tipo : 'Férias';
+  document.getElementById('aus-status').value = a ? a.status : 'Solicitado';
+  document.getElementById('aus-inicio').value = a ? a.data_inicio : '';
+  document.getElementById('aus-fim').value = a ? (a.data_fim||'') : '';
+  document.getElementById('aus-obs').value = a ? (a.observacao||'') : '';
+  document.getElementById('modal-ausencia').classList.add('open');
+}
+async function salvarAusencia(){
+  var id = document.getElementById('aus-id').value;
+  var colaborador_id = document.getElementById('aus-colaborador').value;
+  var data_inicio = document.getElementById('aus-inicio').value;
+  if (!colaborador_id || !data_inicio) { alert('Selecione o colaborador e a data de início.'); return; }
+  var payload = {
+    colaborador_id: colaborador_id,
+    tipo: document.getElementById('aus-tipo').value,
+    status: document.getElementById('aus-status').value,
+    data_inicio: data_inicio,
+    data_fim: document.getElementById('aus-fim').value || null,
+    observacao: document.getElementById('aus-obs').value.trim() || null,
+  };
+  var url = API_BASE+'/colaborador-ausencias'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar registro.'); return; }
+  fecharModal('modal-ausencia');
+  await carregarAusencias();
+}
+async function excluirAusencia(id){
+  if (!confirm('Excluir este registro?')) return;
+  await apiFetch(API_BASE+'/colaborador-ausencias/'+id, { method:'DELETE' });
+  await carregarAusencias();
+}
+
+/* ── Registro de Ponto ── */
+function minutosDeHora(hhmm){
+  if (!hhmm) return null;
+  var p = hhmm.split(':');
+  return Number(p[0])*60 + Number(p[1]);
+}
+function formatMinutos(min){
+  if (min==null) return '—';
+  var sinal = min<0 ? '-' : '';
+  min = Math.abs(Math.round(min));
+  return sinal+Math.floor(min/60)+'h'+String(min%60).padStart(2,'0');
+}
+var TOLERANCIA_PONTO_MIN = 5; // CLT: ate 5min de variacao por batida nao conta como hora extra/atraso
+function ajustarPontoComTolerancia(realHHMM, esperadoHHMM){
+  var real = minutosDeHora(realHHMM);
+  if (real==null) return null;
+  var esperado = minutosDeHora(esperadoHHMM);
+  if (esperado!=null && Math.abs(real-esperado) <= TOLERANCIA_PONTO_MIN) return esperado;
+  return real;
+}
+function calcularMinutosTrabalhados(p, jornada){
+  jornada = jornada || {};
+  var entrada = ajustarPontoComTolerancia(p.entrada, jornada.jornada_entrada);
+  var saida = ajustarPontoComTolerancia(p.saida, jornada.jornada_saida);
+  if (entrada==null || saida==null) return null;
+  var total = saida - entrada;
+  var saidaAlmoco = ajustarPontoComTolerancia(p.saida_almoco, jornada.jornada_saida_almoco);
+  var retornoAlmoco = ajustarPontoComTolerancia(p.retorno_almoco, jornada.jornada_retorno_almoco);
+  if (saidaAlmoco!=null && retornoAlmoco!=null) total -= (retornoAlmoco - saidaAlmoco);
+  return total;
+}
+function jornadaDoColaborador(colaboradorId){
+  var c = colaboradores.find(function(x){ return x.id===colaboradorId; });
+  return c ? { jornada_entrada:c.jornada_entrada, jornada_saida_almoco:c.jornada_saida_almoco, jornada_retorno_almoco:c.jornada_retorno_almoco, jornada_saida:c.jornada_saida } : {};
+}
+function jornadaEsperadaMinutos(jornada){
+  var entrada = minutosDeHora(jornada.jornada_entrada), saida = minutosDeHora(jornada.jornada_saida);
+  if (entrada==null || saida==null) return 480;
+  var total = saida - entrada;
+  var saidaAlmoco = minutosDeHora(jornada.jornada_saida_almoco), retornoAlmoco = minutosDeHora(jornada.jornada_retorno_almoco);
+  if (saidaAlmoco!=null && retornoAlmoco!=null) total -= (retornoAlmoco - saidaAlmoco);
+  return total;
+}
+function atualizarHorasCalculadas(){
+  var colaboradorId = document.getElementById('ponto-colaborador').value;
+  var p = {
+    entrada: document.getElementById('ponto-entrada').value,
+    saida_almoco: document.getElementById('ponto-saida-almoco').value,
+    retorno_almoco: document.getElementById('ponto-retorno-almoco').value,
+    saida: document.getElementById('ponto-saida').value,
+  };
+  var min = calcularMinutosTrabalhados(p, jornadaDoColaborador(colaboradorId));
+  document.getElementById('ponto-horas-resultado').textContent = min==null ? '—' : formatMinutos(min);
+}
+function atualizarHorasColaboradorCalculadas(){
+  var jornada = {
+    jornada_entrada: document.getElementById('col-jornada-entrada').value,
+    jornada_saida_almoco: document.getElementById('col-jornada-saida-almoco').value,
+    jornada_retorno_almoco: document.getElementById('col-jornada-retorno-almoco').value,
+    jornada_saida: document.getElementById('col-jornada-saida').value,
+  };
+  document.getElementById('col-jornada-horas-resultado').textContent = formatMinutos(jornadaEsperadaMinutos(jornada));
+}
+async function carregarPonto(){
+  var r = await apiFetch(API_BASE+'/colaborador-ponto');
+  ponto = await r.json();
+  renderPonto();
+}
+function renderPonto(){
+  var filtroColab = document.getElementById('f-ponto-colab').value;
+  var filtroMes = document.getElementById('f-ponto-mes').value;
+  var linhas = ponto.filter(function(p){
+    if (filtroColab && p.colaborador_id!==filtroColab) return false;
+    if (filtroMes && p.data.slice(0,7)!==filtroMes) return false;
+    return true;
+  }).sort(function(a,b){ return a.data<b.data?1:-1; });
+  var tbody = document.getElementById('tbody-ponto');
+  tbody.innerHTML = linhas.length ? linhas.map(function(p){
+    var jornada = jornadaDoColaborador(p.colaborador_id);
+    var min = calcularMinutosTrabalhados(p, jornada);
+    var saldo = min==null ? null : (min - jornadaEsperadaMinutos(jornada));
+    var saldoCls = saldo==null ? '' : (saldo<-15?'aval-baixo':(saldo>15?'aval-alto':'aval-medio'));
+    var saldoTxt = saldo==null ? '—' : (saldo>=0?'+':'')+formatMinutos(saldo);
+    return '<tr><td>'+e(nomeColaborador(p.colaborador_id))+'</td><td>'+fmtDataBR(p.data)+'</td>'+
+      '<td>'+(p.entrada||'—')+'</td><td>'+(p.saida_almoco||'—')+'</td><td>'+(p.retorno_almoco||'—')+'</td><td>'+(p.saida||'—')+'</td>'+
+      '<td>'+formatMinutos(min)+'</td><td>'+(saldo==null?'—':'<span class="badge '+saldoCls+'">'+saldoTxt+'</span>')+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalPonto(\''+p.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirPonto(\''+p.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="9" class="vazio">Nenhum registro de ponto neste período.</td></tr>';
+}
+function abrirModalPonto(id){
+  var p = id ? ponto.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('ponto-id').value = p ? p.id : '';
+  document.getElementById('ponto-colaborador').innerHTML = selectColaboradoresHTML(false, p?p.colaborador_id:null);
+  document.getElementById('ponto-data').value = p ? p.data : new Date().toISOString().slice(0,10);
+  document.getElementById('ponto-entrada').value = p ? (p.entrada||'') : '';
+  document.getElementById('ponto-saida-almoco').value = p ? (p.saida_almoco||'') : '';
+  document.getElementById('ponto-retorno-almoco').value = p ? (p.retorno_almoco||'') : '';
+  document.getElementById('ponto-saida').value = p ? (p.saida||'') : '';
+  document.getElementById('ponto-obs').value = p ? (p.observacao||'') : '';
+  atualizarHorasCalculadas();
+  document.getElementById('modal-ponto').classList.add('open');
+}
+async function salvarPonto(){
+  var id = document.getElementById('ponto-id').value;
+  var colaborador_id = document.getElementById('ponto-colaborador').value;
+  var data = document.getElementById('ponto-data').value;
+  if (!colaborador_id || !data) { alert('Selecione o colaborador e a data.'); return; }
+  var payload = {
+    colaborador_id: colaborador_id,
+    data: data,
+    entrada: document.getElementById('ponto-entrada').value || null,
+    saida_almoco: document.getElementById('ponto-saida-almoco').value || null,
+    retorno_almoco: document.getElementById('ponto-retorno-almoco').value || null,
+    saida: document.getElementById('ponto-saida').value || null,
+    observacao: document.getElementById('ponto-obs').value.trim() || null,
+  };
+  var url = API_BASE+'/colaborador-ponto'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar registro de ponto (verifique se já existe um registro para esse colaborador nessa data).'); return; }
+  fecharModal('modal-ponto');
+  await carregarPonto();
+}
+async function excluirPonto(id){
+  if (!confirm('Excluir este registro de ponto?')) return;
+  await apiFetch(API_BASE+'/colaborador-ponto/'+id, { method:'DELETE' });
+  await carregarPonto();
+}
+
+/* ── Avaliações ── */
+var CRITERIOS_AVALIACAO = [
+  { categoria:'Resultados e Entregas', desc:'Avalia o quanto a pessoa entrega resultados alinhados aos objetivos.', itens:[
+    { chave:'cumprimento_metas', nome:'Cumprimento de metas', desc:'Entrega resultados no prazo e conforme o esperado' },
+    { chave:'qualidade_entregas', nome:'Qualidade das entregas', desc:'Precisão, consistência e baixo retrabalho' },
+    { chave:'foco_resultados', nome:'Foco em resultados', desc:'Prioriza atividades que geram valor' },
+  ]},
+  { categoria:'Competência Técnica', desc:'Avalia o domínio técnico necessário para a função.', itens:[
+    { chave:'conhecimento_tecnico', nome:'Conhecimento técnico', desc:'Domínio das habilidades exigidas' },
+    { chave:'aprendizado_continuo', nome:'Aprendizado contínuo', desc:'Busca atualização e novos conhecimentos' },
+    { chave:'aplicacao_pratica', nome:'Aplicação prática', desc:'Consegue aplicar o conhecimento no dia a dia' },
+  ]},
+  { categoria:'Comportamento e Atitudes (Soft Skills)', desc:'Avalia postura profissional e relacionamento.', itens:[
+    { chave:'responsabilidade', nome:'Responsabilidade', desc:'Cumpre compromissos e assume consequências' },
+    { chave:'etica_profissionalismo', nome:'Ética e profissionalismo', desc:'Age com integridade e respeito' },
+    { chave:'trabalho_equipe', nome:'Trabalho em equipe', desc:'Cooperação e relacionamento interpessoal' },
+  ]},
+  { categoria:'Comunicação', desc:'Avalia clareza e eficácia ao se comunicar.', itens:[
+    { chave:'clareza', nome:'Clareza', desc:'Transmite ideias de forma compreensível' },
+    { chave:'escuta_ativa', nome:'Escuta ativa', desc:'Ouve com atenção e abertura' },
+    { chave:'comunicacao_assertiva', nome:'Comunicação assertiva', desc:'Expressa opiniões com respeito' },
+  ]},
+  { categoria:'Proatividade e Iniciativa', desc:'Avalia capacidade de agir sem depender de ordens constantes.', itens:[
+    { chave:'antecipacao_problemas', nome:'Antecipação de problemas', desc:'Identifica riscos antes que ocorram' },
+    { chave:'proposicao_melhorias', nome:'Proposição de melhorias', desc:'Sugere soluções e inovações' },
+    { chave:'autonomia', nome:'Autonomia', desc:'Atua com independência e responsabilidade' },
+  ]},
+  { categoria:'Organização e Gestão do Tempo', desc:'Avalia eficiência na execução do trabalho.', itens:[
+    { chave:'planejamento', nome:'Planejamento', desc:'Organiza tarefas e prioridades' },
+    { chave:'gestao_prazos', nome:'Gestão de prazos', desc:'Cumpre prazos de forma consistente' },
+    { chave:'produtividade', nome:'Produtividade', desc:'Usa bem o tempo disponível' },
+  ]},
+  { categoria:'Adaptabilidade e Resiliência', desc:'Avalia reação a mudanças e desafios.', itens:[
+    { chave:'flexibilidade', nome:'Flexibilidade', desc:'Adapta-se a mudanças com facilidade' },
+    { chave:'resiliencia', nome:'Resiliência', desc:'Lida bem com pressão e adversidades' },
+    { chave:'abertura_feedback', nome:'Abertura a feedback', desc:'Aceita críticas e aprende com elas' },
+  ]},
+];
+var ESCALA_AVALIACAO = [
+  { v:-2, label:'-2 · Insatisfatório' },
+  { v:-1, label:'-1 · Abaixo do esperado' },
+  { v:0, label:'0 · Adequado / esperado' },
+  { v:1, label:'1 · Acima do esperado' },
+  { v:2, label:'2 · Satisfatório' },
+];
+function significadoMedia(media){
+  if (media <= -1.5) return 'Insatisfatório';
+  if (media <= -0.5) return 'Abaixo do esperado';
+  if (media < 0.5) return 'Adequado / dentro do esperado';
+  if (media < 1.5) return 'Acima do esperado';
+  return 'Satisfatório';
+}
+function renderCriteriosAvaliacao(valores){
+  valores = valores || {};
+  document.getElementById('aval-criterios').innerHTML = CRITERIOS_AVALIACAO.map(function(cat){
+    return '<div class="crit-categoria"><div class="crit-categoria-hd"><b>'+e(cat.categoria)+'</b><span>'+e(cat.desc)+'</span></div>'+
+      cat.itens.map(function(it){
+        var vAtual = valores[it.chave];
+        var opts = ESCALA_AVALIACAO.map(function(op){
+          return '<option value="'+op.v+'"'+(String(vAtual)===String(op.v)?' selected':'')+'>'+op.label+'</option>';
+        }).join('');
+        return '<div class="crit-item"><div class="crit-item-txt"><b>'+e(it.nome)+'</b><span>'+e(it.desc)+'</span></div>'+
+          '<select data-chave="'+it.chave+'" onchange="atualizarMediaCalculada()"><option value="">—</option>'+opts+'</select></div>';
+      }).join('') + '</div>';
+  }).join('');
+  atualizarMediaCalculada();
+}
+function atualizarMediaCalculada(){
+  var selects = document.querySelectorAll('#aval-criterios select[data-chave]');
+  var soma = 0, qtd = 0;
+  selects.forEach(function(s){ if (s.value !== '') { soma += Number(s.value); qtd++; } });
+  var el = document.getElementById('aval-media-resultado');
+  if (!qtd) { el.textContent = '—'; return; }
+  var media = soma / qtd;
+  el.textContent = media.toFixed(2)+' — '+significadoMedia(media)+(qtd<21?' (parcial, '+qtd+'/21)':'');
+}
+function coletarNotasCriterios(){
+  var notas = {};
+  document.querySelectorAll('#aval-criterios select[data-chave]').forEach(function(s){
+    if (s.value !== '') notas[s.dataset.chave] = Number(s.value);
+  });
+  return notas;
+}
+async function carregarAvaliacoes(){
+  var r = await apiFetch(API_BASE+'/colaborador-avaliacoes');
+  avaliacoes = await r.json();
+  renderAvaliacoes();
+}
+function renderAvaliacoes(){
+  var filtroColab = document.getElementById('f-aval-colab').value;
+  var linhas = avaliacoes.filter(function(a){ return !filtroColab || a.colaborador_id===filtroColab; });
+  var tbody = document.getElementById('tbody-avaliacoes');
+  tbody.innerHTML = linhas.length ? linhas.map(function(a){
+    var periodo = a.semestre || a.ano ? [a.semestre,a.ano].filter(Boolean).join(' / ') : '—';
+    var media = a.nota!=null ? Number(a.nota) : null;
+    var badgeCls = media==null ? '' : (media<-0.5?'aval-baixo':(media<0.5?'aval-medio':'aval-alto'));
+    var badge = media!=null ? '<span class="badge '+badgeCls+'">'+media.toFixed(2)+' · '+significadoMedia(media)+'</span>' : '—';
+    return '<tr><td>'+e(nomeColaborador(a.colaborador_id))+'</td><td>'+e(periodo)+'</td>'+
+      '<td>'+e(a.avaliador||'—')+'</td><td>'+badge+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalAvaliacao(\''+a.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirAvaliacao(\''+a.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="5" class="vazio">Nenhuma avaliação registrada.</td></tr>';
+}
+function abrirModalAvaliacao(id){
+  var a = id ? avaliacoes.find(function(x){ return x.id===id; }) : null;
+  var hoje = new Date();
+  document.getElementById('aval-id').value = a ? a.id : '';
+  document.getElementById('aval-colaborador').innerHTML = selectColaboradoresHTML(false, a?a.colaborador_id:null);
+  document.getElementById('aval-data').value = a ? (a.data_avaliacao||new Date().toISOString().slice(0,10)) : new Date().toISOString().slice(0,10);
+  document.getElementById('aval-semestre').value = a ? (a.semestre||'1º Semestre') : (hoje.getMonth()<6?'1º Semestre':'2º Semestre');
+  document.getElementById('aval-ano').value = a ? (a.ano||hoje.getFullYear()) : hoje.getFullYear();
+  document.getElementById('aval-avaliador').value = a ? (a.avaliador||'') : '';
+  document.getElementById('aval-fortes').value = a ? (a.pontos_fortes||'') : '';
+  document.getElementById('aval-melhoria').value = a ? (a.pontos_melhoria||'') : '';
+  renderCriteriosAvaliacao(a ? a.notas_criterios : null);
+  document.getElementById('modal-avaliacao').classList.add('open');
+}
+async function salvarAvaliacao(){
+  var id = document.getElementById('aval-id').value;
+  var colaborador_id = document.getElementById('aval-colaborador').value;
+  if (!colaborador_id) { alert('Selecione o colaborador.'); return; }
+  var notas_criterios = coletarNotasCriterios();
+  var chaves = Object.keys(notas_criterios);
+  var media = chaves.length ? chaves.reduce(function(s,k){ return s+notas_criterios[k]; },0)/chaves.length : null;
+  var payload = {
+    colaborador_id: colaborador_id,
+    data_avaliacao: document.getElementById('aval-data').value || null,
+    semestre: document.getElementById('aval-semestre').value || null,
+    ano: document.getElementById('aval-ano').value ? Number(document.getElementById('aval-ano').value) : null,
+    nota: media,
+    notas_criterios: notas_criterios,
+    avaliador: document.getElementById('aval-avaliador').value.trim() || null,
+    pontos_fortes: document.getElementById('aval-fortes').value.trim() || null,
+    pontos_melhoria: document.getElementById('aval-melhoria').value.trim() || null,
+  };
+  var url = API_BASE+'/colaborador-avaliacoes'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar avaliação.'); return; }
+  fecharModal('modal-avaliacao');
+  await carregarAvaliacoes();
+}
+async function excluirAvaliacao(id){
+  if (!confirm('Excluir esta avaliação?')) return;
+  await apiFetch(API_BASE+'/colaborador-avaliacoes/'+id, { method:'DELETE' });
+  await carregarAvaliacoes();
+}
+
+/* ── Organograma (árvore de caixas conectadas, tipo organograma clássico) ── */
+function renderOrganograma(){
+  var raiz = colaboradores.filter(function(c){ return !c.supervisor_id; });
+  var el = document.getElementById('org-tree');
+  if (!colaboradores.length) { el.innerHTML = '<li class="vazio" style="list-style:none">Nenhum colaborador cadastrado ainda.</li>'; return; }
+  el.innerHTML = raiz.map(function(c){ return renderNoOrganograma(c); }).join('');
+}
+function renderNoOrganograma(c){
+  var filhos = colaboradores.filter(function(x){ return x.supervisor_id===c.id; });
+  var caixa = '<div class="org-box">'+e(c.nome)+'<span class="org-cargo">'+e(c.cargo||'')+(c.departamento?' · '+e(c.departamento):'')+'</span></div>';
+  var sub = filhos.length ? '<ul>'+filhos.map(renderNoOrganograma).join('')+'</ul>' : '';
+  return '<li>'+caixa+sub+'</li>';
+}
+
+/* ════════════════════════════════════════════════════════════
+   BENEFÍCIOS E CUSTOS
+════════════════════════════════════════════════════════════ */
+function nomeBeneficio(id){ var b = beneficios.find(function(x){ return x.id===id; }); return b ? b.nome : '(removido)'; }
+
+/* ── Benefícios (catálogo) ── */
+async function carregarBeneficios(){
+  var r = await apiFetch(API_BASE+'/rh-beneficios');
+  beneficios = await r.json();
+  renderBeneficios();
+}
+function renderBeneficios(){
+  var tbody = document.getElementById('tbody-beneficios');
+  tbody.innerHTML = beneficios.length ? beneficios.map(function(b){
+    return '<tr><td>'+e(b.nome)+'</td><td>'+e(b.tipo||'—')+'</td><td>'+fmtBRL(b.valor_padrao)+'</td>'+
+      '<td>'+(b.ativo?'<span class="badge ativo">Sim</span>':'<span class="badge encerrado">Não</span>')+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalBeneficio(\''+b.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirBeneficio(\''+b.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="5" class="vazio">Nenhum benefício cadastrado.</td></tr>';
+}
+function abrirModalBeneficio(id){
+  var b = id ? beneficios.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('modal-beneficio-titulo').textContent = b ? 'Editar Benefício' : 'Novo Benefício';
+  document.getElementById('ben-id').value = b ? b.id : '';
+  document.getElementById('ben-nome').value = b ? b.nome : '';
+  document.getElementById('ben-tipo').value = b ? (b.tipo||'') : '';
+  document.getElementById('ben-valor').value = b ? (b.valor_padrao||'') : '';
+  document.getElementById('ben-ativo').checked = b ? !!b.ativo : true;
+  document.getElementById('modal-beneficio').classList.add('open');
+}
+async function salvarBeneficio(){
+  var id = document.getElementById('ben-id').value;
+  var nome = document.getElementById('ben-nome').value.trim();
+  if (!nome) { alert('Informe o nome do benefício.'); return; }
+  var payload = {
+    nome: nome,
+    tipo: document.getElementById('ben-tipo').value.trim() || null,
+    valor_padrao: document.getElementById('ben-valor').value || null,
+    ativo: document.getElementById('ben-ativo').checked,
+  };
+  var url = API_BASE+'/rh-beneficios'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar benefício.'); return; }
+  fecharModal('modal-beneficio');
+  await carregarBeneficios();
+  if (carregado.atribuicoes) renderAtribuicoes();
+}
+async function excluirBeneficio(id){
+  if (!confirm('Excluir este benefício?')) return;
+  await apiFetch(API_BASE+'/rh-beneficios/'+id, { method:'DELETE' });
+  await carregarBeneficios();
+  if (carregado.atribuicoes) renderAtribuicoes();
+}
+
+/* ── Atribuição por colaborador ── */
+async function carregarAtribuicoes(){
+  var r = await apiFetch(API_BASE+'/colaborador-beneficios');
+  atribuicoes = await r.json();
+  renderAtribuicoes();
+}
+function renderAtribuicoes(){
+  var filtro = document.getElementById('f-atrib-colab').value;
+  var linhas = atribuicoes.filter(function(a){ return !filtro || a.colaborador_id===filtro; });
+  var tbody = document.getElementById('tbody-atribuicoes');
+  tbody.innerHTML = linhas.length ? linhas.map(function(a){
+    var badgeCls = a.status==='Ativo'?'ativo':(a.status==='Suspenso'?'suspenso':'encerrado');
+    return '<tr><td>'+e(nomeColaborador(a.colaborador_id))+'</td><td>'+e(nomeBeneficio(a.beneficio_id))+'</td>'+
+      '<td>'+fmtBRL(a.valor)+'</td><td>'+fmtDataBR(a.data_inicio)+'</td><td><span class="badge '+badgeCls+'">'+e(a.status)+'</span></td>'+
+      '<td class="acoes"><button onclick="abrirModalAtribuicao(\''+a.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirAtribuicao(\''+a.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="vazio">Nenhuma atribuição encontrada.</td></tr>';
+}
+function opcoesBeneficiosHTML(valorAtual){
+  return beneficios.map(function(b){ return '<option value="'+b.id+'"'+(b.id===valorAtual?' selected':'')+'>'+e(b.nome)+'</option>'; }).join('');
+}
+function preencherValorPadrao(){
+  var b = beneficios.find(function(x){ return x.id===document.getElementById('atrib-beneficio').value; });
+  if (b && !document.getElementById('atrib-valor').value) document.getElementById('atrib-valor').value = b.valor_padrao || '';
+}
+function abrirModalAtribuicao(id){
+  var a = id ? atribuicoes.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('atrib-id').value = a ? a.id : '';
+  document.getElementById('atrib-colaborador').innerHTML = selectColaboradoresHTML(false, a?a.colaborador_id:null);
+  document.getElementById('atrib-beneficio').innerHTML = opcoesBeneficiosHTML(a?a.beneficio_id:null);
+  document.getElementById('atrib-valor').value = a ? (a.valor||'') : '';
+  document.getElementById('atrib-status').value = a ? a.status : 'Ativo';
+  document.getElementById('atrib-inicio').value = a ? a.data_inicio : new Date().toISOString().slice(0,10);
+  document.getElementById('atrib-fim').value = a ? (a.data_fim||'') : '';
+  document.getElementById('modal-atribuicao').classList.add('open');
+}
+async function salvarAtribuicao(){
+  var id = document.getElementById('atrib-id').value;
+  var colaborador_id = document.getElementById('atrib-colaborador').value;
+  var beneficio_id = document.getElementById('atrib-beneficio').value;
+  if (!colaborador_id || !beneficio_id) { alert('Selecione o colaborador e o benefício.'); return; }
+  var payload = {
+    colaborador_id: colaborador_id, beneficio_id: beneficio_id,
+    valor: document.getElementById('atrib-valor').value || null,
+    status: document.getElementById('atrib-status').value,
+    data_inicio: document.getElementById('atrib-inicio').value || null,
+    data_fim: document.getElementById('atrib-fim').value || null,
+  };
+  var url = API_BASE+'/colaborador-beneficios'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar atribuição.'); return; }
+  fecharModal('modal-atribuicao');
+  await carregarAtribuicoes();
+}
+async function excluirAtribuicao(id){
+  if (!confirm('Excluir esta atribuição?')) return;
+  await apiFetch(API_BASE+'/colaborador-beneficios/'+id, { method:'DELETE' });
+  await carregarAtribuicoes();
+}
+
+/* ── Indicadores (Custos de RH) ── */
+async function carregarResumoCustos(){
+  var r = await apiFetch(API_BASE+'/rh-analise/resumo-custos');
+  var resumo = await r.json();
+  document.getElementById('kpi-colaboradores').textContent = resumo.colaboradoresAtivos;
+  document.getElementById('kpi-salarios').textContent = fmtBRL(resumo.totalSalarios);
+  document.getElementById('kpi-beneficios').textContent = fmtBRL(resumo.totalBeneficios);
+  document.getElementById('kpi-extras').textContent = fmtBRL(resumo.totalCustosExtrasMes);
+  document.getElementById('kpi-total').textContent = fmtBRL(resumo.custoTotalMensalEstimado);
+
+  if (chartDepto) chartDepto.destroy();
+  chartDepto = new Chart(document.getElementById('chart-departamento'), {
+    type: 'bar',
+    data: { labels: resumo.porDepartamento.labels, datasets: [{ data: resumo.porDepartamento.data, backgroundColor: '#F5B800' }] },
+    options: { indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:function(v){return fmtBRL(v);}}}} }
+  });
+  if (chartExtras) chartExtras.destroy();
+  chartExtras = new Chart(document.getElementById('chart-extras'), {
+    type: 'doughnut',
+    data: { labels: resumo.porTipoExtra.labels, datasets: [{ data: resumo.porTipoExtra.data, backgroundColor: ['#F5B800','#22C55E','#3B82F6','#EF4444','#A855F7','#F97316'] }] },
+    options: { maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{boxWidth:10,font:{size:10}}}} }
+  });
+}
+async function carregarCustosExtras(){
+  var r = await apiFetch(API_BASE+'/rh-custos-extras');
+  custosExtras = await r.json();
+  renderCustosExtras();
+}
+function renderCustosExtras(){
+  var tbody = document.getElementById('tbody-custos-extras');
+  tbody.innerHTML = custosExtras.length ? custosExtras.map(function(c){
+    return '<tr><td>'+fmtDataBR(c.data)+'</td><td>'+e(c.tipo)+'</td><td>'+e(c.descricao||'—')+'</td>'+
+      '<td>'+e(nomeColaborador(c.colaborador_id))+'</td><td>'+fmtBRL(c.valor)+'</td>'+
+      '<td class="acoes"><button onclick="abrirModalCustoExtra(\''+c.id+'\')" title="Editar"><i class="ti ti-pencil"></i></button>'+
+      '<button class="excluir" onclick="excluirCustoExtra(\''+c.id+'\')" title="Excluir"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="vazio">Nenhum custo extra lançado.</td></tr>';
+}
+function abrirModalCustoExtra(id){
+  var c = id ? custosExtras.find(function(x){ return x.id===id; }) : null;
+  document.getElementById('custo-id').value = c ? c.id : '';
+  document.getElementById('custo-tipo').value = c ? c.tipo : 'Treinamento';
+  document.getElementById('custo-valor').value = c ? c.valor : '';
+  document.getElementById('custo-data').value = c ? c.data : new Date().toISOString().slice(0,10);
+  document.getElementById('custo-colaborador').value = c ? (c.colaborador_id||'') : '';
+  document.getElementById('custo-descricao').value = c ? (c.descricao||'') : '';
+  document.getElementById('modal-custo-extra').classList.add('open');
+}
+async function salvarCustoExtra(){
+  var id = document.getElementById('custo-id').value;
+  var valor = document.getElementById('custo-valor').value;
+  if (!valor) { alert('Informe o valor.'); return; }
+  var payload = {
+    tipo: document.getElementById('custo-tipo').value,
+    valor: valor,
+    data: document.getElementById('custo-data').value || null,
+    colaborador_id: document.getElementById('custo-colaborador').value || null,
+    descricao: document.getElementById('custo-descricao').value.trim() || null,
+  };
+  var url = API_BASE+'/rh-custos-extras'+(id?'/'+id:'');
+  var res = await apiFetch(url, { method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  if (!res.ok) { alert('Erro ao salvar custo extra.'); return; }
+  fecharModal('modal-custo-extra');
+  await carregarCustosExtras();
+  await carregarResumoCustos();
+}
+async function excluirCustoExtra(id){
+  if (!confirm('Excluir este custo extra?')) return;
+  await apiFetch(API_BASE+'/rh-custos-extras/'+id, { method:'DELETE' });
+  await carregarCustosExtras();
+  await carregarResumoCustos();
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOT — carrega os colaboradores (base de tudo) e abre Indicadores
+════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function(){
+  if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
+  document.getElementById('f-ponto-mes').value = new Date().toISOString().slice(0,7);
+  colaboradoresProntos = carregarColaboradores().catch(function(err){ console.error('Falha ao carregar colaboradores:', err); });
+  showView('indicadores');
+});
+</script>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   RECRUTAMENTO E SELEÇÃO
+   (bloco separado: se a lib de PDF não carregar, o resto da tela continua funcionando)
+   Usa as funções compartilhadas do bloco acima: apiFetch, getAuthToken,
+   API_BASE, e() (escape HTML), fmtDataBR(), showView(), currentView, VIEWS.
+════════════════════════════════════════════════════════════ */
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// Converte uma vaga/candidato vindo da API (snake_case) pro formato usado
+// no resto desta tela (nomes de campo em camelCase, igual ao antigo cache local).
+function mapearVagaDoApi_(v) {
+  return {
+    id: v.id,
+    titulo: v.titulo||'',
+    departamento: v.departamento||'',
+    empresa: v.empresa||'',
+    tipo: v.tipo||'',
+    local: v.local||'',
+    status: v.status||'',
+    descricao: v.descricao||'',
+    requisitos: v.requisitos||'',
+    dataAbertura: fmtDataBR(v.criado_em),
+    candidatos: (v.candidatos||[]).map(mapearCandidatoDoApi_)
+  };
+}
+function mapearCandidatoDoApi_(c) {
+  return {
+    id: c.id,
+    nome: c.nome||'',
+    arquivoNome: c.arquivo_nome||'',
+    textoExtraido: c.texto_extraido||'',
+    score: c.score||0,
+    pontosFortes: c.pontos_fortes||[],
+    pontosAtencao: c.pontos_atencao||[],
+    resumoIA: c.resumo_ia||'',
+    status: c.status||'',
+    dataUpload: fmtDataBR(c.criado_em)
+  };
+}
+
+const EMPRESAS = {
+  barretos:"Barreto's Transportes e Serviços",
+  infra:"Barreto's Sites e Infraestrutura",
+  goncalves:"Gonçalves Soluções em Logística",
+  pinheiro:"Pinheiro Transportes e Serviços"
+};
+
+const ETAPAS = ["Triagem","Entrevista RH","Entrevista Gestor","Proposta","Contratado","Reprovado"];
+
+let state = {
+  vagas: [],
+  vagaAtivaId: null,
+  candidatoAtivoId: null
+};
+let carregandoDados = false;
+let modalOuPainelAberto = () => document.getElementById('modalVaga').classList.contains('open') || document.getElementById('candPanel').classList.contains('open');
+
+function urlConfigurada(){
+  return !!getAuthToken();
+}
+
+// Cache local só para pintar a tela instantaneamente ao abrir;
+// a fonte da verdade é sempre o banco.
+function lerCacheLocal(){
+  try{
+    const raw = localStorage.getItem('rh_vagas_cache');
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function salvarCacheLocal(){
+  try{ localStorage.setItem('rh_vagas_cache', JSON.stringify(state.vagas)); }catch(e){}
+}
+
+async function loadAllData(mostrarCarregando){
+  if(!urlConfigurada()){
+    // Sem sessão: roda tudo local (modo de teste)
+    state.vagas = lerCacheLocal();
+    return;
+  }
+  if(carregandoDados) return;
+  carregandoDados = true;
+  if(mostrarCarregando) setTopoCarregando(true);
+  try{
+    const resp = await apiFetch(API_BASE + '/rh/vagas');
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error||'Erro ao carregar');
+    state.vagas = (data||[]).map(mapearVagaDoApi_);
+    salvarCacheLocal();
+  }catch(err){
+    console.error('Falha ao carregar dados do RH:', err);
+    if(!state.vagas.length) state.vagas = lerCacheLocal();
+  }finally{
+    carregandoDados = false;
+    if(mostrarCarregando) setTopoCarregando(false);
+  }
+}
+
+// Mostra "carregando" no subtítulo da barra superior — só se o usuário ainda
+// estiver numa tela do Recrutamento; ao terminar, volta pro subtítulo da tela atual.
+function setTopoCarregando(ligado){
+  const el = document.getElementById('topbar-sub');
+  if(!el) return;
+  const cfg = VIEWS[currentView] || {};
+  if(ligado){ if(cfg.rec) el.textContent = '/ Carregando dados...'; }
+  else atualizarTopbarSub();
+}
+
+async function enviarAoServidor(payload){
+  if(!urlConfigurada()) return null; // sem sessão — não envia nada
+  try{
+    var acao = payload.action;
+    var res;
+    if(acao === 'criarVaga'){
+      res = await apiFetch(API_BASE + '/rh/vagas', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    }else if(acao === 'atualizarVaga'){
+      res = await apiFetch(API_BASE + '/rh/vagas/' + payload.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ descricao: payload.descricao, requisitos: payload.requisitos }) });
+    }else if(acao === 'limparCandidatosVaga'){
+      res = await apiFetch(API_BASE + '/rh/vagas/' + payload.vagaId + '/candidatos', { method:'DELETE' });
+    }else if(acao === 'criarCandidato'){
+      res = await apiFetch(API_BASE + '/rh/candidatos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    }else if(acao === 'atualizarStatusCandidato'){
+      res = await apiFetch(API_BASE + '/rh/candidatos/' + payload.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: payload.status }) });
+    }else{
+      return null;
+    }
+    var j = await res.json();
+    if(!res.ok) throw new Error(j.error||'Erro ao salvar');
+    return j;
+  }catch(err){
+    console.error('Falha ao gravar no banco:', err);
+    alert('Não foi possível salvar agora. A alteração ficou só nesta tela — tente novamente em instantes.');
+    return null;
+  }
+}
+
+// Mantém a tela em dia com o banco (útil quando mais de uma pessoa usa o RH ao mesmo tempo).
+// Só começa depois que alguém abre o Recrutamento pela primeira vez.
+function iniciarAutoRefresh(){
+  if(!urlConfigurada()) return;
+  setInterval(async ()=>{
+    if(modalOuPainelAberto()) return;
+    await loadAllData(false);
+    renderAll();
+  }, 30000);
+}
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+document.getElementById('filtroEmpresa').addEventListener('change', renderAll);
+
+/* ============================================================
+   RENDER
+============================================================= */
+function empresaFiltro(){ return document.getElementById('filtroEmpresa').value; }
+function vagasFiltradas(){
+  const f = empresaFiltro();
+  return f==='todas' ? state.vagas : state.vagas.filter(v=>v.empresa===f);
+}
+
+function renderAll(){
+  renderSidebarVagas();
+  renderKpis();
+  renderFunnel();
+  renderVagasGrid('dashVagasGrid', 6);
+  renderVagasGrid('vagasGridFull', 999);
+  renderTalentos();
+  if(state.vagaAtivaId) renderDetalheVaga();
+}
+
+function renderSidebarVagas(){
+  const el = document.getElementById('sidebarVagasList');
+  const list = vagasFiltradas();
+  el.innerHTML = list.length ? list.map(v=>`
+    <div class="vaga-mini ${v.id===state.vagaAtivaId?'active':''}" onclick="abrirVaga('${v.id}')">
+      <div class="vaga-mini-title">${e(v.titulo)}</div>
+      <div class="vaga-mini-meta"><span>${v.candidatos.length} candidato(s)</span><span class="vaga-mini-badge ${badgeClass(v.status)}">${v.status}</span></div>
+    </div>
+  `).join('') : `<div style="font-size:11px;color:var(--txt-dim);padding:6px 10px;">Nenhuma vaga cadastrada</div>`;
+}
+
+function badgeClass(status){
+  return status==='Aberta' ? 'rec-badge-aberta' : status==='Pausada' ? 'rec-badge-pausada' : 'rec-badge-fechada';
+}
+
+function renderKpis(){
+  const list = vagasFiltradas();
+  const candidatos = list.flatMap(v=>v.candidatos);
+  document.getElementById('kpiVagas').textContent = list.filter(v=>v.status==='Aberta').length;
+  document.getElementById('kpiCandidatos').textContent = candidatos.length;
+  const media = candidatos.length ? Math.round(candidatos.reduce((s,c)=>s+c.score,0)/candidatos.length) : null;
+  document.getElementById('kpiAderencia').textContent = media!==null ? media+'%' : '—';
+  document.getElementById('kpiAprovados').textContent = candidatos.filter(c=>c.score>=75).length;
+}
+
+function renderFunnel(){
+  const candidatos = vagasFiltradas().flatMap(v=>v.candidatos);
+  const wrap = document.getElementById('funnelWrap');
+  wrap.innerHTML = ETAPAS.map(etapa=>{
+    const n = candidatos.filter(c=>c.status===etapa).length;
+    return `<div class="funnel-stage"><div class="funnel-num">${n}</div><div class="funnel-label">${etapa}</div></div>`;
+  }).join('');
+}
+
+function renderVagasGrid(elId, limit){
+  const el = document.getElementById(elId);
+  const list = vagasFiltradas().slice(0, limit);
+  if(!list.length){
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="ti ti-briefcase-off"></i><p>Nenhuma vaga cadastrada ainda. Clique em "Nova Vaga" para começar.</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(v=>{
+    const media = v.candidatos.length ? Math.round(v.candidatos.reduce((s,c)=>s+c.score,0)/v.candidatos.length) : 0;
+    return `
+    <div class="vaga-card" onclick="abrirVaga('${v.id}')">
+      <div class="vaga-card-top">
+        <div><div class="vaga-card-title">${e(v.titulo)}</div><div class="vaga-card-dept">${e(v.departamento)} · ${EMPRESAS[v.empresa]}</div></div>
+        <span class="rec-badge ${badgeClass(v.status)}">${v.status}</span>
+      </div>
+      <div class="vaga-card-mid">
+        <span><i class="ti ti-users"></i> ${v.candidatos.length} candidato(s)</span>
+        <span><i class="ti ti-map-pin"></i> ${e(v.local||'—')}</span>
+      </div>
+      <div class="rec-sub" style="margin-bottom:2px;">Aderência média</div>
+      <div class="vaga-card-bar"><div style="width:${media}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderTalentos(){
+  const candidatos = [];
+  vagasFiltradas().forEach(v=> v.candidatos.forEach(c=> candidatos.push({...c, vagaTitulo:v.titulo, vagaId:v.id})));
+  candidatos.sort((a,b)=>b.score-a.score);
+  const body = document.getElementById('talentosBody');
+  const empty = document.getElementById('talentosEmpty');
+  if(!candidatos.length){ body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  body.innerHTML = candidatos.map(c=>`
+    <tr onclick="abrirCandidato('${c.vagaId}','${c.id}')">
+      <td class="cand-name">${e(c.nome)}</td>
+      <td>${e(c.vagaTitulo)}</td>
+      <td>${scorePill(c.score)}</td>
+      <td>${e(c.status)}</td>
+      <td class="mono">${c.dataUpload}</td>
+    </tr>
+  `).join('');
+}
+
+function scorePill(score){
+  const cls = score>=75?'score-alta':score>=50?'score-media':'score-baixa';
+  return `<span class="score-pill ${cls}"><i class="ti ti-target-arrow"></i> ${score}%</span>`;
+}
+
+/* ============================================================
+   VAGAS: criar / abrir / salvar
+============================================================= */
+document.getElementById('btnNovaVaga').addEventListener('click',()=>{
+  document.getElementById('modalVaga').classList.add('open');
+});
+function fecharModalVaga(){ document.getElementById('modalVaga').classList.remove('open'); }
+
+async function criarVaga(){
+  const titulo = document.getElementById('nvTitulo').value.trim();
+  if(!titulo){ alert('Informe o título da vaga.'); return; }
+  const payload = {
+    action: 'criarVaga',
+    titulo,
+    departamento: document.getElementById('nvDepto').value.trim() || '—',
+    empresa: document.getElementById('nvEmpresa').value,
+    tipo: document.getElementById('nvTipo').value,
+    local: document.getElementById('nvLocal').value.trim(),
+    descricao: document.getElementById('nvDescricao').value.trim(),
+    requisitos: document.getElementById('nvRequisitos').value.trim()
+  };
+  const criada = await enviarAoServidor(payload);
+  if(!criada){ alert('Não foi possível criar a vaga agora. Tente novamente.'); return; }
+  const vaga = mapearVagaDoApi_(criada);
+  state.vagas.unshift(vaga);
+  salvarCacheLocal();
+  ['nvTitulo','nvDepto','nvLocal','nvDescricao','nvRequisitos'].forEach(id=>document.getElementById(id).value='');
+  fecharModalVaga();
+  abrirVaga(vaga.id);
+}
+
+// Drill-down de uma vaga (cards do Painel/Vagas e lista da barra lateral)
+function abrirVaga(id){
+  state.vagaAtivaId = id;
+  showView('detalhe');
+}
+
+function getVagaAtiva(){ return state.vagas.find(v=>v.id===state.vagaAtivaId); }
+
+function limparCandidatosVagaAtual(){
+  const v = getVagaAtiva();
+  if(!v) return;
+  if(!v.candidatos.length){ return; }
+  if(!confirm(`Remover todos os ${v.candidatos.length} candidato(s) triado(s) desta vaga? Essa ação não pode ser desfeita.`)) return;
+  v.candidatos = [];
+  salvarCacheLocal();
+  enviarAoServidor({ action:'limparCandidatosVaga', vagaId: v.id });
+  renderDetalheVaga();
+  renderAll();
+}
+
+function renderDetalheVaga(){
+  const v = getVagaAtiva();
+  if(!v) return;
+  document.getElementById('detalheTitulo').innerHTML = `<i class="ti ti-briefcase"></i> ${e(v.titulo)}`;
+  document.getElementById('detalheBadge').className = 'rec-badge ' + badgeClass(v.status);
+  document.getElementById('detalheBadge').textContent = v.status;
+  document.getElementById('detalheMeta').textContent = `${v.departamento} · ${EMPRESAS[v.empresa]} · ${v.tipo} · ${v.local||'local não informado'} · aberta em ${v.dataAbertura}`;
+  document.getElementById('detalheDescricao').value = v.descricao || '';
+  document.getElementById('detalheRequisitos').value = v.requisitos || '';
+  // só troca o título da barra superior se o detalhe for a tela aberta agora
+  // (o auto-refresh chama isso em segundo plano com qualquer tela aberta)
+  if(currentView==='detalhe') document.getElementById('topbar-title').textContent = v.titulo;
+
+  const cands = [...v.candidatos].sort((a,b)=>b.score-a.score);
+  document.getElementById('countCandidatos').textContent = `${cands.length} candidato(s)`;
+  const table = document.getElementById('candTable');
+  const empty = document.getElementById('candEmpty');
+  const body = document.getElementById('candTableBody');
+  if(!cands.length){
+    table.style.display='none'; empty.style.display='block';
+  }else{
+    table.style.display=''; empty.style.display='none';
+    body.innerHTML = cands.map(c=>`
+      <tr onclick="abrirCandidato('${v.id}','${c.id}')">
+        <td><div class="cand-name">${e(c.nome)}</div><div class="cand-file"><i class="ti ti-paperclip"></i> ${e(c.arquivoNome)}</div></td>
+        <td>${scorePill(c.score)}</td>
+        <td>${e(c.status)}</td>
+        <td style="text-align:right;color:var(--txt-dim);"><i class="ti ti-chevron-right"></i></td>
+      </tr>
+    `).join('');
+  }
+}
+
+function salvarVaga(){
+  const v = getVagaAtiva();
+  if(!v) return;
+  v.descricao = document.getElementById('detalheDescricao').value.trim();
+  v.requisitos = document.getElementById('detalheRequisitos').value.trim();
+  salvarCacheLocal();
+  enviarAoServidor({ action:'atualizarVaga', id: v.id, descricao: v.descricao, requisitos: v.requisitos });
+  renderAll();
+}
+
+/* ============================================================
+   UPLOAD & EXTRAÇÃO DE TEXTO (PDF / Word)
+============================================================= */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('click',()=>fileInput.click());
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('dragover');});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop',e=>{
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change',e=>handleFiles(e.target.files));
+
+async function handleFiles(files){
+  const v = getVagaAtiva();
+  if(!v){ return; }
+  for(const file of files){
+    await processarCurriculo(file, v);
+  }
+  fileInput.value = '';
+}
+
+async function extrairTextoPdf(arrayBuffer){
+  const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+  let texto = '';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    texto += content.items.map(it=>it.str).join(' ') + '\n';
+  }
+  return texto;
+}
+async function extrairTextoDocx(arrayBuffer){
+  const result = await mammoth.extractRawText({arrayBuffer});
+  return result.value;
+}
+
+// Fallback para PDFs sem camada de texto (ex: currículos exportados do Canva,
+// prints de tela ou digitalizados como imagem): renderiza cada página em
+// canvas e aplica OCR.
+// Cuidado especial: alguns currículos chegam como um único print de tela
+// MUITO comprido (ex: scroll de página inteira virando 1 página de PDF com
+// proporção tipo 1:7). Escalar isso num canvas só pode ultrapassar o limite
+// de tamanho de canvas que os navegadores aceitam (Chrome trava perto de
+// 16384px numa dimensão) e o OCR falha silenciosamente. Por isso a escala é
+// calculada a partir do tamanho real da página, e páginas que mesmo assim
+// ficariam altas demais são processadas em fatias horizontais.
+async function extrairTextoPdfViaOcr(arrayBuffer, onProgress){
+  const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+  const maxPages = Math.min(pdf.numPages, 4);
+  const LIMITE_SEGURO = 3500; // bem abaixo do limite dos navegadores, com folga
+  let texto = '';
+  for(let i=1;i<=maxPages;i++){
+    const page = await pdf.getPage(i);
+    const base = page.getViewport({scale:1});
+
+    // Escolhe a maior escala possível sem estourar o limite seguro de canvas
+    let scale = Math.min(2.2, LIMITE_SEGURO/base.width, LIMITE_SEGURO/base.height);
+    scale = Math.max(scale, 0.4); // não deixa a imagem ficar ilegível demais
+    const viewport = page.getViewport({scale});
+
+    if(viewport.height <= LIMITE_SEGURO){
+      if(onProgress) onProgress(i, maxPages, 1, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({canvasContext: ctx, viewport}).promise;
+      const { data:{ text } } = await Tesseract.recognize(canvas, 'por');
+      texto += text + '\n';
+    } else {
+      // Página fora do padrão (ex: print de tela inteira) — processa em
+      // fatias verticais, cada uma dentro do limite seguro de canvas.
+      const partes = Math.min(Math.ceil(viewport.height/LIMITE_SEGURO), 10);
+      for(let p=0; p<partes; p++){
+        if(onProgress) onProgress(i, maxPages, p+1, partes);
+        const offsetY = p*LIMITE_SEGURO;
+        const alturaParte = Math.min(LIMITE_SEGURO, viewport.height-offsetY);
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = alturaParte;
+        const ctx = canvas.getContext('2d');
+        ctx.translate(0, -offsetY); // desloca o desenho pra essa fatia cair no topo do canvas
+        await page.render({canvasContext: ctx, viewport}).promise;
+        const { data:{ text } } = await Tesseract.recognize(canvas, 'por');
+        texto += text + '\n';
+      }
+    }
+  }
+  return texto;
+}
+
+function setUploadStatus(html){
+  document.getElementById('uploadStatus').innerHTML = html;
+}
+
+async function processarCurriculo(file, vaga){
+  setUploadStatus(`<div class="loading-inline"><div class="spin"></div> Lendo "${e(file.name)}"...</div>`);
+  try{
+    const buffer = await file.arrayBuffer();
+    let texto = '';
+    const nomeArq = file.name.toLowerCase();
+    if(nomeArq.endsWith('.pdf')){
+      texto = await extrairTextoPdf(buffer);
+    }else if(nomeArq.endsWith('.docx') || nomeArq.endsWith('.doc')){
+      texto = await extrairTextoDocx(buffer);
+    }else{
+      setUploadStatus(`<div style="color:var(--red);font-size:12px;">Formato não suportado. Envie PDF ou Word.</div>`);
+      return;
+    }
+    texto = texto.replace(/\s+/g,' ').trim();
+
+    if(texto.length < 30 && nomeArq.endsWith('.pdf')){
+      // PDF sem camada de texto (imagem/escaneado) — tenta OCR antes de desistir
+      try{
+        const bufferOcr = await file.arrayBuffer();
+        texto = await extrairTextoPdfViaOcr(bufferOcr, (pagina, total, parte, partes)=>{
+          const sufixoParte = partes>1 ? ` (parte ${parte}/${partes})` : '';
+          setUploadStatus(`<div class="loading-inline"><div class="spin"></div> Currículo parece ser uma imagem — aplicando OCR (página ${pagina}/${total}${sufixoParte})...</div>`);
+        });
+        texto = texto.replace(/\s+/g,' ').trim();
+      }catch(ocrErr){
+        console.error(ocrErr);
+      }
+    }
+
+    if(texto.length < 30){
+      setUploadStatus(`<div style="color:var(--red);font-size:12px;">Não foi possível extrair texto legível do arquivo, mesmo com OCR. Tente uma foto/scan com melhor qualidade ou peça o currículo em Word.</div>`);
+      return;
+    }
+
+    setUploadStatus(`<div class="loading-inline"><div class="spin"></div> Analisando aderência à vaga...</div>`);
+    const analise = analisarCurriculoLocal(texto, vaga);
+
+    const payloadCandidato = {
+      action: 'criarCandidato',
+      vagaId: vaga.id,
+      nome: analise.nome_candidato || file.name.replace(/\.(pdf|docx?|DOC)$/i,''),
+      arquivoNome: file.name,
+      textoExtraido: texto.slice(0, 6000),
+      score: clampScore(analise.score),
+      pontosFortes: analise.pontos_fortes || [],
+      pontosAtencao: analise.pontos_de_atencao || [],
+      resumoIA: analise.resumo || 'Análise indisponível.'
+    };
+    const criado = await enviarAoServidor(payloadCandidato);
+    if(!criado){
+      setUploadStatus(`<div style="color:var(--red);font-size:12px;">Não foi possível salvar "${e(file.name)}" agora. Tente novamente.</div>`);
+      return;
+    }
+    const candidato = mapearCandidatoDoApi_(criado);
+    vaga.candidatos.push(candidato);
+    salvarCacheLocal();
+    renderAll();
+    setUploadStatus(`<div style="color:var(--green);font-size:12px;"><i class="ti ti-check"></i> "${e(file.name)}" analisado — aderência ${candidato.score}%.</div>`);
+    setTimeout(()=>setUploadStatus(''), 4000);
+  }catch(err){
+    console.error(err);
+    setUploadStatus(`<div style="color:var(--red);font-size:12px;">Erro ao processar o arquivo: ${e(err.message||'falha desconhecida')}.</div>`);
+  }
+}
+
+function clampScore(n){
+  n = Number(n);
+  if(isNaN(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+/* ============================================================
+   ANÁLISE DE ADERÊNCIA — por palavras-chave e regras, 100% local
+   (sem chamada a nenhuma API externa — roda inteiro no navegador)
+
+   Observação: a versão anterior chamava a API da Anthropic direto do
+   navegador (fetch sem chave). Isso só funciona dentro do preview de
+   artefatos do Claude.ai, que intermedia a chamada por trás dos panos.
+   Publicado no domínio do sistema (GitHub Pages) e aberto num navegador
+   comum, essa chamada é bloqueada por CORS e sempre dá "Failed to
+   fetch" — por isso nenhum currículo conseguia ser analisado.
+
+   Se no futuro quiserem uma análise com IA de verdade (entendendo
+   nuances, não só palavras-chave), o caminho é criar um Apps Script
+   que guarde a chave da API do lado do servidor e sirva de proxy —
+   mesmo padrão usado no resto do sistema (Financeiro, Kanban etc.).
+============================================================= */
+// Remove acentos: depois do NFD, os acentos viram "marcas combinantes" U+0300..U+036F
+const REGEX_ACENTOS_ = new RegExp('[' + String.fromCharCode(0x300) + '-' + String.fromCharCode(0x36f) + ']', 'g');
+function normalizarTexto_(s){
+  return (s||'').toString().toLowerCase().normalize('NFD').replace(REGEX_ACENTOS_,'').trim();
+}
+
+// Palavras que não devem contar como "palavra-chave" mesmo tendo 4+ letras:
+// preposições/conectores comuns e termos genéricos de currículo que aparecem
+// em praticamente qualquer candidato (ex: toda vaga tem uma seção "Experiência
+// Profissional", isso sozinho não prova nada sobre a vaga específica).
+const STOPWORDS_CURRICULO_ = new Set([
+  'para','como','ter','sera','uma','este','esta','deste','desta','pelo','pela',
+  'pelos','pelas','pode','podem','pois','mais','menos','muito','todo','toda',
+  'todos','todas','sobre','dentro','fora','quando','onde','qual','quais','essa',
+  'esse','esses','essas','aquele','aquela','outros','outras','sendo','tendo',
+  'apos','ainda','tambem','alem','cada','qualquer','sempre','nunca','isso',
+  'isto','aquilo','entre','desde','durante','seus','suas','seu','sua','nosso',
+  'nossa','experiencia','conhecimento','conhecimentos','diferencial',
+  'comprovada','comprovado','pratica','pratico','necessaria','necessario'
+]);
+
+function ehSigla_(palavraOriginal){
+  return /^[A-Z]{2,5}$/.test(palavraOriginal);
+}
+
+// Extrai as palavras que realmente carregam significado numa frase de
+// requisito/título — descarta preposições e termos genéricos de currículo,
+// mas preserva siglas curtas (CNH, MOPP, RH...) mesmo sendo curtas.
+function termosSignificativos_(frase){
+  const termos = [];
+  (frase||'').split(/\s+/).forEach(p=>{
+    const pn = normalizarTexto_(p).replace(/[^a-z0-9]/g,'');
+    if(!pn) return;
+    if(ehSigla_(p) || (pn.length>=4 && !STOPWORDS_CURRICULO_.has(pn))) termos.push(pn);
+  });
+  return termos;
+}
+
+// Quebra o campo de requisitos da vaga em itens individuais (por vírgula,
+// ponto e vírgula, quebra de linha ou marcador de lista)
+function extrairRequisitos_(texto){
+  if(!texto) return [];
+  return texto.split(/[\n;,•]+/).map(s=>s.trim()).filter(s=>s.length>1);
+}
+
+// Soma os intervalos de datas tipo "01/2017 – 05/2020" encontrados no
+// currículo, como estimativa de anos de experiência
+function calcularAnosExperiencia_(texto){
+  const re = /(\d{1,2})\/(\d{4})\s*[–\-a]{1,3}\s*(\d{1,2})\/(\d{4})/g;
+  let totalMeses = 0, m;
+  while((m = re.exec(texto))){
+    const inicio = new Date(Number(m[2]), Number(m[1])-1);
+    const fim = new Date(Number(m[4]), Number(m[3])-1);
+    const meses = (fim.getFullYear()-inicio.getFullYear())*12 + (fim.getMonth()-inicio.getMonth());
+    if(meses>0 && meses<600) totalMeses += meses;
+  }
+  return Math.round(totalMeses/12);
+}
+
+// Tenta achar o nome do candidato numa das primeiras linhas do currículo
+// (heurística: linha em maiúsculas, 2 a 6 palavras)
+function extrairNomeCandidato_(texto){
+  const linhas = texto.split('\n').map(l=>l.trim()).filter(Boolean);
+  for(let i=0;i<Math.min(linhas.length,6);i++){
+    const l = linhas[i];
+    if(/^[A-ZÀ-Ú][A-ZÀ-Ú\s.]{4,60}$/.test(l) && l.split(/\s+/).length<=6){
+      return l.split(/\s+/).map(w=>w.charAt(0)+w.slice(1).toLowerCase()).join(' ');
+    }
+  }
+  return '';
+}
+
+function analisarCurriculoLocal(textoCurriculo, vaga){
+  const textoNorm = normalizarTexto_(textoCurriculo);
+  const requisitos = extrairRequisitos_(vaga.requisitos);
+
+  const atendidos = [];
+  const faltantes = [];
+  requisitos.forEach(req=>{
+    const termos = termosSignificativos_(req);
+    if(!termos.length) return; // requisito só com palavras genéricas — não dá pra avaliar, ignora
+    const encontrado = termos.some(t=>textoNorm.indexOf(t)!==-1);
+    (encontrado ? atendidos : faltantes).push(req);
+  });
+
+  const totalReq = atendidos.length + faltantes.length;
+  let score = totalReq>0 ? Math.round((atendidos.length/totalReq)*100) : 50;
+
+  const anosExperiencia = calcularAnosExperiencia_(textoCurriculo);
+  if(anosExperiencia>=5) score = Math.min(100, score+10);
+  else if(anosExperiencia>=2) score = Math.min(100, score+5);
+
+  // Checagem do cargo em si: se nenhuma palavra do TÍTULO da vaga (ex:
+  // "motorista", "carreteiro") aparece em lugar nenhum do currículo, isso é
+  // um sinal forte de que a área de atuação não bate — mesmo que o
+  // candidato tenha batido em requisitos genéricos isolados, o score fica
+  // travado num teto baixo.
+  const termosTitulo = termosSignificativos_(vaga.titulo);
+  const tituloBate = termosTitulo.length ? termosTitulo.some(t=>textoNorm.indexOf(t)!==-1) : true;
+  if(!tituloBate) score = Math.min(score, 35);
+
+  const resumo = !tituloBate
+    ? `O currículo não menciona nada relacionado ao cargo "${vaga.titulo}" — provavelmente é de outra área de atuação, mesmo que bata em algum requisito isolado.`
+    : (totalReq>0
+      ? `O currículo atende ${atendidos.length} de ${totalReq} requisito(s) identificados na vaga`
+        + (anosExperiencia ? `, com aproximadamente ${anosExperiencia} ano(s) de experiência somada(s) identificados no texto.` : '.')
+      : `Não foram informados requisitos específicos na vaga para comparação — avaliação baseada no conteúdo geral do currículo.`);
+
+  return {
+    nome_candidato: extrairNomeCandidato_(textoCurriculo),
+    score,
+    pontos_fortes: atendidos.slice(0,4),
+    pontos_de_atencao: faltantes.slice(0,4),
+    resumo
+  };
+}
+
+/* ============================================================
+   PAINEL LATERAL DO CANDIDATO
+============================================================= */
+function abrirCandidato(vagaId, candId){
+  const vaga = state.vagas.find(v=>v.id===vagaId);
+  const cand = vaga.candidatos.find(c=>c.id===candId);
+  if(!cand) return;
+  state.candidatoAtivoId = candId;
+  state.vagaAtivaId = vagaId;
+
+  document.getElementById('cpNome').textContent = cand.nome;
+  document.getElementById('cpVaga').textContent = vaga.titulo + ' · ' + EMPRESAS[vaga.empresa];
+  document.getElementById('cpScoreNum').textContent = cand.score + '%';
+  document.getElementById('cpStatus').value = cand.status;
+  document.getElementById('cpResumo').textContent = cand.resumoIA;
+  document.getElementById('cpArquivo').textContent = cand.arquivoNome;
+  document.getElementById('cpTexto').textContent = cand.textoExtraido;
+
+  const circumference = 238.7;
+  const offset = circumference - (cand.score/100)*circumference;
+  const ring = document.getElementById('cpRingProgress');
+  ring.style.stroke = cand.score>=75 ? '#22C55E' : cand.score>=50 ? '#F5B800' : '#EF4444';
+  ring.setAttribute('stroke-dashoffset', offset);
+
+  document.getElementById('cpFortes').innerHTML = cand.pontosFortes.length
+    ? cand.pontosFortes.map(p=>`<span class="tag tag-forte"><i class="ti ti-check"></i> ${e(p)}</span>`).join('')
+    : `<span style="font-size:11.5px;color:var(--txt-dim);">Nenhum ponto destacado.</span>`;
+  document.getElementById('cpAtencao').innerHTML = cand.pontosAtencao.length
+    ? cand.pontosAtencao.map(p=>`<span class="tag tag-atencao"><i class="ti ti-alert-triangle"></i> ${e(p)}</span>`).join('')
+    : `<span style="font-size:11.5px;color:var(--txt-dim);">Nenhuma lacuna identificada.</span>`;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('candPanel').classList.add('open');
+}
+function closeCandPanel(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('candPanel').classList.remove('open');
+}
+document.getElementById('overlay').addEventListener('click', closeCandPanel);
+
+function atualizarStatusCandidato(){
+  const vaga = state.vagas.find(v=>v.id===state.vagaAtivaId);
+  const cand = vaga.candidatos.find(c=>c.id===state.candidatoAtivoId);
+  cand.status = document.getElementById('cpStatus').value;
+  salvarCacheLocal();
+  enviarAoServidor({ action:'atualizarStatusCandidato', id: cand.id, status: cand.status });
+  renderAll();
+}
+</script>
+
+<script>
+/* ── SISTEMA DE TEMA (injetado) ──────────────────────────── */
+(function(){
+  function applyTema(t){
+    document.body.classList.remove('tema-claro','tema-escuro');
+    if(t==='claro') document.body.classList.add('tema-claro');
+  }
+  var t=localStorage.getItem('barretos_tema')||'escuro';
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){ applyTema(t); });
+  } else { applyTema(t); }
+  window.addEventListener('message',function(ev){
+    if(ev.data && ev.data.type==='barretos_tema'){
+      localStorage.setItem('barretos_tema', ev.data.tema);
+      applyTema(ev.data.tema);
+    }
+  });
+})();
+/* ─────────────────────────────────────────────────────────── */
+</script>
+</body>
+</html>

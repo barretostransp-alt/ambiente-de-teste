@@ -341,8 +341,8 @@ body.tema-claro #login-screen .logo-claro{display:block!important}
 
 /* Todos os itens do menu visíveis por padrão — JS oculta se sem permissão */
 #nav-kanban_pin,#nav-kanban_inf,#nav-kanban_bar,#nav-kanban_gon,
-#nav-ideias,#nav-helpdesk,#nav-diarias,#nav-recrutamento,#nav-cotacao,#nav-relatorio,
-#nav-frota,#nav-mapa_operacoes,#nav-torre_controle,#nav-rh_colaboradores,#nav-rh_beneficios{display:flex;}
+#nav-ideias,#nav-helpdesk,#nav-diarias,#nav-cotacao,#nav-relatorio,
+#nav-frota,#nav-mapa_operacoes,#nav-torre_controle,#nav-rh_colaboradores{display:flex;}
 </style>
 
 <style>
@@ -469,16 +469,10 @@ body.tema-claro .topbar * { color: #E8E9F0 !important; }
       </div>
       <div class="sb-section" id="section-rh">RH</div>
       <div class="sb-item" id="nav-rh_colaboradores" onclick="navigate('rh_colaboradores')">
-        <i class="ti ti-users-group"></i><span>Colaboradores</span>
-      </div>
-      <div class="sb-item" id="nav-rh_beneficios" onclick="navigate('rh_beneficios')">
-        <i class="ti ti-gift"></i><span>Benefícios e Custos</span>
+        <i class="ti ti-users-group"></i><span>RH</span>
       </div>
       <div class="sb-item" id="nav-diarias" onclick="navigate('diarias')">
         <i class="ti ti-calendar-check"></i><span>Diárias de Motoristas</span>
-      </div>
-      <div class="sb-item" id="nav-recrutamento" onclick="navigate('recrutamento')">
-        <i class="ti ti-user-search"></i><span>Recrutamento e Seleção</span>
       </div>
       <div class="sb-section" id="section-comercial">Comercial</div>
       <div class="sb-item" id="nav-cotacao" onclick="navigate('cotacao')">
@@ -708,10 +702,8 @@ var TOOLS = {
   torre_controle: { src:"torre_de_controle.html", cat:"Geral",      label:"Indicadores TV",         icon:"ti-device-tv"        },
   calendario:{ src:"calendario.html",            cat:"Geral",       label:"Calendário",            icon:"ti-calendar"         },
   despesas:  { src:"despesas.html",              cat:"Geral",       label:"Despesas",              icon:"ti-wallet"           },
-  rh_colaboradores: { src:"rh_colaboradores.html", cat:"RH",       label:"Colaboradores",          icon:"ti-users-group"     },
-  rh_beneficios: { src:"rh_beneficios_custos.html", cat:"RH",      label:"Benefícios e Custos",    icon:"ti-gift"            },
+  rh_colaboradores: { src:"rh_gestao.html",      cat:"RH",          label:"RH",                     icon:"ti-users-group"     },
   diarias:   { src:"diarias_desktop.html",      cat:"RH",          label:"Diárias de Motoristas", icon:"ti-calendar-check"   },
-  recrutamento: { src:"rh_recrutamento.html",   cat:"RH",          label:"Recrutamento e Seleção", icon:"ti-user-search"     },
   cotacao:   { src:"cotacao_comercial.html",     cat:"Comercial",   label:"Cotação Comercial",     icon:"ti-calculator"       },
   relatorio: { src:"relatorio_de_vendedor.html", cat:"Comercial",   label:"Relatório de Vendedor", icon:"ti-chart-bar"        },
   crm:       { src:"nexsales_crm.html",          cat:"Comercial",   label:"CRM",                     icon:"ti-target-arrow"     },
@@ -835,12 +827,12 @@ function aplicarMenuPermissoes(p){
   // nunca deveria acessar. Se uma ferramenta nova precisar ser liberada
   // pra alguém, isso deve ser feito atualizando a permissão dela mesmo,
   // não escondendo o controle de acesso inteiro.)
-  ["cotacao","relatorio","crm","clientes","calendario","despesas","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","config","log_atividades","rh_colaboradores","rh_beneficios","diarias","recrutamento","financeiro","faturamento","conciliacao"].forEach(function(k){
+  ["cotacao","relatorio","crm","clientes","calendario","despesas","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","config","log_atividades","rh_colaboradores","diarias","financeiro","faturamento","conciliacao"].forEach(function(k){
     var el=document.getElementById("nav-"+k);
     if(!el) return;
     el.style.display=p.includes(k)?"flex":"none";
   });
-  var sm={rh:["rh_colaboradores","rh_beneficios","diarias","recrutamento"],comercial:["cotacao","relatorio","crm","clientes"],financeiro:["financeiro","faturamento","conciliacao"],operacional:["frota","mapa_operacoes","kanban_pin","kanban_inf","kanban_bar","kanban_gon"],melhoria:["ideias","helpdesk"],admin:["config","log_atividades"]};
+  var sm={rh:["rh_colaboradores","diarias"],comercial:["cotacao","relatorio","crm","clientes"],financeiro:["financeiro","faturamento","conciliacao"],operacional:["frota","mapa_operacoes","kanban_pin","kanban_inf","kanban_bar","kanban_gon"],melhoria:["ideias","helpdesk"],admin:["config","log_atividades"]};
   Object.keys(sm).forEach(function(s){
     var el=document.getElementById("section-"+s); if(!el) return;
     el.style.display=sm[s].some(function(k){return p.includes(k);})?"flex":"none";
@@ -848,7 +840,7 @@ function aplicarMenuPermissoes(p){
 }
 
 function mostrarTudo(){
-  ["cotacao","relatorio","crm","clientes","calendario","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","rh_colaboradores","rh_beneficios","diarias","recrutamento","financeiro","faturamento","conciliacao"].forEach(function(k){
+  ["cotacao","relatorio","crm","clientes","calendario","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","rh_colaboradores","diarias","financeiro","faturamento","conciliacao"].forEach(function(k){
     var el=document.getElementById("nav-"+k); if(el) el.style.display="flex";
   });
   ["section-geral","section-rh","section-comercial","section-financeiro","section-operacional","section-melhoria"].forEach(function(s){
