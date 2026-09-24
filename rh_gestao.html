@@ -328,13 +328,15 @@ body.tema-claro .rec-btn-gold{color:#1A1200;}
   <div class="nav-item" data-view="beneficios" onclick="showView('beneficios')"><i class="ti ti-gift"></i>Catálogo de Benefícios</div>
   <div class="nav-item" data-view="atribuicao" onclick="showView('atribuicao')"><i class="ti ti-user-check"></i>Atribuição por Colaborador</div>
 
-  <div class="sidebar-divider"></div>
-  <div class="sidebar-section">Recrutamento</div>
-  <div class="nav-item" data-view="recPainel" onclick="showView('recPainel')"><i class="ti ti-layout-dashboard"></i>Painel de Recrutamento</div>
-  <div class="nav-item" data-view="vagas" onclick="showView('vagas')"><i class="ti ti-briefcase"></i>Vagas</div>
-  <div class="nav-item" data-view="talentos" onclick="showView('talentos')"><i class="ti ti-user-search"></i>Talentos</div>
-  <div class="sidebar-sublabel">Vagas em andamento</div>
-  <div class="vagas-list" id="sidebarVagasList"></div>
+  <div id="grupo-recrutamento">
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Recrutamento</div>
+    <div class="nav-item" data-view="recPainel" onclick="showView('recPainel')"><i class="ti ti-layout-dashboard"></i>Painel de Recrutamento</div>
+    <div class="nav-item" data-view="vagas" onclick="showView('vagas')"><i class="ti ti-briefcase"></i>Vagas</div>
+    <div class="nav-item" data-view="talentos" onclick="showView('talentos')"><i class="ti ti-user-search"></i>Talentos</div>
+    <div class="sidebar-sublabel">Vagas em andamento</div>
+    <div class="vagas-list" id="sidebarVagasList"></div>
+  </div>
 </nav>
 
 <!-- ═══════════════════════════════════════════════
@@ -1881,6 +1883,18 @@ async function excluirCustoExtra(id){
 ════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function(){
   if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
+  // Recrutamento e Seleção já existe em produção com permissão própria
+  // ("recrutamento"), usada por gente que não tem acesso ao resto do RH —
+  // por isso essa seção do menu só aparece pra quem também tiver essa
+  // permissão específica (as demais seções seguem liberadas por inteiro
+  // com a permissão única "rh_colaboradores", sem esconder nada entre si).
+  try {
+    var permissoes = JSON.parse(localStorage.getItem('barretos_permissoes') || '[]');
+    if (!permissoes.includes('recrutamento')) {
+      var grupo = document.getElementById('grupo-recrutamento');
+      if (grupo) grupo.style.display = 'none';
+    }
+  } catch(e) {}
   document.getElementById('f-ponto-mes').value = new Date().toISOString().slice(0,7);
   colaboradoresProntos = carregarColaboradores().catch(function(err){ console.error('Falha ao carregar colaboradores:', err); });
   showView('indicadores');
