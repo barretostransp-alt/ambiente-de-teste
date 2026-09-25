@@ -248,6 +248,9 @@ body.tema-claro .card-section,body.tema-claro .op-row,body.tema-claro .op-card{b
         <div class="card-hd">
           <div class="card-hd-ico" style="background:rgba(245,184,0,.12);color:var(--gold)"><i class="ti ti-clock"></i></div>
           <div class="card-hd-title">Meu Espelho de Ponto</div>
+          <button id="btn-bater-ponto" onclick="baterPonto()" style="display:none;background:var(--gold);color:#111;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;align-items:center;gap:5px">
+            <i class="ti ti-fingerprint" style="font-size:13px"></i> <span id="btn-bater-ponto-label">Bater Ponto</span>
+          </button>
         </div>
         <div style="padding:10px 14px;overflow-y:auto;flex:1;min-height:0" id="ponto-body">
           <div class="skel shimmer"></div>
@@ -512,19 +515,12 @@ function calcularMinutosPonto_(p, jornada) {
   var entrada = ajustarComTolerancia_(p.entrada, jornada.jornada_entrada);
   var saida = ajustarComTolerancia_(p.saida, jornada.jornada_saida);
   if (entrada == null || saida == null) return null;
-  var total = saida - entrada;
-  var saidaAlmoco = ajustarComTolerancia_(p.saida_almoco, jornada.jornada_saida_almoco);
-  var retornoAlmoco = ajustarComTolerancia_(p.retorno_almoco, jornada.jornada_retorno_almoco);
-  if (saidaAlmoco != null && retornoAlmoco != null) total -= (retornoAlmoco - saidaAlmoco);
-  return total;
+  return saida - entrada;
 }
 function jornadaEsperadaMinutosPonto_(jornada) {
   var entrada = minutosDeHoraPonto_(jornada.jornada_entrada), saida = minutosDeHoraPonto_(jornada.jornada_saida);
   if (entrada == null || saida == null) return 480;
-  var total = saida - entrada;
-  var saidaAlmoco = minutosDeHoraPonto_(jornada.jornada_saida_almoco), retornoAlmoco = minutosDeHoraPonto_(jornada.jornada_retorno_almoco);
-  if (saidaAlmoco != null && retornoAlmoco != null) total -= (retornoAlmoco - saidaAlmoco);
-  return total;
+  return saida - entrada;
 }
 async function carregarEspelhoPonto(user) {
   var el = document.getElementById('ponto-body');
@@ -537,8 +533,49 @@ async function carregarEspelhoPonto(user) {
     el.innerHTML = '<div class="side-empty">Erro ao carregar seu ponto.</div>';
   }
 }
+function atualizarBotaoBaterPonto_(resp) {
+  var btn = document.getElementById('btn-bater-ponto');
+  if (!resp.colaborador) { btn.style.display = 'none'; return; }
+  btn.style.display = 'flex';
+  var hoje = new Date().toISOString().slice(0, 10);
+  var registroHoje = (resp.registros || []).find(function(r) { return r.data === hoje; });
+  var label = document.getElementById('btn-bater-ponto-label');
+  if (!registroHoje || !registroHoje.entrada) {
+    btn.disabled = false; label.textContent = 'Bater Entrada';
+  } else if (!registroHoje.saida) {
+    btn.disabled = false; label.textContent = 'Bater Saída';
+  } else {
+    btn.disabled = true; label.textContent = 'Ponto do dia completo';
+  }
+  btn.style.opacity = btn.disabled ? '.5' : '1';
+  btn.style.cursor = btn.disabled ? 'default' : 'pointer';
+}
+async function baterPonto() {
+  var btn = document.getElementById('btn-bater-ponto');
+  if (btn.disabled) return;
+  var label = document.getElementById('btn-bater-ponto-label');
+  var labelAntigo = label.textContent;
+  btn.disabled = true;
+  label.textContent = 'Registrando…';
+  try {
+    var r = await apiFetch(API_BASE + '/meu-ponto/bater', { method: 'POST' });
+    var resp = await r.json();
+    if (!r.ok) {
+      alert(resp.error || 'Erro ao registrar o ponto.');
+      label.textContent = labelAntigo;
+      btn.disabled = false;
+      return;
+    }
+    await carregarEspelhoPonto();
+  } catch (e) {
+    alert('Erro ao registrar o ponto.');
+    label.textContent = labelAntigo;
+    btn.disabled = false;
+  }
+}
 function renderEspelhoPonto(resp) {
   var el = document.getElementById('ponto-body');
+  atualizarBotaoBaterPonto_(resp);
   if (!resp.colaborador) {
     el.innerHTML = '<div class="side-empty">Seu usuário ainda não está vinculado a um cadastro de colaborador no RH.</div>';
     return;
@@ -556,8 +593,7 @@ function renderEspelhoPonto(resp) {
     var partes = p.data.split('-');
     var diaSemana = diasSemana[new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2])).getDay()];
     var dataLabel = diaSemana + ', ' + partes[2] + '/' + partes[1];
-    var horarios = (p.entrada ? p.entrada.slice(0, 5) : '--:--') + ' → ' + (p.saida_almoco ? p.saida_almoco.slice(0, 5) : '--:--') +
-      ' · ' + (p.retorno_almoco ? p.retorno_almoco.slice(0, 5) : '--:--') + ' → ' + (p.saida ? p.saida.slice(0, 5) : '--:--');
+    var horarios = (p.entrada ? p.entrada.slice(0, 5) : '--:--') + ' → ' + (p.saida ? p.saida.slice(0, 5) : '--:--');
     return '<div style="display:flex;align-items:center;gap:18px;padding:10px 0;border-bottom:1px solid rgba(30,33,48,.5)">' +
       '<span style="font-size:11px;font-weight:600;color:var(--txt);min-width:72px;flex-shrink:0">' + esc(dataLabel) + '</span>' +
       '<span style="font-size:10.5px;color:var(--txt-dim);flex:1">' + esc(horarios) + '</span>' +
