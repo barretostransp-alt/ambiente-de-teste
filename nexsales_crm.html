@@ -1713,6 +1713,15 @@ function deleteVendedor(id){
    manual — a antiga crm_produtividade nunca teve um registro sequer).
 --------------------------------------------------------------------- */
 let dtProdutividade = null;
+// Formata horas decimais (0.96) como "horas.minutos" (0.58h) em vez de
+// fração decimal — minuto sempre 00-59, sem precisar fazer conta de
+// cabeça pra saber quanto é 0.96 de hora.
+function fmtHorasMin_(horasDecimais){
+  const totalMin = Math.round((Number(horasDecimais)||0) * 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h + '.' + String(m).padStart(2,'0') + 'h';
+}
 async function renderProdutividade(){
   const vendedorIdsFiltro = getGlobalVendedorIds();
   const {dIni, dFim} = getGlobalPeriodo();
@@ -1732,7 +1741,7 @@ async function renderProdutividade(){
       {label:'Cards', data:s.cards, borderColor:'#ef4444', backgroundColor:'#ef444422', tension:.3, fill:true},
       {label:'Faturamento/Financeiro', data:s.financeiro, borderColor:'#3b82f6', backgroundColor:'#3b82f622', tension:.3, fill:true},
     ]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y}h`}}}, scales:{y:{beginAtZero:true, ticks:{callback:v=>v+'h'}}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtHorasMin_(c.parsed.y)}`}}}, scales:{y:{beginAtZero:true, ticks:{callback:fmtHorasMin_}}}}
   });
 
   const rowsData = resp.tabela.map(p=>[
