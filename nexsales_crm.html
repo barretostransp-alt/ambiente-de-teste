@@ -443,6 +443,12 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
         <div><h3>Clientes</h3><div class="subtitle">Base completa de prospects e clientes</div></div>
         <button class="btn btn-accent" onclick="openClienteModal()"><i class="fa-solid fa-plus me-1"></i>Novo Cliente</button>
       </div>
+
+      <!-- Carteira: clientes esfriando (45/90 dias sem cotação) e cadastros
+           incompletos — calculado no backend (ver /api/crm/carteira),
+           some sozinho quando não tem nada nesse grupo. -->
+      <div id="carteira-crm" class="row g-3 mb-3"></div>
+
       <div class="card p-3">
         <div class="table-responsive">
           <table class="table table-hover align-middle" id="table-clientes" style="width:100%">
@@ -1291,7 +1297,7 @@ function renderPage(page){
   switch(page){
     case 'dashboard': renderDashboard(); break;
     case 'comercial': renderVendedores(); renderProdutividade(); break;
-    case 'clientes': renderClientes(); break;
+    case 'clientes': renderClientes(); renderCarteiraCrm(); break;
     case 'cotacoes': renderCotacoes(); break;
     case 'entrevistas': renderEntrevistas(); break;
     case 'metas': renderMetas(); break;
@@ -1859,6 +1865,93 @@ function renderClientes(){
     dtClientes.clear();
     dtClientes.rows.add(rowsData);
     dtClientes.draw();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   CARTEIRA — clientes esfriando (45/90 dias sem cotação) e cadastros
+   incompletos (ver GET /api/crm/carteira, src/services/crmCarteiraService.js
+   no backend). A virada de status (Inativo/desvínculo de vendedor) já é
+   automática (job diário) — aqui só mostra o resultado e permite
+   reatribuir vendedor pros clientes órfãos (90 dias).
+--------------------------------------------------------------------- */
+function nomeClienteCarteira_(item){
+  return item.nome_fantasia ? `${escapeHtml(item.razao_social)} <span class="text-muted small">(${escapeHtml(item.nome_fantasia)})</span>` : escapeHtml(item.razao_social);
+}
+async function renderCarteiraCrm(){
+  const el = document.getElementById('carteira-crm');
+  let dados;
+  try{
+    dados = await crmFetch('/carteira');
+  }catch(e){
+    el.innerHTML = '';
+    return;
+  }
+  const { alerta45, critico90, dadosIncompletos } = dados;
+  if(!alerta45.length && !critico90.length && !dadosIncompletos.length){
+    el.innerHTML = '';
+    return;
+  }
+
+  const vendedores = DB.vendedores();
+  const optsVendedor = vendedores.map(v=>`<option value="${escapeHtml(v.nome)}">${escapeHtml(v.nome)}</option>`).join('');
+
+  let html = '';
+
+  if(alerta45.length){
+    html += `<div class="col-lg-4"><div class="card p-3 h-100" style="border-left:3px solid #f59e0b">
+      <h6 class="mb-2"><i class="fa-solid fa-clock text-warning me-1"></i>45 dias sem cotação (${alerta45.length})</h6>
+      <div class="small text-muted mb-2">Já marcado como Inativo na aba Clientes.</div>
+      <div style="max-height:220px;overflow:auto">${alerta45.map(item=>`
+        <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+          <div>${nomeClienteCarteira_(item)}</div>
+          <span class="badge bg-warning text-dark">${item.dias_sem_cotacao}d</span>
+        </div>`).join('')}</div>
+    </div></div>`;
+  }
+
+  if(critico90.length){
+    html += `<div class="col-lg-4"><div class="card p-3 h-100" style="border-left:3px solid #ef4444">
+      <h6 class="mb-2"><i class="fa-solid fa-user-slash text-danger me-1"></i>90 dias — sem vendedor fixo (${critico90.length})</h6>
+      <div class="small text-muted mb-2">Vendedor já foi desvinculado automaticamente — escolha quem assume.</div>
+      <div style="max-height:220px;overflow:auto">${critico90.map(item=>`
+        <div class="py-2 border-bottom">
+          <div class="mb-1">${nomeClienteCarteira_(item)} <span class="badge bg-danger">${item.dias_sem_cotacao}d</span></div>
+          <div class="d-flex gap-1">
+            <select class="form-select form-select-sm" id="carteira-vend-${item.id}"><option value="">Atribuir a...</option>${optsVendedor}</select>
+            <button class="btn btn-sm btn-outline-primary" onclick="atribuirVendedorCarteira('${item.id}')">OK</button>
+          </div>
+        </div>`).join('')}</div>
+    </div></div>`;
+  }
+
+  if(dadosIncompletos.length){
+    html += `<div class="col-lg-4"><div class="card p-3 h-100" style="border-left:3px solid #6366f1">
+      <h6 class="mb-2"><i class="fa-solid fa-clipboard-question text-indigo me-1"></i>Dados incompletos (${dadosIncompletos.length})</h6>
+      <div class="small text-muted mb-2">Peça ao vendedor responsável pra completar.</div>
+      <div style="max-height:220px;overflow:auto">${dadosIncompletos.map(item=>`
+        <div class="py-1 border-bottom">
+          <div>${nomeClienteCarteira_(item)}</div>
+          <div>${item.campos_faltantes.map(c=>`<span class="badge bg-light text-dark border me-1">${escapeHtml(c)}</span>`).join('')}</div>
+        </div>`).join('')}</div>
+    </div></div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+async function atribuirVendedorCarteira(clienteId){
+  const sel = document.getElementById('carteira-vend-'+clienteId);
+  const vendedor = sel ? sel.value : '';
+  if(!vendedor){ toast('Escolha um vendedor', 'warning'); return; }
+  try{
+    await crmFetch(`/carteira/${clienteId}/vendedor`, { method:'PUT', headers:CRM_JSON_HEADERS, body: JSON.stringify({ vendedor }) });
+    toast('Vendedor atribuído');
+    await renderCarteiraCrm();
+    await recarregarClientes_();
+    renderClientes();
+  }catch(e){
+    toast(e.message || 'Erro ao atribuir vendedor', 'error');
   }
 }
 function fillStatusSelect(sel, current){
