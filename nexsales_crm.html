@@ -1912,7 +1912,13 @@ async function renderCarteiraCrm(){
     el.innerHTML = '';
     return;
   }
-  const { alerta45, critico90, dadosIncompletos } = dados;
+  const { alerta45, critico90 } = dados;
+  // "Dados incompletos" respeita o filtro global de vendedor (os outros
+  // dois cards não, de propósito — só esse foi pedido).
+  const nomesVendedorFiltro = getGlobalVendedorNomes();
+  const dadosIncompletos = nomesVendedorFiltro.length
+    ? dados.dadosIncompletos.filter(item=>nomesVendedorFiltro.includes((item.vendedor||'').trim().toLowerCase()))
+    : dados.dadosIncompletos;
   if(!alerta45.length && !critico90.length && !dadosIncompletos.length){
     el.innerHTML = '';
     return;
@@ -1953,11 +1959,11 @@ async function renderCarteiraCrm(){
   if(dadosIncompletos.length){
     html += `<div class="col-lg-4"><div class="card p-3 h-100" style="border-left:3px solid #6366f1">
       <h6 class="mb-2"><i class="fa-solid fa-clipboard-question text-indigo me-1"></i>Dados incompletos (${dadosIncompletos.length})</h6>
-      <div class="small text-muted mb-2">Peça ao vendedor responsável pra completar.</div>
+      <div class="small text-muted mb-2">Peça ao vendedor responsável pra completar.${nomesVendedorFiltro.length?' <span class="fst-italic">(filtrado por vendedor)</span>':''}</div>
       <div style="max-height:220px;overflow:auto">${dadosIncompletos.map(item=>`
         <div class="py-1 border-bottom">
           <div>${nomeClienteCarteira_(item)}</div>
-          <div>${item.campos_faltantes.map(c=>`<span class="badge bg-light text-dark border me-1">${escapeHtml(c)}</span>`).join('')}</div>
+          <div>${item.campos_faltantes.map(c=>`<span class="badge me-1" style="background:rgba(99,102,241,.18);color:#a5b4fc;border:1px solid rgba(99,102,241,.4)">${escapeHtml(c)}</span>`).join('')}</div>
         </div>`).join('')}</div>
     </div></div>`;
   }
