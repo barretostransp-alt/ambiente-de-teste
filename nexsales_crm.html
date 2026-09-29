@@ -336,7 +336,15 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
   <div class="filter-bar" id="global-filter-bar" style="margin:16px 24px 0">
     <div class="row g-3 align-items-end">
       <div class="col-md-4"><label class="form-label">Período</label><input type="text" class="form-control" id="global-f-periodo" placeholder="Selecione o intervalo"></div>
-      <div class="col-md-4"><label class="form-label">Vendedor</label><select class="form-select" id="global-f-vendedor"><option value="">Todos os vendedores</option></select></div>
+      <div class="col-md-4">
+        <label class="form-label">Vendedor</label>
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary w-100 text-start dropdown-toggle" type="button" id="global-f-vendedor-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+            <span id="global-f-vendedor-label">Todos os vendedores</span>
+          </button>
+          <div class="dropdown-menu p-2" id="global-f-vendedor-menu" style="max-height:280px;overflow:auto;min-width:100%"></div>
+        </div>
+      </div>
       <div class="col-md-2"><button class="btn btn-accent w-100" onclick="aplicarFiltroGlobal()"><i class="fa-solid fa-filter me-1"></i>Filtrar</button></div>
       <div class="col-md-2"><button class="btn btn-outline-secondary w-100" onclick="aplicarFiltroGlobal(true)"><i class="fa-solid fa-rotate me-1"></i>Atualizar</button></div>
     </div>
@@ -1312,12 +1320,16 @@ function renderPage(page){
 // dentro de cada tela. Cada render function lê os valores atuais daqui.
 let globalRangePicker = null;
 function initGlobalFilters(){
-  const sel = document.getElementById('global-f-vendedor');
-  if(!sel) return;
+  const menu = document.getElementById('global-f-vendedor-menu');
+  if(!menu) return;
   const vendedores = DB.vendedores();
-  const atual = sel.value;
-  sel.innerHTML = '<option value="">Todos os vendedores</option>' + vendedores.map(v=>`<option value="${v.id}">${escapeHtml(v.nome)}</option>`).join('');
-  if(vendedores.some(v=>v.id===atual)) sel.value = atual;
+  const selecionadosAntes = getGlobalVendedorIds(); // preserva a seleção ao trocar de aba (menu é reconstruído toda vez)
+  menu.innerHTML = vendedores.map(v=>`
+    <label class="dropdown-item form-check py-1 mb-0" style="cursor:pointer">
+      <input class="form-check-input me-2" type="checkbox" value="${v.id}" ${selecionadosAntes.includes(v.id)?'checked':''} onchange="atualizarLabelVendedorGlobal_()">
+      ${escapeHtml(v.nome)}
+    </label>`).join('');
+  atualizarLabelVendedorGlobal_();
   if(!globalRangePicker){ globalRangePicker = flatpickr('#global-f-periodo', {mode:'range', dateFormat:'Y-m-d', locale:'pt'}); }
 }
 // {dIni, dFim} como objetos Date (ou null/null se nenhum período selecionado)
@@ -1329,8 +1341,21 @@ function getGlobalPeriodo(){
   }
   return {dIni:null, dFim:null};
 }
-function getGlobalVendedorId(){ return document.getElementById('global-f-vendedor')?.value || ''; }
-function getGlobalVendedorNome(){ const id=getGlobalVendedorId(); return id ? (vendedorNome(id)||'').trim().toLowerCase() : ''; }
+// Array de ids selecionados (vazio = "todos os vendedores").
+function getGlobalVendedorIds(){
+  return Array.from(document.querySelectorAll('#global-f-vendedor-menu input:checked')).map(el=>el.value);
+}
+function getGlobalVendedorNomes(){
+  return getGlobalVendedorIds().map(id=>(vendedorNome(id)||'').trim().toLowerCase()).filter(Boolean);
+}
+function atualizarLabelVendedorGlobal_(){
+  const ids = getGlobalVendedorIds();
+  const label = document.getElementById('global-f-vendedor-label');
+  if(!label) return;
+  if(!ids.length) label.textContent = 'Todos os vendedores';
+  else if(ids.length===1) label.textContent = vendedorNome(ids[0]);
+  else label.textContent = ids.length + ' vendedores selecionados';
+}
 function aplicarFiltroGlobal(force){
   if(force){ _relatorioVendedorRowsCache = null; _cotacoesCache = null; }
   const ativa = PAGES.find(p=>document.getElementById('page-'+p)?.classList.contains('active')) || 'dashboard';
@@ -1375,10 +1400,10 @@ async function renderDashboard(){
   const now = new Date();
   document.getElementById('dash-date-subtitle').textContent = 'Hoje é ' + now.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'long', year:'numeric'});
 
-  const vendedorIdFiltro = getGlobalVendedorId();
+  const vendedorIdsFiltro = getGlobalVendedorIds();
   const {dIni, dFim} = getGlobalPeriodo();
   const qs = new URLSearchParams();
-  if(vendedorIdFiltro) qs.set('vendedorId', vendedorIdFiltro);
+  if(vendedorIdsFiltro.length) qs.set('vendedorIds', vendedorIdsFiltro.join(','));
   if(dIni) qs.set('dataInicio', dateToISO(dIni));
   if(dFim) qs.set('dataFim', dateToISO(dFim));
   let d;
@@ -1471,8 +1496,8 @@ function renderQualidadeRelacionamento(q){
 --------------------------------------------------------------------- */
 async function renderVendedores(){
   const todosVendedores = DB.vendedores();
-  const vendedorIdFiltro = getGlobalVendedorId();
-  const vendedores = vendedorIdFiltro ? todosVendedores.filter(v=>v.id===vendedorIdFiltro) : todosVendedores;
+  const vendedorIdsFiltro = getGlobalVendedorIds();
+  const vendedores = vendedorIdsFiltro.length ? todosVendedores.filter(v=>vendedorIdsFiltro.includes(v.id)) : todosVendedores;
   const grid = document.getElementById('vendedores-grid');
   if(todosVendedores.length===0){ grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-user-tie"></i><div>Nenhum vendedor cadastrado</div></div>'; return; }
   if(vendedores.length===0){ grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-user-tie"></i><div>Nenhum vendedor cadastrado bate com o filtro selecionado</div></div>'; return; }
@@ -1482,7 +1507,7 @@ async function renderVendedores(){
   // selecionado, cai no mês atual (comportamento de sempre).
   const {dIni, dFim} = getGlobalPeriodo();
   const qs = new URLSearchParams();
-  if(vendedorIdFiltro) qs.set('vendedorId', vendedorIdFiltro);
+  if(vendedorIdsFiltro.length) qs.set('vendedorIds', vendedorIdsFiltro.join(','));
   if(dIni) qs.set('periodoInicio', dateToISO(dIni));
   if(dFim) qs.set('periodoFim', dateToISO(dFim));
   let resumo;
@@ -1828,10 +1853,10 @@ function deleteProdutividade(id){
 --------------------------------------------------------------------- */
 let dtClientes = null;
 function renderClientes(){
-  const vendedorIdFiltro = getGlobalVendedorId();
+  const vendedorIdsFiltro = getGlobalVendedorIds();
   const {dIni, dFim} = getGlobalPeriodo();
   const clientes = DB.clientes().filter(c=>{
-    if(vendedorIdFiltro && c.responsavel!==vendedorIdFiltro) return false;
+    if(vendedorIdsFiltro.length && !vendedorIdsFiltro.includes(c.responsavel)) return false;
     if(dIni || dFim){
       if(!c.dataCadastro) return false;
       const d = new Date(c.dataCadastro+'T00:00:00');
@@ -2021,10 +2046,10 @@ async function renderCotacoes(force){
     return;
   }
   // Filtro global de Período (Data da cotação) e Vendedor.
-  const nomeVendedorFiltro = getGlobalVendedorNome();
+  const nomesVendedorFiltro = getGlobalVendedorNomes();
   const {dIni, dFim} = getGlobalPeriodo();
   const rows = rowsBrutas.filter(r=>{
-    if(nomeVendedorFiltro && (r['Vendedor']||'').trim().toLowerCase()!==nomeVendedorFiltro) return false;
+    if(nomesVendedorFiltro.length && !nomesVendedorFiltro.includes((r['Vendedor']||'').trim().toLowerCase())) return false;
     if(dIni || dFim){
       const d = parseDataCotacao_(r['Data']);
       if(!d) return false;
@@ -2033,7 +2058,7 @@ async function renderCotacoes(force){
     }
     return true;
   });
-  statusEl.textContent = rows.length + ' cotação(ões)' + (nomeVendedorFiltro||dIni ? ' (filtrado de '+rowsBrutas.length+')' : ' no histórico') + ' · atualizado ' + new Date().toLocaleTimeString('pt-BR');
+  statusEl.textContent = rows.length + ' cotação(ões)' + (nomesVendedorFiltro.length||dIni ? ' (filtrado de '+rowsBrutas.length+')' : ' no histórico') + ' · atualizado ' + new Date().toLocaleTimeString('pt-BR');
 
   // Agrupa por vendedor
   const porVendedor = {};
@@ -2351,10 +2376,10 @@ async function saveTimelineEntry(){
    14. ENTREVISTAS
 --------------------------------------------------------------------- */
 function renderEntrevistas(){
-  const filtro = getGlobalVendedorId();
+  const filtroIds = getGlobalVendedorIds();
   const {dIni, dFim} = getGlobalPeriodo();
   let entrevistas = DB.entrevistas().slice().sort((a,b)=>b.data.localeCompare(a.data));
-  if(filtro) entrevistas = entrevistas.filter(e=>e.vendedor===filtro);
+  if(filtroIds.length) entrevistas = entrevistas.filter(e=>filtroIds.includes(e.vendedor));
   if(dIni || dFim){
     entrevistas = entrevistas.filter(e=>{
       if(!e.data) return false;
@@ -2519,15 +2544,15 @@ function deleteEntrevista(id){
 // dois lugares sempre mostram o mesmo número.
 async function renderMetas(){
   const todosVendedores = DB.vendedores();
-  const vendedorIdFiltro = getGlobalVendedorId();
-  const vendedores = vendedorIdFiltro ? todosVendedores.filter(v=>v.id===vendedorIdFiltro) : todosVendedores;
+  const vendedorIdsFiltro = getGlobalVendedorIds();
+  const vendedores = vendedorIdsFiltro.length ? todosVendedores.filter(v=>vendedorIdsFiltro.includes(v.id)) : todosVendedores;
 
   const metaEquipe = DB.metasEquipe();
   // Diária/Semanal/Mensal/Anual da equipe e por vendedor, tudo calculado
   // no backend (ver GET /api/crm/resumo-vendedores) direto do Relatório
   // de Vendedor real.
   let resumo;
-  try { resumo = await crmFetch('/resumo-vendedores' + (vendedorIdFiltro ? '?vendedorId='+encodeURIComponent(vendedorIdFiltro) : '')); }
+  try { resumo = await crmFetch('/resumo-vendedores' + (vendedorIdsFiltro.length ? '?vendedorIds='+encodeURIComponent(vendedorIdsFiltro.join(',')) : '')); }
   catch(e){ console.error('[metas] falha ao buscar resumo:', e); return; }
   const porVendedorId = {}; resumo.porVendedor.forEach(r=> porVendedorId[r.vendedorId]=r);
   const valorMesEquipe = resumo.valorMesEquipe;
@@ -2622,9 +2647,9 @@ function parseDataCotacao_(valor){
 // Médio e Conversão vêm direto do Relatório de Vendedor/Cotação
 // Comercial reais, sem passar mais por nenhum Apps Script.
 async function renderIndicadores(){
-  const vendedorIdFiltro = getGlobalVendedorId();
+  const vendedorIdsFiltro = getGlobalVendedorIds();
   let resp;
-  try { resp = await crmFetch('/indicadores' + (vendedorIdFiltro ? '?vendedorId='+encodeURIComponent(vendedorIdFiltro) : '')); }
+  try { resp = await crmFetch('/indicadores' + (vendedorIdsFiltro.length ? '?vendedorIds='+encodeURIComponent(vendedorIdsFiltro.join(',')) : '')); }
   catch(e){ console.error('[indicadores] falha ao buscar dados:', e); return; }
 
   makeChart('chart-conversao', {type:'line', data:{labels:resp.mesesLabels, datasets:[{label:'Conversão %', data:resp.conversaoData, borderColor:'#D97706', backgroundColor:'#D9770622', fill:true, tension:.35}]}, options:{maintainAspectRatio:false, plugins:{legend:{display:false}}}});
@@ -2677,11 +2702,11 @@ let dtGestorCotacoes = null;
 
 // Tudo calculado no backend (ver GET /api/crm/painel-gestor).
 async function renderPainelGestor(){
-  const vendedorIdFiltro = getGlobalVendedorId();
-  const nomeVendedorFiltro = getGlobalVendedorNome();
+  const vendedorIdsFiltro = getGlobalVendedorIds();
+  const nomesVendedorFiltro = getGlobalVendedorNomes();
   const {dIni, dFim} = getGlobalPeriodo();
   const qs = new URLSearchParams();
-  if(vendedorIdFiltro) qs.set('vendedorId', vendedorIdFiltro);
+  if(vendedorIdsFiltro.length) qs.set('vendedorIds', vendedorIdsFiltro.join(','));
   if(dIni) qs.set('dataInicio', dateToISO(dIni));
   if(dFim) qs.set('dataFim', dateToISO(dFim));
   let resp;
@@ -2725,7 +2750,7 @@ async function renderPainelGestor(){
 
   const statusEl = document.getElementById('gestor-cotacoes-status');
   const detalhado = resp.cotacoesDetalhado;
-  statusEl.textContent = detalhado.length + ' cotação(ões) em aberto' + (nomeVendedorFiltro?(' · vendedor: '+vendedorNome(vendedorIdFiltro)):'');
+  statusEl.textContent = detalhado.length + ' cotação(ões) em aberto' + (vendedorIdsFiltro.length?(' · vendedor(es): '+vendedorIdsFiltro.map(vendedorNome).join(', ')):'');
   const rowsGestorCot = detalhado.map(r=>{
     const dataFmt = r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '';
     return [
@@ -2828,12 +2853,12 @@ async function renderFretesFechados(force){
     return;
   }
 
-  const vendedorId = getGlobalVendedorId();
-  const nomeVendedorFiltro = getGlobalVendedorNome();
+  const vendedorIdsFiltro = getGlobalVendedorIds();
+  const nomesVendedorFiltro = getGlobalVendedorNomes();
   const {dIni, dFim} = getGlobalPeriodo();
 
   const filtradas = rows.filter(r=>{
-    if(nomeVendedorFiltro && (r['Vendedor']||'').trim().toLowerCase()!==nomeVendedorFiltro) return false;
+    if(nomesVendedorFiltro.length && !nomesVendedorFiltro.includes((r['Vendedor']||'').trim().toLowerCase())) return false;
     if(dIni || dFim){
       const d = parseDataColeta_(r['Data Coleta']);
       if(!d) return false;
@@ -2844,7 +2869,7 @@ async function renderFretesFechados(force){
   });
   _ultimasFretesFiltradas = filtradas;
 
-  statusEl.textContent = filtradas.length + ' frete(s) fechado(s)' + (nomeVendedorFiltro?(' · vendedor: '+vendedorNome(vendedorId)):'') + ' · atualizado ' + new Date().toLocaleTimeString('pt-BR');
+  statusEl.textContent = filtradas.length + ' frete(s) fechado(s)' + (vendedorIdsFiltro.length?(' · vendedor(es): '+vendedorIdsFiltro.map(vendedorNome).join(', ')):'') + ' · atualizado ' + new Date().toLocaleTimeString('pt-BR');
 
   let fat=0, custo=0, icms=0;
   filtradas.forEach(r=>{ fat+=parseBRL_(r['Frete Cobrado']); custo+=parseBRL_(r['Custo Operacional']); icms+=parseBRL_(r['ICMS']); });
