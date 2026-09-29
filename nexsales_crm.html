@@ -429,13 +429,14 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
       <div id="com-tab-produtividade" class="d-none">
         <div class="card p-3 mb-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">Atividade Diária (automático — Log de Atividades, só vendedores)</h6>
+            <h6 class="mb-0">Horas por Seção (estimado — Log de Atividades, só vendedores)</h6>
             <div class="d-flex gap-3 small">
               <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#F5B800;margin-right:4px"></span>Comercial</span>
               <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#ef4444;margin-right:4px"></span>Cards</span>
               <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#3b82f6;margin-right:4px"></span>Faturamento/Financeiro</span>
             </div>
           </div>
+          <div class="small text-muted mb-2">Estimativa por proximidade entre ações (até 30min sem mexer em nada = parou) — não é um controle de ponto exato.</div>
           <div style="position:relative;height:260px;"><canvas id="chart-produtividade-tab"></canvas></div>
         </div>
         <div class="card p-3">
@@ -1731,7 +1732,7 @@ async function renderProdutividade(){
       {label:'Cards', data:s.cards, borderColor:'#ef4444', backgroundColor:'#ef444422', tension:.3, fill:true},
       {label:'Faturamento/Financeiro', data:s.financeiro, borderColor:'#3b82f6', backgroundColor:'#3b82f622', tension:.3, fill:true},
     ]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y}h`}}}, scales:{y:{beginAtZero:true, ticks:{callback:v=>v+'h'}}}}
   });
 
   const rowsData = resp.tabela.map(p=>[
