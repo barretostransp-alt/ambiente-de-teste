@@ -359,7 +359,7 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
           <h3>Dashboard</h3>
           <div class="subtitle" id="dash-date-subtitle"></div>
         </div>
-        <button class="btn btn-accent" onclick="navigateTo('comercial')"><i class="fa-solid fa-plus me-1"></i> Lançar Produtividade</button>
+        <button class="btn btn-accent" onclick="navigateTo('comercial')"><i class="fa-solid fa-chart-line me-1"></i> Ver Produtividade</button>
       </div>
       <div class="row g-3 mb-3">
         <div class="col-lg-4">
@@ -427,17 +427,21 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
       </div>
 
       <div id="com-tab-produtividade" class="d-none">
-        <div class="d-flex justify-content-end mb-3">
-          <button class="btn btn-accent" onclick="openProdutividadeModal()"><i class="fa-solid fa-plus me-1"></i>Lançar Produtividade</button>
-        </div>
         <div class="card p-3 mb-3">
-          <h6 class="mb-3">Evolução (30 dias)</h6>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Atividade Diária (automático — Log de Atividades, só vendedores)</h6>
+            <div class="d-flex gap-3 small">
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#F5B800;margin-right:4px"></span>Comercial</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#ef4444;margin-right:4px"></span>Cards</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#3b82f6;margin-right:4px"></span>Faturamento/Financeiro</span>
+            </div>
+          </div>
           <div style="position:relative;height:260px;"><canvas id="chart-produtividade-tab"></canvas></div>
         </div>
         <div class="card p-3">
           <div class="table-responsive">
             <table class="table table-hover align-middle" id="table-produtividade" style="width:100%">
-              <thead><tr><th>Data</th><th>Vendedor</th><th>Prospectados</th><th>Ligações</th><th>Mensagens</th><th>Retornos</th><th>Positivos</th><th>Fechados</th><th>Valor Vendido</th><th>Horas</th><th></th></tr></thead>
+              <thead><tr><th>Data</th><th>Vendedor</th><th>Propostas</th><th>Fechados</th><th>Perdidos</th><th>Valor Vendido</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -710,41 +714,6 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
         </form>
       </div>
       <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-accent" onclick="saveCliente()">Salvar</button></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ MODAL: PRODUTIVIDADE ============ -->
-<div class="modal fade" id="modalProdutividade" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Lançamento de Produtividade</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <form id="formProdutividade">
-          <input type="hidden" id="p-id">
-          <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Data</label><input type="text" class="form-control flatpickr-date" id="p-data"></div>
-            <div class="col-md-6"><label class="form-label">Vendedor</label><select class="form-select" id="p-vendedor"></select></div>
-            <div class="col-md-3"><label class="form-label">Clientes Prospectados</label><input type="number" class="form-control" id="p-prospectados" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Ligações</label><input type="number" class="form-control" id="p-ligacoes" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Mensagens</label><input type="number" class="form-control" id="p-mensagens" value="0"></div>
-            <div class="col-md-3"><label class="form-label">E-mails</label><input type="number" class="form-control" id="p-emails" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Retornos</label><input type="number" class="form-control" id="p-retornos" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Clientes Ignorados</label><input type="number" class="form-control" id="p-ignorados" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Clientes Positivos</label><input type="number" class="form-control" id="p-positivos" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Clientes Negativos</label><input type="number" class="form-control" id="p-negativos" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Propostas</label><input type="number" class="form-control" id="p-propostas" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Visitas</label><input type="number" class="form-control" id="p-visitas" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Reuniões</label><input type="number" class="form-control" id="p-reunioes" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Horas Trabalhadas</label><input type="number" step="0.5" class="form-control" id="p-horas" value="8"></div>
-            <div class="col-md-3"><label class="form-label">Serviços Fechados</label><input type="number" class="form-control" id="p-fechados" value="0"></div>
-            <div class="col-md-3"><label class="form-label">Serviços Perdidos</label><input type="number" class="form-control" id="p-perdidos" value="0"></div>
-            <div class="col-md-6"><label class="form-label">Valor Vendido (R$)</label><input type="number" class="form-control" id="p-valor-vendido" value="0"></div>
-            <div class="col-md-12"><label class="form-label">Observações</label><textarea class="form-control" id="p-obs" rows="2"></textarea></div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-accent" onclick="saveProdutividade()">Salvar</button></div>
     </div>
   </div>
 </div>
@@ -1079,19 +1048,6 @@ function mapClienteParaApi_(c){
     proximo_contato:c.proximoContato||null, ultimo_contato:c.ultimoContato||null, data_fechamento:c.dataFechamento||null,
     status_cotacao_data:c.statusCotacaoData||null };
 }
-function mapProdutividadeDoApi_(p){
-  return { id:p.id, data:p.data, vendedor:p.vendedor_id, prospectados:p.prospectados||0, ligacoes:p.ligacoes||0,
-    mensagens:p.mensagens||0, emails:p.emails||0, retornos:p.retornos||0, ignorados:p.ignorados||0,
-    positivos:p.positivos||0, negativos:p.negativos||0, propostas:p.propostas||0, visitas:p.visitas||0,
-    reunioes:p.reunioes||0, horas:p.horas||0, fechados:p.fechados||0, perdidos:p.perdidos||0,
-    valorVendido:p.valor_vendido||0, obs:p.obs||'' };
-}
-function mapProdutividadeParaApi_(p){
-  return { data:p.data, vendedor_id:p.vendedor, prospectados:p.prospectados, ligacoes:p.ligacoes,
-    mensagens:p.mensagens, emails:p.emails, retornos:p.retornos, ignorados:p.ignorados, positivos:p.positivos,
-    negativos:p.negativos, propostas:p.propostas, visitas:p.visitas, reunioes:p.reunioes, horas:p.horas,
-    fechados:p.fechados, perdidos:p.perdidos, valor_vendido:p.valorVendido, obs:p.obs||null };
-}
 function mapEntrevistaDoApi_(e){
   return { id:e.id, data:e.data, vendedor:e.vendedor_id, comoFoiSeuDia:e.como_foi_seu_dia||'',
     prospectados:e.prospectados||0, ligacoes:e.ligacoes||0, mensagens:e.mensagens||0, retornos:e.retornos||0,
@@ -1129,18 +1085,17 @@ function mapTarefaParaApi_(t){
    igual sempre foi), só a carga inicial e as mutações que viram chamada
    de rede.
 --------------------------------------------------------------------- */
-const CRM_DATA = { vendedores:[], clientes:[], produtividade:[], entrevistas:[], tarefas:[], metasEquipe:{mensal:0, anual:0} };
+const CRM_DATA = { vendedores:[], clientes:[], entrevistas:[], tarefas:[], metasEquipe:{mensal:0, anual:0} };
 
 async function recarregarVendedores_(){ CRM_DATA.vendedores = (await crmFetch('/vendedores')).map(mapVendedorDoApi_); }
 async function recarregarClientes_(){ CRM_DATA.clientes = (await crmFetch('/clientes')).map(mapClienteDoApi_); }
-async function recarregarProdutividade_(){ CRM_DATA.produtividade = (await crmFetch('/produtividade')).map(mapProdutividadeDoApi_); }
 async function recarregarEntrevistas_(){ CRM_DATA.entrevistas = (await crmFetch('/entrevistas')).map(mapEntrevistaDoApi_); }
 async function recarregarTarefas_(){ CRM_DATA.tarefas = (await crmFetch('/tarefas')).map(mapTarefaDoApi_); }
 async function recarregarMetasEquipe_(){ const m = await crmFetch('/metas-equipe'); CRM_DATA.metasEquipe = {mensal:m.mensal, anual:m.anual}; }
 
 async function carregarDadosCRM(){
   await Promise.all([
-    recarregarVendedores_(), recarregarClientes_(), recarregarProdutividade_(),
+    recarregarVendedores_(), recarregarClientes_(),
     recarregarEntrevistas_(), recarregarTarefas_(), recarregarMetasEquipe_(),
   ]);
 }
@@ -1149,7 +1104,6 @@ const DB = {
   vendedores(){ return CRM_DATA.vendedores; },
   clientes(){ return CRM_DATA.clientes; },
   entrevistas(){ return CRM_DATA.entrevistas; },
-  produtividade(){ return CRM_DATA.produtividade; },
   metasEquipe(){ return CRM_DATA.metasEquipe; },
   tarefas(){ return CRM_DATA.tarefas; }
 };
@@ -1752,100 +1706,48 @@ function deleteVendedor(id){
 }
 
 /* ---------------------------------------------------------------------
-   10. COMERCIAL — PRODUTIVIDADE
+   10. COMERCIAL — PRODUTIVIDADE (automática — Log de Atividades +
+   cotações/fretes reais; ver GET /api/crm/produtividade-diaria,
+   src/services/crmProdutividadeService.js. Não tem mais lançamento
+   manual — a antiga crm_produtividade nunca teve um registro sequer).
 --------------------------------------------------------------------- */
 let dtProdutividade = null;
-function renderProdutividade(){
-  const prod = DB.produtividade().slice().sort((a,b)=>b.data.localeCompare(a.data));
-  const rowsData = prod.map(p=>[
-    fmtDateBR(p.data), escapeHtml(vendedorNome(p.vendedor)),
-    p.prospectados, p.ligacoes, p.mensagens, p.retornos,
-    p.positivos, p.fechados, fmtMoney(p.valorVendido), p.horas,
-    `<button class="btn btn-sm btn-outline-secondary" onclick="openProdutividadeModal('${p.id}')"><i class="fa-solid fa-pen"></i></button>
-     <button class="btn btn-sm btn-outline-danger" onclick="deleteProdutividade('${p.id}')"><i class="fa-solid fa-trash"></i></button>`
+async function renderProdutividade(){
+  const vendedorIdsFiltro = getGlobalVendedorIds();
+  const {dIni, dFim} = getGlobalPeriodo();
+  const qs = new URLSearchParams();
+  if(vendedorIdsFiltro.length) qs.set('vendedorIds', vendedorIdsFiltro.join(','));
+  if(dIni) qs.set('dataInicio', dateToISO(dIni));
+  if(dFim) qs.set('dataFim', dateToISO(dFim));
+  let resp;
+  try { resp = await crmFetch('/produtividade-diaria' + (qs.toString() ? '?'+qs.toString() : '')); }
+  catch(e){ console.error('[produtividade] falha ao buscar dados:', e); return; }
+
+  const s = resp.series;
+  makeChart('chart-produtividade-tab', {
+    type:'line',
+    data:{labels:s.labels.map(fmtDateBR), datasets:[
+      {label:'Comercial', data:s.comercial, borderColor:'#F5B800', backgroundColor:'#F5B80022', tension:.3, fill:true},
+      {label:'Cards', data:s.cards, borderColor:'#ef4444', backgroundColor:'#ef444422', tension:.3, fill:true},
+      {label:'Faturamento/Financeiro', data:s.financeiro, borderColor:'#3b82f6', backgroundColor:'#3b82f622', tension:.3, fill:true},
+    ]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+  });
+
+  const rowsData = resp.tabela.map(p=>[
+    fmtDateBR(p.data), escapeHtml(p.vendedor), p.propostas, p.fechados, p.perdidos, fmtMoney(p.valorVendido),
   ]);
   // Troca as linhas pela API do DataTables (clear + rows.add + draw) em
   // vez de destruir/recriar a cada render — evita o aviso "Incorrect
   // column count" que acontece quando o innerHTML da tabela é mexido por
   // fora enquanto uma instância do DataTables ainda está presa a ela.
   if(!dtProdutividade){
-    dtProdutividade = $('#table-produtividade').DataTable({data: rowsData, order:[[0,'desc']], pageLength:8, language:DT_PT});
+    dtProdutividade = $('#table-produtividade').DataTable({data: rowsData, order:[], pageLength:8, language:DT_PT});
   } else {
     dtProdutividade.clear();
     dtProdutividade.rows.add(rowsData);
     dtProdutividade.draw();
   }
-
-  const hoje = todayISO();
-  const dias30 = []; for(let i=29;i>=0;i--) dias30.push(addDays(hoje,-i));
-  const all = DB.produtividade();
-  const sumDay = (d,f)=>all.filter(p=>p.data===d).reduce((s,x)=>s+(Number(x[f])||0),0);
-  makeChart('chart-produtividade-tab', {
-    type:'bar',
-    data:{labels:dias30.map(fmtDateBR), datasets:[
-      {label:'Valor Vendido', data:dias30.map(d=>sumDay(d,'valorVendido')), backgroundColor:'#D97706'}
-    ]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
-  });
-}
-function openProdutividadeModal(id){
-  const m = new bootstrap.Modal('#modalProdutividade');
-  document.getElementById('formProdutividade').reset();
-  document.getElementById('p-data')._flatpickr?.setDate(todayISO());
-  if(id){
-    const p = DB.produtividade().find(x=>x.id===id);
-    document.getElementById('p-id').value = p.id;
-    document.getElementById('p-data')._flatpickr?.setDate(p.data);
-    document.getElementById('p-vendedor').value = p.vendedor;
-    ['prospectados','ligacoes','mensagens','emails','retornos','ignorados','positivos','negativos','propostas','visitas','reunioes','horas','fechados','perdidos'].forEach(f=>{
-      document.getElementById('p-'+f).value = p[f]||0;
-    });
-    document.getElementById('p-valor-vendido').value = p.valorVendido||0;
-    document.getElementById('p-obs').value = p.obs||'';
-  } else {
-    document.getElementById('p-id').value = '';
-  }
-  m.show();
-}
-async function saveProdutividade(){
-  const vendedor = document.getElementById('p-vendedor').value;
-  if(!vendedor){ toast('Selecione um vendedor','warning'); return; }
-  const id = document.getElementById('p-id').value;
-  const payload = mapProdutividadeParaApi_({
-    data: document.getElementById('p-data').value || todayISO(), vendedor,
-    prospectados:Number(document.getElementById('p-prospectados').value)||0,
-    ligacoes:Number(document.getElementById('p-ligacoes').value)||0,
-    mensagens:Number(document.getElementById('p-mensagens').value)||0,
-    emails:Number(document.getElementById('p-emails').value)||0,
-    retornos:Number(document.getElementById('p-retornos').value)||0,
-    ignorados:Number(document.getElementById('p-ignorados').value)||0,
-    positivos:Number(document.getElementById('p-positivos').value)||0,
-    negativos:Number(document.getElementById('p-negativos').value)||0,
-    propostas:Number(document.getElementById('p-propostas').value)||0,
-    visitas:Number(document.getElementById('p-visitas').value)||0,
-    reunioes:Number(document.getElementById('p-reunioes').value)||0,
-    horas:Number(document.getElementById('p-horas').value)||0,
-    fechados:Number(document.getElementById('p-fechados').value)||0,
-    perdidos:Number(document.getElementById('p-perdidos').value)||0,
-    valorVendido:Number(document.getElementById('p-valor-vendido').value)||0,
-    obs:document.getElementById('p-obs').value.trim()
-  });
-  try{
-    if(id) await crmFetch('/produtividade/'+id, {method:'PUT', headers:CRM_JSON_HEADERS, body:JSON.stringify(payload)});
-    else await crmFetch('/produtividade', {method:'POST', headers:CRM_JSON_HEADERS, body:JSON.stringify(payload)});
-  }catch(e){ toast('Erro ao salvar produtividade.','error'); return; }
-  await recarregarProdutividade_();
-  bootstrap.Modal.getInstance(document.getElementById('modalProdutividade')).hide();
-  toast('Produtividade lançada com sucesso!');
-  renderProdutividade();
-}
-function deleteProdutividade(id){
-  confirmDelete().then(async r=>{ if(!r.isConfirmed) return;
-    try{ await crmFetch('/produtividade/'+id, {method:'DELETE'}); }
-    catch(e){ toast('Erro ao excluir registro.','error'); return; }
-    await recarregarProdutividade_();
-    toast('Registro excluído.','info'); renderProdutividade();
-  });
 }
 
 /* ---------------------------------------------------------------------
@@ -2989,6 +2891,11 @@ function setupTabs(){
       tab.classList.add('active');
       document.getElementById('com-tab-vendedores').classList.toggle('d-none', tab.dataset.comTab!=='vendedores');
       document.getElementById('com-tab-produtividade').classList.toggle('d-none', tab.dataset.comTab!=='produtividade');
+      // O gráfico é desenhado com o canvas escondido (d-none) na primeira
+      // carga da página — Chart.js não redesenha sozinho quando o canvas
+      // vira visível depois. Re-renderiza só ao abrir a aba, já com o
+      // tamanho certo.
+      if(tab.dataset.comTab==='produtividade') renderProdutividade();
     });
   });
 }
