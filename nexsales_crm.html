@@ -387,7 +387,14 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
       <div class="row g-3 mb-3">
         <div class="col-12">
           <div class="card p-3 h-100">
-            <h6 class="mb-3">Produtividade — Últimos 14 dias</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">Horas por Seção — Últimos 14 dias (estimado)</h6>
+              <div class="d-flex gap-3 small">
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#F5B800;margin-right:4px"></span>Comercial</span>
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#ef4444;margin-right:4px"></span>Cards</span>
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#3b82f6;margin-right:4px"></span>Faturamento/Financeiro</span>
+              </div>
+            </div>
             <div style="position:relative;height:300px;"><canvas id="chart-produtividade"></canvas></div>
           </div>
         </div>
@@ -1397,11 +1404,11 @@ async function renderDashboard(){
   makeChart('chart-produtividade', {
     type:'line',
     data:{labels:d.produtividade14dias.labels.map(fmtDateBR), datasets:[
-      {label:'Prospectados', data:d.produtividade14dias.prospectados, borderColor:PALETTE[0], backgroundColor:PALETTE[0]+'22', tension:.35, fill:true},
-      {label:'Ligações', data:d.produtividade14dias.ligacoes, borderColor:PALETTE[4], backgroundColor:PALETTE[4]+'22', tension:.35, fill:true},
-      {label:'Fechados', data:d.produtividade14dias.fechados, borderColor:PALETTE[1], backgroundColor:PALETTE[1]+'22', tension:.35, fill:true}
+      {label:'Comercial', data:d.produtividade14dias.comercial, borderColor:'#F5B800', backgroundColor:'#F5B80022', tension:.35, fill:true},
+      {label:'Cards', data:d.produtividade14dias.cards, borderColor:'#ef4444', backgroundColor:'#ef444422', tension:.35, fill:true},
+      {label:'Faturamento/Financeiro', data:d.produtividade14dias.financeiro, borderColor:'#3b82f6', backgroundColor:'#3b82f622', tension:.35, fill:true}
     ]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtHorasMin_(c.parsed.y)}`}}}, scales:{y:{beginAtZero:true, ticks:{callback:fmtHorasMin_}}}}
   });
 
   const medals = ['#f59e0b','#94a3b8','#b45309','#D97706','#D97706'];
