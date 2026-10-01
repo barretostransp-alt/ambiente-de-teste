@@ -1842,7 +1842,14 @@ async function renderComissoes(){
   catch(e){ console.error('[comissoes] falha ao buscar dados:', e); return; }
 
   const vendedoresPorId = {}; DB.vendedores().forEach(v => vendedoresPorId[v.id] = v);
+  // Pedido do Alex: esses vendedores não entram nessa faixa de comissão —
+  // nem precisam aparecer no visual.
+  const VENDEDORES_SEM_COMISSAO = ['Diego', 'Jessé', 'Gabriel'];
   const linhas = resp.porVendedor
+    .filter(r => {
+      const v = vendedoresPorId[r.vendedorId];
+      return !v || !VENDEDORES_SEM_COMISSAO.includes(v.nome);
+    })
     .map(r => {
       const v = vendedoresPorId[r.vendedorId];
       const margem = r.periodo.margem;
