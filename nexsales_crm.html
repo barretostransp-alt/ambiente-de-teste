@@ -424,6 +424,7 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
       <ul class="nav nav-pills tab-pills mb-3" role="tablist">
         <li class="nav-item"><a class="nav-link active" data-com-tab="vendedores">Vendedores</a></li>
         <li class="nav-item"><a class="nav-link" data-com-tab="produtividade">Produtividade Diária</a></li>
+        <li class="nav-item"><a class="nav-link" data-com-tab="comissoes">Comissões</a></li>
       </ul>
 
       <div id="com-tab-vendedores">
@@ -451,6 +452,27 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
             <table class="table table-hover align-middle" id="table-produtividade" style="width:100%">
               <thead><tr><th>Data</th><th>Vendedor</th><th>Propostas</th><th>Fechados</th><th>Perdidos</th><th>Valor Vendido</th></tr></thead>
               <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="com-tab-comissoes" class="d-none">
+        <div class="card p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <h6 class="mb-1">Comissão sobre Margem Líquida</h6>
+              <div class="small text-muted">Faixa única por mês: a margem líquida inteira do vendedor paga a alíquota da faixa em que o total se encaixou.</div>
+            </div>
+            <select class="form-select form-select-sm" id="comissoes-mes" style="width:auto" onchange="renderComissoes()"></select>
+          </div>
+        </div>
+        <div class="card p-3">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle" id="table-comissoes" style="width:100%">
+              <thead><tr><th>Vendedor</th><th>Margem Líquida</th><th>Faixa</th><th>% Comissão</th><th>Valor da Comissão</th></tr></thead>
+              <tbody></tbody>
+              <tfoot><tr class="fw-bold"><td>Total</td><td id="comissoes-total-margem">—</td><td></td><td></td><td id="comissoes-total-valor">—</td></tr></tfoot>
             </table>
           </div>
         </div>
@@ -1266,7 +1288,7 @@ function renderPage(page){
   initGlobalFilters(); // garante que o select de vendedor está atualizado antes de qualquer render
   switch(page){
     case 'dashboard': renderDashboard(); break;
-    case 'comercial': renderVendedores(); renderProdutividade(); break;
+    case 'comercial': renderVendedores(); renderProdutividade(); renderComissoes(); break;
     case 'clientes': renderClientes(); renderCarteiraCrm(); break;
     case 'cotacoes': renderCotacoes(); break;
     case 'entrevistas': renderEntrevistas(); break;
@@ -1764,6 +1786,85 @@ async function renderProdutividade(){
     dtProdutividade.clear();
     dtProdutividade.rows.add(rowsData);
     dtProdutividade.draw();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   10b. COMERCIAL — COMISSÕES (sobre margem líquida do mês, faixa única —
+   a margem inteira do vendedor paga a alíquota da faixa em que o total
+   se encaixou, sem progressão por pedaço como no IR).
+--------------------------------------------------------------------- */
+const FAIXAS_COMISSAO = [
+  { ate: 20000, pct: 5 },
+  { ate: 30000, pct: 6 },
+  { ate: 50000, pct: 7 },
+  { ate: 60000, pct: 8 },
+  { ate: Infinity, pct: 9 },
+];
+function calcularComissao_(margem){
+  if(!margem || margem <= 0) return { pct: 0, valor: 0, faixaLabel: 'Sem comissão (margem ≤ 0)' };
+  const faixa = FAIXAS_COMISSAO.find(f => margem <= f.ate);
+  const idx = FAIXAS_COMISSAO.indexOf(faixa);
+  const de = idx === 0 ? 0 : FAIXAS_COMISSAO[idx-1].ate + 1;
+  const faixaLabel = faixa.ate === Infinity ? `Acima de ${fmtMoney(FAIXAS_COMISSAO[idx-1].ate)}` : `${fmtMoney(de)} a ${fmtMoney(faixa.ate)}`;
+  return { pct: faixa.pct, valor: margem * faixa.pct / 100, faixaLabel };
+}
+
+let mesesComissaoCarregados = null; // cache — mesma lista de meses pra toda a sessão na tela
+async function popularMesesComissao_(){
+  if(mesesComissaoCarregados) return mesesComissaoCarregados;
+  const res = await apiFetch(API_BASE + '/relatorio-vendedor/resumo-mensal');
+  const j = await res.json();
+  mesesComissaoCarregados = j;
+  const sel = document.getElementById('comissoes-mes');
+  sel.innerHTML = j.meses.map(m => `<option value="${m.chave}">${escapeHtml(m.label)}</option>`).join('');
+  sel.value = j.mesSelecionado;
+  return j;
+}
+function ultimoDiaMes_(chave){
+  const [y,m] = chave.split('-').map(Number);
+  return dateToISO(new Date(y, m, 0));
+}
+let dtComissoes = null;
+async function renderComissoes(){
+  await popularMesesComissao_();
+  const chave = document.getElementById('comissoes-mes').value;
+  if(!chave) return;
+  const periodoInicio = chave + '-01';
+  const periodoFim = ultimoDiaMes_(chave);
+
+  const vendedorIdsFiltro = getGlobalVendedorIds();
+  const qs = new URLSearchParams({ periodoInicio, periodoFim });
+  if(vendedorIdsFiltro.length) qs.set('vendedorIds', vendedorIdsFiltro.join(','));
+
+  let resp;
+  try { resp = await crmFetch('/resumo-vendedores?' + qs.toString()); }
+  catch(e){ console.error('[comissoes] falha ao buscar dados:', e); return; }
+
+  const vendedoresPorId = {}; DB.vendedores().forEach(v => vendedoresPorId[v.id] = v);
+  const linhas = resp.porVendedor
+    .map(r => {
+      const v = vendedoresPorId[r.vendedorId];
+      const margem = r.periodo.margem;
+      const com = calcularComissao_(margem);
+      return { nome: v ? v.nome : '—', margem, ...com };
+    })
+    .sort((a,b) => b.margem - a.margem);
+
+  const totalMargem = linhas.reduce((s,l) => s + l.margem, 0);
+  const totalValor  = linhas.reduce((s,l) => s + l.valor, 0);
+  document.getElementById('comissoes-total-margem').textContent = fmtMoney(totalMargem);
+  document.getElementById('comissoes-total-valor').textContent  = fmtMoney(totalValor);
+
+  const rowsData = linhas.map(l => [
+    escapeHtml(l.nome), fmtMoney(l.margem), escapeHtml(l.faixaLabel), l.pct ? l.pct + '%' : '—', fmtMoney(l.valor),
+  ]);
+  if(!dtComissoes){
+    dtComissoes = $('#table-comissoes').DataTable({data: rowsData, order:[], pageLength:10, language:DT_PT});
+  } else {
+    dtComissoes.clear();
+    dtComissoes.rows.add(rowsData);
+    dtComissoes.draw();
   }
 }
 
@@ -2908,11 +3009,13 @@ function setupTabs(){
       tab.classList.add('active');
       document.getElementById('com-tab-vendedores').classList.toggle('d-none', tab.dataset.comTab!=='vendedores');
       document.getElementById('com-tab-produtividade').classList.toggle('d-none', tab.dataset.comTab!=='produtividade');
+      document.getElementById('com-tab-comissoes').classList.toggle('d-none', tab.dataset.comTab!=='comissoes');
       // O gráfico é desenhado com o canvas escondido (d-none) na primeira
       // carga da página — Chart.js não redesenha sozinho quando o canvas
       // vira visível depois. Re-renderiza só ao abrir a aba, já com o
       // tamanho certo.
       if(tab.dataset.comTab==='produtividade') renderProdutividade();
+      if(tab.dataset.comTab==='comissoes') renderComissoes();
     });
   });
 }
