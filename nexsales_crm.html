@@ -1971,7 +1971,7 @@ async function renderComissoes(){
 
   const rowsData = linhas.map(l => {
     const valorCel = l.overrideEquipe > 0
-      ? `${fmtMoney(l.valor)} + ${fmtMoney(l.overrideEquipe)} (2% equipe) = <strong>${fmtMoney(l.valorFinal)}</strong>`
+      ? `${fmtMoney(l.valor)} + ${fmtMoney(l.overrideEquipe)} = <strong>${fmtMoney(l.valorFinal)}</strong>`
       : fmtMoney(l.valorFinal);
     return [escapeHtml(l.nome), fmtMoney(l.margem), escapeHtml(l.faixaLabel), l.pct ? l.pct + '%' : '—', valorCel];
   });
