@@ -227,6 +227,38 @@ body.tema-claro #login-screen .logo-claro{display:block!important}
 .btn-sm.primary:hover{opacity:.88}
 .help{font-size:11px;color:var(--txt-dim);line-height:1.5;margin-top:6px}
 
+/* ─── ASSISTENTE VIRTUAL (v1 — teste) ─── */
+.asst-bubble{
+  position:fixed;bottom:20px;right:20px;width:52px;height:52px;border-radius:50%;
+  background:var(--gold);color:#111;display:flex;align-items:center;justify-content:center;
+  font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);z-index:150;
+  transition:transform .15s;
+}
+.asst-bubble:hover{transform:scale(1.06)}
+.asst-panel{
+  position:fixed;bottom:20px;right:20px;width:340px;max-width:calc(100vw - 32px);
+  height:480px;max-height:calc(100vh - 100px);background:var(--card);border:1px solid var(--border);
+  border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.4);display:flex;flex-direction:column;
+  z-index:151;opacity:0;pointer-events:none;transform:translateY(12px);transition:all .18s;
+}
+.asst-panel.open{opacity:1;pointer-events:all;transform:translateY(0)}
+.asst-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.asst-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--txt)}
+.asst-msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.asst-msg{max-width:85%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;white-space:pre-wrap}
+.asst-msg.user{align-self:flex-end;background:var(--gold-dim);color:var(--txt);border:1px solid var(--gold-b)}
+.asst-msg.bot{align-self:flex-start;background:var(--surface);color:var(--txt);border:1px solid var(--border)}
+.asst-msg.erro{align-self:flex-start;background:rgba(220,38,38,.12);color:#F87171;border:1px solid rgba(220,38,38,.3)}
+.asst-confirmar{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-width:90%;font-size:12px;color:var(--txt)}
+.asst-confirmar .asst-resumo{margin-bottom:8px;line-height:1.5}
+.asst-confirmar-btns{display:flex;gap:8px}
+.asst-input-row{padding:10px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center}
+.asst-input-row input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--txt);font-size:12px}
+.asst-input-row button{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--txt-dim);cursor:pointer;flex-shrink:0}
+.asst-input-row button:hover{border-color:var(--gold);color:var(--gold)}
+.asst-input-row .asst-mic.gravando{color:#EF4444;border-color:#EF4444}
+.asst-typing{align-self:flex-start;font-size:11px;color:var(--txt-dim);padding:4px 12px}
+
 /* script modal */
 .script-modal{max-width:680px}
 
@@ -557,6 +589,22 @@ body.tema-claro .topbar * { color: #E8E9F0 !important; }
   </div>
 </div>
 
+<div id="asst-bubble" class="asst-bubble" onclick="toggleAssistente()" style="display:none" title="Assistente virtual">
+  <i class="ti ti-message-chatbot"></i>
+</div>
+<div id="asst-panel" class="asst-panel">
+  <div class="asst-hd">
+    <span class="asst-title"><i class="ti ti-message-chatbot"></i> Assistente (teste)</span>
+    <button class="modal-close" onclick="toggleAssistente()">&times;</button>
+  </div>
+  <div class="asst-msgs" id="asst-msgs"></div>
+  <div class="asst-input-row">
+    <button class="asst-mic" id="asst-mic-btn" onclick="asstToggleMic()" title="Falar"><i class="ti ti-microphone"></i></button>
+    <input type="text" id="asst-input" placeholder="Digite um pedido..." onkeydown="if(event.key==='Enter')asstEnviar()">
+    <button onclick="asstEnviar()" title="Enviar"><i class="ti ti-send"></i></button>
+  </div>
+</div>
+
 <script>
 
 /* ══════════════════════════════
@@ -768,6 +816,7 @@ function applyUser(user){
   var perms = [];
   try { perms = JSON.parse(localStorage.getItem("barretos_permissoes")||"[]"); } catch(e) { perms = []; }
   if (perms.length > 0) { aplicarMenuPermissoes(perms); } else { mostrarTudo(); }
+  inicializarAssistente(perms);
   // Exceção pontual pedida pelo Alex: Jessé Farias não deve ver a tela de
   // Início (ela não é controlada pelas permissões de módulo normais,
   // então precisa desse tratamento à parte — mesmo padrão já usado nos
@@ -894,6 +943,13 @@ function logout(){
   document.getElementById("main-frame").src="";
   var av=document.getElementById("sb-avatar");
   av.textContent="G"; av.style.background="var(--gold)"; av.style.color="#111";
+  var asstBolha=document.getElementById("asst-bubble");
+  if(asstBolha) asstBolha.style.display="none";
+  var asstPainel=document.getElementById("asst-panel");
+  if(asstPainel) asstPainel.classList.remove("open");
+  var asstMsgs=document.getElementById("asst-msgs");
+  if(asstMsgs) asstMsgs.innerHTML="";
+  asstHistorico=[];
   showLogin();
 }
 
@@ -2714,6 +2770,151 @@ function initTemaButtons() {
   selecionarTema(_temaAtual);
 }
 /* ─────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════
+   ASSISTENTE VIRTUAL (v1 — teste)
+   Chat com IA (Gemini) que executa ações reais do sistema. Toda ação que
+   grava dado (cotação, ordem de coleta, faturamento, PIX, card) exige
+   confirmação explícita antes de gravar — o backend não executa nada
+   sozinho (ver src/services/assistenteService.js).
+══════════════════════════════ */
+var FERRAMENTAS_ASSISTENTE = ['cotacao','faturamento','financeiro','kanban_pin','kanban_inf','kanban_bar','kanban_gon'];
+var asstHistorico = [];
+var asstAguardando = false;
+
+function inicializarAssistente(perms) {
+  var pode = Array.isArray(perms) && perms.some(function(p){ return FERRAMENTAS_ASSISTENTE.indexOf(p) !== -1; });
+  var bolha = document.getElementById('asst-bubble');
+  if (bolha) bolha.style.display = pode ? 'flex' : 'none';
+}
+
+function toggleAssistente() {
+  var painel = document.getElementById('asst-panel');
+  painel.classList.toggle('open');
+  if (painel.classList.contains('open') && !asstHistorico.length) {
+    asstAdicionarMsg('bot', 'Oi! Posso te ajudar a criar uma cotação, ordem de coleta, lançar faturamento, solicitar PIX ou criar um card no Kanban. O que você precisa?');
+  }
+}
+
+function asstAdicionarMsg(tipo, texto) {
+  var box = document.getElementById('asst-msgs');
+  var div = document.createElement('div');
+  div.className = 'asst-msg ' + tipo;
+  div.textContent = texto;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function asstMostrarTyping(mostrar) {
+  var existente = document.getElementById('asst-typing');
+  if (mostrar && !existente) {
+    var box = document.getElementById('asst-msgs');
+    var div = document.createElement('div');
+    div.id = 'asst-typing'; div.className = 'asst-typing'; div.textContent = 'digitando…';
+    box.appendChild(div); box.scrollTop = box.scrollHeight;
+  } else if (!mostrar && existente) {
+    existente.remove();
+  }
+}
+
+async function asstEnviar() {
+  if (asstAguardando) return;
+  var input = document.getElementById('asst-input');
+  var texto = input.value.trim();
+  if (!texto) return;
+  input.value = '';
+  asstAdicionarMsg('user', texto);
+  asstHistorico.push({ role: 'user', texto: texto });
+  asstAguardando = true;
+  asstMostrarTyping(true);
+  try {
+    var r = await apiFetchShell(API_BASE + '/assistente/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensagens: asstHistorico }),
+    });
+    var j = await r.json();
+    asstMostrarTyping(false);
+    if (!r.ok) {
+      asstAdicionarMsg('erro', j.error || 'Deu um erro, tenta de novo.');
+      return;
+    }
+    if (j.tipo === 'confirmar_acao') {
+      asstHistorico.push({ role: 'assistente', texto: j.resumo });
+      asstMostrarConfirmacao(j.resumo, j.acao);
+    } else {
+      asstHistorico.push({ role: 'assistente', texto: j.texto });
+      asstAdicionarMsg('bot', j.texto);
+    }
+  } catch (e) {
+    asstMostrarTyping(false);
+    asstAdicionarMsg('erro', 'Erro de conexão. Tenta de novo.');
+  } finally {
+    asstAguardando = false;
+  }
+}
+
+function asstMostrarConfirmacao(resumo, acao) {
+  var box = document.getElementById('asst-msgs');
+  var div = document.createElement('div');
+  div.className = 'asst-confirmar';
+  div.innerHTML = '<div class="asst-resumo"></div><div class="asst-confirmar-btns">' +
+    '<button class="btn-sm primary">Confirmar</button>' +
+    '<button class="btn-sm ghost">Cancelar</button></div>';
+  div.querySelector('.asst-resumo').textContent = resumo;
+  var btns = div.querySelectorAll('button');
+  btns[0].onclick = function () { asstConfirmar(acao, div); };
+  btns[1].onclick = function () {
+    div.remove();
+    asstAdicionarMsg('bot', 'Ação cancelada.');
+    asstHistorico.push({ role: 'assistente', texto: 'Ação cancelada pelo usuário.' });
+  };
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function asstConfirmar(acao, elConfirmar) {
+  var btns = elConfirmar.querySelectorAll('button');
+  for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+  try {
+    var r = await apiFetchShell(API_BASE + '/assistente/confirmar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: acao }),
+    });
+    var j = await r.json();
+    elConfirmar.remove();
+    if (!r.ok) {
+      asstAdicionarMsg('erro', j.error || 'Não foi possível concluir.');
+      return;
+    }
+    asstAdicionarMsg('bot', j.texto || 'Feito!');
+    asstHistorico.push({ role: 'assistente', texto: j.texto || 'Feito.' });
+  } catch (e) {
+    elConfirmar.remove();
+    asstAdicionarMsg('erro', 'Erro de conexão ao confirmar.');
+  }
+}
+
+/* Microfone — Web Speech API (reconhecimento de voz do navegador, sem
+   arquitetura nova nenhuma no backend). */
+var asstReconhecimento = null;
+var asstGravando = false;
+function asstToggleMic() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { asstAdicionarMsg('erro', 'Seu navegador não suporta reconhecimento de voz.'); return; }
+  var btn = document.getElementById('asst-mic-btn');
+  if (asstGravando) { asstReconhecimento.stop(); return; }
+  asstReconhecimento = new SR();
+  asstReconhecimento.lang = 'pt-BR';
+  asstReconhecimento.interimResults = false;
+  asstReconhecimento.onstart = function () { asstGravando = true; btn.classList.add('gravando'); };
+  asstReconhecimento.onend = function () { asstGravando = false; btn.classList.remove('gravando'); };
+  asstReconhecimento.onresult = function (ev) {
+    document.getElementById('asst-input').value = ev.results[0][0].transcript;
+  };
+  asstReconhecimento.start();
+}
 </script>
 </body>
 </html>
