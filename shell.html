@@ -597,12 +597,12 @@ body.tema-claro .topbar * { color: #E8E9F0 !important; }
   </div>
 </div>
 
-<div id="asst-bubble" class="asst-bubble" onclick="toggleAssistente()" style="display:none" title="Assistente virtual">
+<div id="asst-bubble" class="asst-bubble" onclick="toggleAssistente()" style="display:none" title="Manuel, o assistente virtual">
   <i class="ti ti-message-chatbot"></i>
 </div>
 <div id="asst-panel" class="asst-panel">
   <div class="asst-hd">
-    <span class="asst-title"><i class="ti ti-message-chatbot"></i> Assistente (teste)</span>
+    <span class="asst-title"><i class="ti ti-message-chatbot"></i> Manuel (teste)</span>
     <button class="modal-close" onclick="toggleAssistente()">&times;</button>
   </div>
   <div class="asst-msgs" id="asst-msgs"></div>
@@ -2812,7 +2812,7 @@ function toggleAssistente() {
   var painel = document.getElementById('asst-panel');
   painel.classList.toggle('open');
   if (painel.classList.contains('open') && !asstHistorico.length) {
-    asstAdicionarMsg('bot', 'Oi! Posso te ajudar a criar uma cotação, ordem de coleta, lançar faturamento, solicitar PIX ou criar um card no Kanban. O que você precisa?');
+    asstAdicionarMsg('bot', 'Oi, eu sou o Manuel! Posso te ajudar a criar uma cotação, ordem de coleta, lançar faturamento, solicitar PIX ou criar um card no Kanban. O que você precisa?');
   }
 }
 
