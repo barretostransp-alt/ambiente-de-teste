@@ -2989,24 +2989,62 @@ async function asstConfirmar(acao, elConfirmar) {
     if (acao.nome === 'anexar_arquivo') asstRemoverArquivoPendente();
     asstAdicionarMsg('bot', j.texto || 'Feito!');
     asstHistorico.push({ role: 'assistente', texto: j.texto || 'Feito.' });
-    if (acao.nome === 'criar_ordem_coleta') asstAdicionarBotaoPDF_(acao.args);
+    if (acao.nome === 'criar_ordem_coleta') {
+      asstAdicionarBotaoPDF_('Baixar PDF da Ordem de Coleta', function () { asstGerarPDFOrdemColeta_(acao.args); });
+    }
+    if (acao.nome === 'criar_cotacao') {
+      asstAdicionarBotaoPDF_('Baixar PDF da Cotação', function () { asstGerarPDFCotacao_(acao.args, j.resultado); });
+    }
   } catch (e) {
     elConfirmar.remove();
     asstAdicionarMsg('erro', 'Erro de conexão ao confirmar.');
   }
 }
 
-/* PDF simples da Ordem de Coleta — gerado no navegador, só com os campos
-   que o assistente já coletou na conversa (sem timbrado/logo oficial, não
-   é o mesmo documento da tela de Cotação Comercial). */
-function asstAdicionarBotaoPDF_(args) {
+/* PDFs simples (Ordem de Coleta / Cotação) — gerados no navegador, só com
+   os campos que o assistente já coletou na conversa (sem timbrado/logo
+   oficial, não são os mesmos documentos da tela de Cotação Comercial). */
+function asstAdicionarBotaoPDF_(label, onClick) {
   var box = document.getElementById('asst-msgs');
   var btn = document.createElement('button');
   btn.className = 'asst-btn-pdf';
-  btn.innerHTML = '<i class="ti ti-file-download"></i> Baixar PDF da Ordem de Coleta';
-  btn.onclick = function () { asstGerarPDFOrdemColeta_(args); };
+  btn.innerHTML = '<i class="ti ti-file-download"></i> ' + label;
+  btn.onclick = onClick;
   box.appendChild(btn);
   box.scrollTop = box.scrollHeight;
+}
+
+function asstGerarPDFCotacao_(a, r) {
+  if (typeof window.jspdf === 'undefined') { asstAdicionarMsg('erro', 'Biblioteca de PDF não carregada.'); return; }
+  var doc = new window.jspdf.jsPDF('p', 'mm', 'a4');
+  var MX = 15, y = 20, CW = 180;
+  function linha(label, valor) {
+    doc.setFont(undefined, 'bold'); doc.setFontSize(9); doc.text(label, MX, y);
+    doc.setFont(undefined, 'normal'); doc.text(String(valor || '—'), MX + 45, y);
+    y += 7;
+  }
+  doc.setFont(undefined, 'bold'); doc.setFontSize(14);
+  doc.text('Cotação de Frete (gerado via assistente)', MX, y); y += 6;
+  doc.setFont(undefined, 'normal'); doc.setFontSize(9); doc.setTextColor(120);
+  doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), MX, y); y += 10;
+  doc.setTextColor(0);
+  if (r && r.numero) linha('Cotação nº:', r.numero);
+  linha('Empresa emitente:', a.empresa);
+  linha('Cliente:', a.cliente);
+  if (a.cnpj_tomador) linha('CNPJ cliente:', a.cnpj_tomador);
+  linha('Origem:', a.origem);
+  linha('Destino:', a.destino);
+  linha('Modalidade:', a.modalidade);
+  linha('Tipo de veículo:', a.tipo_veiculo);
+  linha('Valor:', a.valor != null ? Number(a.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—');
+  linha('Vendedor:', a.vendedor);
+  if (a.observacoes_cliente) {
+    y += 3;
+    doc.setFont(undefined, 'bold'); doc.text('Observações:', MX, y); y += 6;
+    doc.setFont(undefined, 'normal');
+    doc.text(doc.splitTextToSize(String(a.observacoes_cliente), CW), MX, y);
+  }
+  doc.save('cotacao-assistente-' + (r && r.numero ? r.numero : Date.now()) + '.pdf');
 }
 
 function asstGerarPDFOrdemColeta_(a) {
