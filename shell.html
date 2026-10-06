@@ -245,10 +245,12 @@ body.tema-claro #login-screen .logo-claro{display:block!important}
 .asst-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .asst-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--txt)}
 .asst-msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
-.asst-msg{max-width:85%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;white-space:pre-wrap}
+.asst-msg{max-width:85%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;white-space:pre-wrap;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .asst-msg.user{align-self:flex-end;background:var(--gold-dim);color:var(--txt);border:1px solid var(--gold-b)}
 .asst-msg.bot{align-self:flex-start;background:var(--surface);color:var(--txt);border:1px solid var(--border)}
 .asst-msg.erro{align-self:flex-start;background:rgba(220,38,38,.12);color:#F87171;border:1px solid rgba(220,38,38,.3)}
+.asst-msg>span:first-child{align-self:stretch;white-space:pre-wrap}
+.asst-hora{font-size:9px;color:var(--txt-dim);opacity:.8}
 .asst-confirmar{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-width:90%;font-size:12px;color:var(--txt)}
 .asst-confirmar .asst-resumo{margin-bottom:8px;line-height:1.5}
 .asst-confirmar-btns{display:flex;gap:8px}
@@ -2796,11 +2798,22 @@ function toggleAssistente() {
   }
 }
 
+function asstHorarioAtual_() {
+  var d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
 function asstAdicionarMsg(tipo, texto) {
   var box = document.getElementById('asst-msgs');
   var div = document.createElement('div');
   div.className = 'asst-msg ' + tipo;
-  div.textContent = texto;
+  var spanTexto = document.createElement('span');
+  spanTexto.textContent = texto;
+  var spanHora = document.createElement('span');
+  spanHora.className = 'asst-hora';
+  spanHora.textContent = asstHorarioAtual_();
+  div.appendChild(spanTexto);
+  div.appendChild(spanHora);
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
