@@ -2945,7 +2945,7 @@ function asstMostrarConfirmacao(resumo, acao) {
   // assistenteService.js) — o frontend já sabe, então completa o resumo.
   // Vale tanto pra anexar_arquivo quanto pra lancar_faturamento_fila com
   // arquivo junto (ver asstConfirmar).
-  var asstAcaoUsaArquivoPendente_ = acao.nome === 'anexar_arquivo' || acao.nome === 'lancar_faturamento_fila';
+  var asstAcaoUsaArquivoPendente_ = acao.nome === 'anexar_arquivo' || acao.nome === 'lancar_faturamento_fila' || acao.nome === 'enviar_canhoto';
   if (asstAcaoUsaArquivoPendente_ && asstArquivoPendente) {
     resumoExibido = resumo.replace(/\.$/, '') + ' — arquivo: ' + asstArquivoPendente.nome;
   }
@@ -2974,7 +2974,7 @@ async function asstConfirmar(acao, elConfirmar) {
     // entra no corpo da chamada — antes disso ele nunca saiu do navegador.
     // Vale tanto pra anexar_arquivo quanto pra lancar_faturamento_fila com
     // arquivo junto (anexa automaticamente à solicitação recém-criada).
-    var acaoUsaArquivoPendente = acao.nome === 'anexar_arquivo' || acao.nome === 'lancar_faturamento_fila';
+    var acaoUsaArquivoPendente = acao.nome === 'anexar_arquivo' || acao.nome === 'lancar_faturamento_fila' || acao.nome === 'enviar_canhoto';
     if (acaoUsaArquivoPendente && asstArquivoPendente) {
       var dataBase64 = await asstArquivoParaBase64_(asstArquivoPendente.file);
       acaoFinal = { nome: acao.nome, args: Object.assign({}, acao.args, {
