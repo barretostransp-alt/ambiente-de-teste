@@ -260,6 +260,12 @@ body.tema-claro #login-screen .logo-claro{display:block!important}
 .asst-input-row button:hover{border-color:var(--gold);color:var(--gold)}
 .asst-input-row .asst-mic.gravando{color:#EF4444;border-color:#EF4444}
 .asst-typing{align-self:flex-start;font-size:11px;color:var(--txt-dim);padding:4px 12px}
+.asst-chip-arquivo{margin:0 10px;padding:6px 10px;background:var(--gold-dim);border:1px solid var(--gold-b);border-radius:8px;font-size:11px;color:var(--txt);display:flex;align-items:center;gap:6px}
+.asst-chip-arquivo span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asst-chip-arquivo button{background:none;border:none;color:var(--txt-dim);cursor:pointer;font-size:12px;padding:0}
+.asst-link-arquivo{color:var(--gold);text-decoration:underline}
+.asst-btn-pdf{align-self:flex-start;margin-top:-6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--txt);cursor:pointer;display:flex;align-items:center;gap:5px}
+.asst-btn-pdf:hover{border-color:var(--gold);color:var(--gold)}
 
 /* script modal */
 .script-modal{max-width:680px}
@@ -600,12 +606,20 @@ body.tema-claro .topbar * { color: #E8E9F0 !important; }
     <button class="modal-close" onclick="toggleAssistente()">&times;</button>
   </div>
   <div class="asst-msgs" id="asst-msgs"></div>
+  <div class="asst-chip-arquivo" id="asst-chip-arquivo" style="display:none">
+    <i class="ti ti-paperclip"></i> <span id="asst-chip-nome"></span>
+    <button onclick="asstRemoverArquivoPendente()" title="Remover">✕</button>
+  </div>
   <div class="asst-input-row">
+    <input type="file" id="asst-arquivo-input" style="display:none" onchange="asstArquivoSelecionado(this)">
+    <button class="asst-clip" onclick="document.getElementById('asst-arquivo-input').click()" title="Anexar arquivo"><i class="ti ti-paperclip"></i></button>
     <button class="asst-mic" id="asst-mic-btn" onclick="asstToggleMic()" title="Falar"><i class="ti ti-microphone"></i></button>
     <input type="text" id="asst-input" placeholder="Digite um pedido..." onkeydown="if(event.key==='Enter')asstEnviar()">
     <button onclick="asstEnviar()" title="Enviar"><i class="ti ti-send"></i></button>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
 
@@ -952,6 +966,9 @@ function logout(){
   var asstMsgs=document.getElementById("asst-msgs");
   if(asstMsgs) asstMsgs.innerHTML="";
   asstHistorico=[];
+  asstArquivoPendente=null;
+  var asstChip=document.getElementById("asst-chip-arquivo");
+  if(asstChip) asstChip.style.display="none";
   showLogin();
 }
 
@@ -2783,6 +2800,7 @@ function initTemaButtons() {
 var FERRAMENTAS_ASSISTENTE = ['cotacao','faturamento','financeiro','kanban_pin','kanban_inf','kanban_bar','kanban_gon'];
 var asstHistorico = [];
 var asstAguardando = false;
+var asstArquivoPendente = null; // {file, nome, mimeType}
 
 function inicializarAssistente(perms) {
   var pode = Array.isArray(perms) && perms.some(function(p){ return FERRAMENTAS_ASSISTENTE.indexOf(p) !== -1; });
@@ -2803,12 +2821,29 @@ function asstHorarioAtual_() {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 
+// Troca links do bucket de anexos por um botão clicável em vez de mostrar a
+// URL crua — nunca usa innerHTML com o texto do modelo (monta nó por nó).
+function asstPreencherTexto_(el, texto) {
+  var regex = /(https:\/\/[^\s]+\/storage\/v1\/object\/public\/anexos\/[^\s)]+)/g;
+  var ultimoIndex = 0, m;
+  while ((m = regex.exec(texto))) {
+    if (m.index > ultimoIndex) el.appendChild(document.createTextNode(texto.slice(ultimoIndex, m.index)));
+    var a = document.createElement('a');
+    a.href = m[0]; a.target = '_blank'; a.rel = 'noopener'; a.className = 'asst-link-arquivo';
+    var nomeArquivo = decodeURIComponent(m[0].split('/').pop());
+    a.textContent = '📎 ' + nomeArquivo;
+    el.appendChild(a);
+    ultimoIndex = m.index + m[0].length;
+  }
+  if (ultimoIndex < texto.length) el.appendChild(document.createTextNode(texto.slice(ultimoIndex)));
+}
+
 function asstAdicionarMsg(tipo, texto) {
   var box = document.getElementById('asst-msgs');
   var div = document.createElement('div');
   div.className = 'asst-msg ' + tipo;
   var spanTexto = document.createElement('span');
-  spanTexto.textContent = texto;
+  asstPreencherTexto_(spanTexto, texto);
   var spanHora = document.createElement('span');
   spanHora.className = 'asst-hora';
   spanHora.textContent = asstHorarioAtual_();
@@ -2816,6 +2851,34 @@ function asstAdicionarMsg(tipo, texto) {
   div.appendChild(spanHora);
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
+  return div;
+}
+
+/* Anexo de arquivo — o arquivo escolhido fica guardado no navegador até o
+   usuário confirmar a ação "anexar_arquivo"; só então vira base64 e sobe de
+   verdade. O modelo nunca recebe os bytes do arquivo, só o nome (ver
+   asstEnviar). */
+function asstArquivoSelecionado(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  asstArquivoPendente = { file: file, nome: file.name, mimeType: file.type || 'application/octet-stream' };
+  document.getElementById('asst-chip-nome').textContent = file.name;
+  document.getElementById('asst-chip-arquivo').style.display = 'flex';
+  input.value = '';
+}
+
+function asstRemoverArquivoPendente() {
+  asstArquivoPendente = null;
+  document.getElementById('asst-chip-arquivo').style.display = 'none';
+}
+
+function asstArquivoParaBase64_(file) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () { resolve(String(reader.result).split(',').pop()); };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function asstMostrarTyping(mostrar) {
@@ -2834,10 +2897,16 @@ async function asstEnviar() {
   if (asstAguardando) return;
   var input = document.getElementById('asst-input');
   var texto = input.value.trim();
-  if (!texto) return;
+  var temArquivo = !!asstArquivoPendente;
+  if (!texto && !temArquivo) return;
+  if (!texto && temArquivo) texto = 'anexar arquivo';
   input.value = '';
-  asstAdicionarMsg('user', texto);
-  asstHistorico.push({ role: 'user', texto: texto });
+  asstAdicionarMsg('user', texto + (temArquivo ? ' 📎 ' + asstArquivoPendente.nome : ''));
+  // O modelo só vê o nome do arquivo (marcador em texto), nunca os bytes —
+  // isso só vai pro histórico mandado pra API, não pro que aparece na tela.
+  var textoParaApi = texto + (temArquivo ? '\n[Arquivo anexado: ' + asstArquivoPendente.nome + ']' : '');
+  asstHistorico.push({ role: 'user', texto: textoParaApi });
+  if (temArquivo) document.getElementById('asst-chip-arquivo').style.display = 'none';
   asstAguardando = true;
   asstMostrarTyping(true);
   try {
@@ -2871,14 +2940,21 @@ function asstMostrarConfirmacao(resumo, acao) {
   var box = document.getElementById('asst-msgs');
   var div = document.createElement('div');
   div.className = 'asst-confirmar';
+  var resumoExibido = resumo;
+  // O backend não sabe o nome do arquivo até a confirmação (ver
+  // assistenteService.js) — o frontend já sabe, então completa o resumo.
+  if (acao.nome === 'anexar_arquivo' && asstArquivoPendente) {
+    resumoExibido = resumo.replace(/\.$/, '') + ' — arquivo: ' + asstArquivoPendente.nome;
+  }
   div.innerHTML = '<div class="asst-resumo"></div><div class="asst-confirmar-btns">' +
     '<button class="btn-sm primary">Confirmar</button>' +
     '<button class="btn-sm ghost">Cancelar</button></div>';
-  div.querySelector('.asst-resumo').textContent = resumo;
+  div.querySelector('.asst-resumo').textContent = resumoExibido;
   var btns = div.querySelectorAll('button');
   btns[0].onclick = function () { asstConfirmar(acao, div); };
   btns[1].onclick = function () {
     div.remove();
+    if (acao.nome === 'anexar_arquivo') asstRemoverArquivoPendente();
     asstAdicionarMsg('bot', 'Ação cancelada.');
     asstHistorico.push({ role: 'assistente', texto: 'Ação cancelada pelo usuário.' });
   };
@@ -2890,10 +2966,19 @@ async function asstConfirmar(acao, elConfirmar) {
   var btns = elConfirmar.querySelectorAll('button');
   for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
   try {
+    var acaoFinal = acao;
+    // Só agora (depois do clique em Confirmar) o arquivo vira base64 e
+    // entra no corpo da chamada — antes disso ele nunca saiu do navegador.
+    if (acao.nome === 'anexar_arquivo' && asstArquivoPendente) {
+      var dataBase64 = await asstArquivoParaBase64_(asstArquivoPendente.file);
+      acaoFinal = { nome: acao.nome, args: Object.assign({}, acao.args, {
+        nome: asstArquivoPendente.nome, mimeType: asstArquivoPendente.mimeType, data: dataBase64,
+      }) };
+    }
     var r = await apiFetchShell(API_BASE + '/assistente/confirmar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: acao }),
+      body: JSON.stringify({ acao: acaoFinal }),
     });
     var j = await r.json();
     elConfirmar.remove();
@@ -2901,12 +2986,60 @@ async function asstConfirmar(acao, elConfirmar) {
       asstAdicionarMsg('erro', j.error || 'Não foi possível concluir.');
       return;
     }
+    if (acao.nome === 'anexar_arquivo') asstRemoverArquivoPendente();
     asstAdicionarMsg('bot', j.texto || 'Feito!');
     asstHistorico.push({ role: 'assistente', texto: j.texto || 'Feito.' });
+    if (acao.nome === 'criar_ordem_coleta') asstAdicionarBotaoPDF_(acao.args);
   } catch (e) {
     elConfirmar.remove();
     asstAdicionarMsg('erro', 'Erro de conexão ao confirmar.');
   }
+}
+
+/* PDF simples da Ordem de Coleta — gerado no navegador, só com os campos
+   que o assistente já coletou na conversa (sem timbrado/logo oficial, não
+   é o mesmo documento da tela de Cotação Comercial). */
+function asstAdicionarBotaoPDF_(args) {
+  var box = document.getElementById('asst-msgs');
+  var btn = document.createElement('button');
+  btn.className = 'asst-btn-pdf';
+  btn.innerHTML = '<i class="ti ti-file-download"></i> Baixar PDF da Ordem de Coleta';
+  btn.onclick = function () { asstGerarPDFOrdemColeta_(args); };
+  box.appendChild(btn);
+  box.scrollTop = box.scrollHeight;
+}
+
+function asstGerarPDFOrdemColeta_(a) {
+  if (typeof window.jspdf === 'undefined') { asstAdicionarMsg('erro', 'Biblioteca de PDF não carregada.'); return; }
+  var doc = new window.jspdf.jsPDF('p', 'mm', 'a4');
+  var MX = 15, y = 20, CW = 180;
+  function linha(label, valor) {
+    doc.setFont(undefined, 'bold'); doc.setFontSize(9); doc.text(label, MX, y);
+    doc.setFont(undefined, 'normal'); doc.text(String(valor || '—'), MX + 45, y);
+    y += 7;
+  }
+  doc.setFont(undefined, 'bold'); doc.setFontSize(14);
+  doc.text('Ordem de Coleta (gerado via assistente)', MX, y); y += 6;
+  doc.setFont(undefined, 'normal'); doc.setFontSize(9); doc.setTextColor(120);
+  doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), MX, y); y += 10;
+  doc.setTextColor(0);
+  if (a.cotacao_numero) linha('Cotação nº:', a.cotacao_numero);
+  linha('Motorista:', a.motorista);
+  linha('Placa(s):', Array.isArray(a.placas) ? a.placas.join(' / ') : a.placas);
+  linha('Veículo:', a.veiculo);
+  y += 3;
+  linha('Remetente:', a.remetente);
+  linha('CNPJ remetente:', a.cnpj_remetente);
+  linha('Destinatário:', a.destinatario);
+  linha('CNPJ destinatário:', a.cnpj_destinatario);
+  y += 3;
+  doc.setFont(undefined, 'bold'); doc.text('Endereço de coleta:', MX, y); y += 6;
+  doc.setFont(undefined, 'normal');
+  doc.text(doc.splitTextToSize(String(a.end_coleta || '—'), CW), MX, y); y += 12;
+  doc.setFont(undefined, 'bold'); doc.text('Endereço de entrega:', MX, y); y += 6;
+  doc.setFont(undefined, 'normal');
+  doc.text(doc.splitTextToSize(String(a.end_entrega || '—'), CW), MX, y);
+  doc.save('ordem-coleta-assistente-' + Date.now() + '.pdf');
 }
 
 /* Microfone — Web Speech API (reconhecimento de voz do navegador, sem
