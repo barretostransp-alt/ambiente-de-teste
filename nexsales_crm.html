@@ -537,7 +537,7 @@ table.dataTable tbody td{border-color:var(--border) !important;font-size:13.5px;
         <button class="btn btn-outline-secondary" onclick="renderCotacoes(true)"><i class="fa-solid fa-rotate me-1"></i>Atualizar</button>
       </div>
       <div id="cotacoes-status" class="small text-muted mb-2"></div>
-      <div class="kpi-grid mb-3" id="cotacoes-kpis"></div>
+      <div class="kpi-grid kpi-grid-money mb-3" id="cotacoes-kpis"></div>
       <div class="card p-3 mb-3">
         <h6 class="mb-3">Valor em Cotações por Status (R$)</h6>
         <div class="kpi-grid kpi-grid-money" id="cotacoes-valor-status"></div>
@@ -2397,7 +2397,7 @@ function renderCotacoesIndividualTable_(){
       escapeHtml(r.Cliente||''),
       `<span class="badge-status" style="background:${COTACAO_STATUS_COR[sc]}1a;color:${COTACAO_STATUS_COR[sc]}">${COTACAO_STATUS_LABEL[sc]}</span>`,
       `<span class="text-end d-block">${fmtMoney(r.Valor)}</span>`,
-      `<button class="btn btn-sm btn-outline-accent" onclick="viewCotacao('${r.Numero}')"><i class="fa-solid fa-eye me-1"></i>${obsLabel}</button>`,
+      `<button class="btn btn-sm btn-outline-accent" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap" onclick="viewCotacao('${r.Numero}')"><i class="fa-solid fa-eye"></i>${obsLabel}</button>`,
     ];
   });
   if(!dtCotacoesIndividual){
