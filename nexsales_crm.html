@@ -191,10 +191,10 @@ body.sidebar-open #sidebar-overlay{display:block;}
 .kpi-tile .kpi-trend{position:absolute;top:16px;right:16px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;}
 /* Linha de KPIs com valor em R$ (textos mais longos, ex: "R$ 6.536.082,99")
    — força as 6 colunas numa linha só e reduz a fonte pra caber. */
-.kpi-grid-money{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;}
-.kpi-grid-money .kpi-tile{padding:12px 10px;}
-.kpi-grid-money .kpi-value{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.kpi-grid-money .kpi-label{font-size:9.5px;white-space:nowrap;}
+.kpi-grid-money{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
+.kpi-grid-money .kpi-tile{padding:12px 8px;}
+.kpi-grid-money .kpi-value{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;letter-spacing:-.03em;}
+.kpi-grid-money .kpi-label{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.03em;}
 @media(max-width:900px){ .kpi-grid-money{grid-template-columns:repeat(3,minmax(0,1fr));} }
 
 /* Status badges */
