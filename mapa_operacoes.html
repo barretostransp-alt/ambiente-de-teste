@@ -90,6 +90,60 @@ body.tema-claro{
 }
 body.tema-claro .chip{color:#374151;}
 body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);}
+
+/* ── Abas do topbar (Mapa / Detalhamento) ── */
+.tb-tabs{display:flex;gap:4px;margin-left:4px;}
+.tb-tab{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--txt-dim);
+  padding:5px 12px;font-size:11.5px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.tb-tab:hover{border-color:var(--gold-b);color:var(--txt);}
+.tb-tab.ativo{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:600;}
+
+/* ── Aba Detalhamento (lista com todos os cards das 4 empresas) ── */
+.det-view{height:calc(100vh - 52px);display:none;flex-direction:column;overflow:hidden;}
+.det-filtros{display:flex;align-items:center;gap:18px;padding:14px 18px;border-bottom:1px solid var(--border);
+  background:var(--surface);flex-wrap:wrap;flex-shrink:0;}
+.det-busca-input{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);
+  padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;min-width:220px;margin-left:auto;}
+.det-busca-input:focus{outline:none;border-color:var(--gold-b);}
+.det-tabela-wrap{flex:1;overflow:auto;padding:0 18px 18px;}
+.det-tabela{width:100%;border-collapse:collapse;font-size:12px;}
+.det-tabela thead th{text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--txt-dim);padding:10px;border-bottom:1px solid var(--border);position:sticky;top:0;
+  background:var(--bg);z-index:1;}
+.det-tabela tbody td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--txt);vertical-align:middle;}
+.det-tabela tbody tr:hover{background:rgba(255,255,255,.03)}
+.det-codigo{color:var(--gold);font-weight:700;font-size:11px;white-space:nowrap;}
+.det-select{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);
+  padding:5px 8px;font-size:11px;font-family:'DM Sans',sans-serif;max-width:190px;width:100%;}
+.det-select:focus{outline:none;border-color:var(--gold-b);}
+.det-select:disabled{opacity:.6;}
+.det-vazio{color:var(--txt-dim);padding:18px 10px!important;text-align:center;}
+.det-btn-obs{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--txt-mid);
+  padding:4px 9px;font-size:10.5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+  font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.det-btn-obs:hover{border-color:var(--gold-b);color:var(--gold);}
+
+/* ── Modal de observações do card (mesmo padrão de Cotações) ── */
+.ov-notas{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:500;}
+.ov-notas.open{display:flex;}
+.ov-notas-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:420px;
+  max-width:92vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;}
+.ov-notas-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ov-notas-head h4{font-size:13px;font-weight:700;color:var(--txt);}
+.ov-notas-head .fechar{cursor:pointer;color:var(--txt-dim);background:none;border:none;font-size:20px;line-height:1;}
+.ov-notas-head .fechar:hover{color:var(--txt);}
+.ov-notas-body{padding:14px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;}
+.obs-add-row{display:flex;gap:6px;flex-shrink:0;}
+.obs-add-row input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);
+  padding:7px 9px;font-size:12px;font-family:'DM Sans',sans-serif;}
+.obs-add-row input:focus{outline:none;border-color:var(--gold-b);}
+.obs-add-row button{background:var(--gold-dim);border:1px solid var(--gold-b);border-radius:6px;color:var(--gold);
+  padding:0 11px;cursor:pointer;display:flex;align-items:center;}
+.obs-add-row button:disabled{opacity:.5;cursor:default;}
+.obs-nota{border:1px solid var(--border);border-radius:8px;padding:9px 11px;background:var(--card);}
+.obs-nota-meta{font-size:10px;color:var(--txt-dim);margin-bottom:4px;}
+.obs-nota-autor{color:var(--txt-mid);font-weight:600;}
+.obs-nota-texto{font-size:12px;color:var(--txt);white-space:pre-wrap;word-break:break-word;}
 </style>
 </head>
 <body>
@@ -98,6 +152,10 @@ body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);
   <span class="tb-logo">Mapa das Operações</span>
   <span class="tb-sep">|</span>
   <span class="tb-sub" id="tb-resumo">Carregando...</span>
+  <div class="tb-tabs">
+    <button class="tb-tab ativo" id="tab-mapa" onclick="mudarAba_('mapa')">Mapa</button>
+    <button class="tb-tab" id="tab-detalhamento" onclick="mudarAba_('detalhamento')">Detalhamento</button>
+  </div>
   <div class="tb-r">
     <button class="bsm" onclick="carregarTudo()"><i class="ti ti-refresh"></i> Atualizar</button>
   </div>
@@ -122,6 +180,47 @@ body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);
   <div class="mapa-wrap">
     <div id="mapa"></div>
     <div id="sem-dados"><i class="ti ti-map-off" style="font-size:26px"></i><span>Nenhuma rota pra mostrar com esse filtro.</span></div>
+  </div>
+</div>
+
+<div class="det-view" id="detalhamento-view">
+  <div class="det-filtros">
+    <div class="filtro-grupo">
+      <span class="filtro-lbl">Empresa</span>
+      <div id="det-chips-empresa" class="filtro-chips"></div>
+    </div>
+    <div class="filtro-grupo">
+      <span class="filtro-lbl">Status</span>
+      <div id="det-chips-status" class="filtro-chips"></div>
+    </div>
+    <input type="text" id="det-busca" class="det-busca-input" placeholder="Buscar por código, cliente ou motorista...">
+  </div>
+  <div class="det-tabela-wrap">
+    <table class="det-tabela">
+      <thead>
+        <tr>
+          <th>Número</th><th>Cliente</th><th>Rota</th><th>Empresa</th>
+          <th>Acompanhamento</th><th>Motorista</th><th>Telefone</th><th>Obs.</th>
+        </tr>
+      </thead>
+      <tbody id="det-tabela-corpo"><tr><td colspan="8" class="det-vazio">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="ov-notas" id="ov-notas">
+  <div class="ov-notas-box">
+    <div class="ov-notas-head">
+      <h4 id="ov-notas-titulo">Observações</h4>
+      <button class="fechar" onclick="fecharNotasCard_()">&times;</button>
+    </div>
+    <div class="ov-notas-body">
+      <div class="obs-add-row">
+        <input type="text" id="ov-notas-input" placeholder="Escrever uma observação...">
+        <button id="ov-notas-btn" onclick="adicionarNotaCard_()"><i class="ti ti-plus" style="font-size:13px"></i></button>
+      </div>
+      <div id="ov-notas-lista"></div>
+    </div>
   </div>
 </div>
 
@@ -297,6 +396,21 @@ var filtroStatus = null;
 var EMPRESAS = ['GONCALVES', 'INFRA', "BARRETO'S", 'PINHEIRO'];
 var STATUS_ABERTOS = ['OPERACIONAL', 'COLETA', 'FATURADO'];
 
+// Mesmas listas usadas no quadro Kanban (pinheiro.html/infra.html/etc,
+// idênticas nos 4) — a aba Detalhamento edita o mesmo campo, então usa
+// exatamente as mesmas opções.
+var STATUS_LIST = ["OPERACIONAL","COLETA","FATURADO","FINALIZADO"];
+var AO = ["","EM ROTA DE COLETA","AGUARDANDO CARREGAMENTO","CARREGANDO","EM ROTA DE ENTREGA","DESCARREGANDO","CONCLUIDO","NECESSARIO TRANSBORDO","RETOMAR CONTRATAÇÃO","SEM CONTATO"];
+
+function nomeUsuarioAtual() {
+  try {
+    var raw = sessionStorage.getItem('barretos_user') || localStorage.getItem('barretos_user');
+    if (!raw) return '';
+    var u = JSON.parse(raw);
+    return (u.nome || u.login || '').toString();
+  } catch (e) { return ''; }
+}
+
 function enderecoResumo_(endereco, ufFallback){
   var partes = String(endereco||'').split(/,|—/).map(function(s){return s.trim();}).filter(Boolean);
   if (!partes.length) return '';
@@ -448,6 +562,216 @@ async function carregarTudo(){
   }
   statusEl.textContent = '';
   renderizarMapa();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ABA DETALHAMENTO — lista de todos os cards das 4 empresas, com
+   edição rápida de acompanhamento e histórico de observações.
+   ══════════════════════════════════════════════════════════════ */
+var detCardsTodos = [];
+var detFiltroEmpresa = null; // null = todas
+var detFiltroStatus = null;  // null = todos
+var detBusca = '';
+var detCarregado = false;
+var detNotasAtual = null; // {empresa, codigo} do card com o modal de observações aberto
+
+function mudarAba_(aba){
+  document.getElementById('tab-mapa').classList.toggle('ativo', aba === 'mapa');
+  document.getElementById('tab-detalhamento').classList.toggle('ativo', aba === 'detalhamento');
+  document.querySelector('.corpo').style.display = aba === 'mapa' ? 'flex' : 'none';
+  document.getElementById('detalhamento-view').style.display = aba === 'detalhamento' ? 'flex' : 'none';
+  if (aba === 'detalhamento' && !detCarregado) carregarDetalhamento_();
+}
+
+async function buscarTodosCardsDetalhamento_(){
+  var promessas = EMPRESAS.map(function(emp){
+    return apiFetch(API_BASE + '/kanban?empresa=' + encodeURIComponent(emp)).then(function(r){ return r.json(); }).catch(function(){ return []; });
+  });
+  var listas = await Promise.all(promessas);
+  return [].concat.apply([], listas);
+}
+
+async function carregarDetalhamento_(){
+  document.getElementById('det-tabela-corpo').innerHTML = '<tr><td colspan="8" class="det-vazio">Carregando...</td></tr>';
+  detCardsTodos = await buscarTodosCardsDetalhamento_();
+  detCarregado = true;
+  renderizarFiltrosDetalhamento_();
+  renderizarTabelaDetalhamento_();
+}
+
+function renderizarFiltrosDetalhamento_(){
+  var elE = document.getElementById('det-chips-empresa');
+  elE.innerHTML = EMPRESAS.map(function(emp){
+    return '<span class="chip" data-emp="'+e(emp)+'" onclick="toggleFiltroEmpresaDet_(\''+e(emp).replace(/'/g,"\\'")+'\')">'+e(emp)+'</span>';
+  }).join('');
+  var elS = document.getElementById('det-chips-status');
+  elS.innerHTML = STATUS_LIST.map(function(s){
+    return '<span class="chip" data-s="'+s+'" onclick="toggleFiltroStatusDet_(\''+s+'\')">'+s+'</span>';
+  }).join('');
+  atualizarClassesChipsDet_();
+}
+
+function atualizarClassesChipsDet_(){
+  document.querySelectorAll('#det-chips-empresa .chip').forEach(function(el){
+    var emp = el.getAttribute('data-emp');
+    el.classList.toggle('ativo', !detFiltroEmpresa || detFiltroEmpresa.has(emp));
+  });
+  document.querySelectorAll('#det-chips-status .chip').forEach(function(el){
+    var s = el.getAttribute('data-s');
+    el.classList.toggle('ativo', !detFiltroStatus || detFiltroStatus.has(s));
+  });
+}
+
+function toggleFiltroEmpresaDet_(emp){
+  if (!detFiltroEmpresa) detFiltroEmpresa = new Set(EMPRESAS);
+  if (detFiltroEmpresa.has(emp)) detFiltroEmpresa.delete(emp); else detFiltroEmpresa.add(emp);
+  if (detFiltroEmpresa.size === EMPRESAS.length) detFiltroEmpresa = null;
+  atualizarClassesChipsDet_();
+  renderizarTabelaDetalhamento_();
+}
+function toggleFiltroStatusDet_(s){
+  if (!detFiltroStatus) detFiltroStatus = new Set(STATUS_LIST);
+  if (detFiltroStatus.has(s)) detFiltroStatus.delete(s); else detFiltroStatus.add(s);
+  if (detFiltroStatus.size === STATUS_LIST.length) detFiltroStatus = null;
+  atualizarClassesChipsDet_();
+  renderizarTabelaDetalhamento_();
+}
+
+function filtrarCardsDetalhamento_(){
+  var termo = detBusca.trim().toLowerCase();
+  return detCardsTodos.filter(function(c){
+    if (detFiltroEmpresa && !detFiltroEmpresa.has(c.empresa)) return false;
+    if (detFiltroStatus && !detFiltroStatus.has(c.status)) return false;
+    if (termo) {
+      var alvo = (String(c.codigo||'') + ' ' + (c.cliente||'') + ' ' + (c.motorista||'')).toLowerCase();
+      if (alvo.indexOf(termo) === -1) return false;
+    }
+    return true;
+  });
+}
+
+function renderizarTabelaDetalhamento_(){
+  var corpo = document.getElementById('det-tabela-corpo');
+  var lista = filtrarCardsDetalhamento_();
+  if (!lista.length) { corpo.innerHTML = '<tr><td colspan="8" class="det-vazio">Nenhum card encontrado com esse filtro.</td></tr>'; return; }
+  corpo.innerHTML = lista.map(function(c){
+    var origemResumo = enderecoResumo_(c.endereco_origem, c.uf_origem);
+    var destinoResumo = enderecoResumo_(c.endereco_destino, c.uf_destino);
+    var rota = origemResumo + (destinoResumo ? ' → ' + destinoResumo : '');
+    var codigoAttr = e(String(c.codigo)).replace(/'/g,"\\'");
+    var empresaAttr = e(c.empresa).replace(/'/g,"\\'");
+    var opcoesAO = AO.map(function(op){
+      return '<option value="'+e(op)+'"'+(op === (c.acompanhamento||'') ? ' selected' : '')+'>'+e(op || '(sem etiqueta)')+'</option>';
+    }).join('');
+    var qtdNotas = (c.notas && c.notas.length) || 0;
+    return '<tr>'+
+      '<td class="det-codigo">'+e(c.codigo)+'</td>'+
+      '<td>'+e(c.cliente || '—')+'</td>'+
+      '<td>'+e(rota || '—')+'</td>'+
+      '<td>'+e(c.empresa)+'</td>'+
+      '<td><select class="det-select" onchange="salvarAcompanhamento_(\''+empresaAttr+'\',\''+codigoAttr+'\',this.value,this)">'+opcoesAO+'</select></td>'+
+      '<td>'+e(c.motorista || '—')+'</td>'+
+      '<td>'+e(c.telefone_motorista || '—')+'</td>'+
+      '<td><button class="det-btn-obs" onclick="abrirNotasCard_(\''+empresaAttr+'\',\''+codigoAttr+'\')"><i class="ti ti-notes"></i> '+qtdNotas+'</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+document.getElementById('det-busca').addEventListener('input', function(){
+  detBusca = this.value;
+  renderizarTabelaDetalhamento_();
+});
+
+async function salvarAcompanhamento_(empresa, codigo, novoValor, selectEl){
+  if (selectEl) selectEl.disabled = true;
+  try {
+    var res = await apiFetch(API_BASE + '/kanban/' + encodeURIComponent(empresa) + '/' + encodeURIComponent(codigo), {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ acompanhamento: novoValor }),
+    });
+    if (res.ok) {
+      var card = detCardsTodos.find(function(c){ return c.empresa === empresa && String(c.codigo) === String(codigo); });
+      if (card) card.acompanhamento = novoValor;
+    } else {
+      var j = await res.json().catch(function(){ return {}; });
+      alert('Erro ao salvar acompanhamento: ' + (j.error || 'desconhecido'));
+    }
+  } catch (err) {
+    alert('Erro de conexão ao salvar acompanhamento.');
+  }
+  if (selectEl) selectEl.disabled = false;
+}
+
+async function abrirNotasCard_(empresa, codigo){
+  detNotasAtual = { empresa: empresa, codigo: codigo };
+  document.getElementById('ov-notas-titulo').textContent = 'Observações — ' + codigo;
+  document.getElementById('ov-notas-input').value = '';
+  document.getElementById('ov-notas-lista').innerHTML = '<p style="font-size:11px;color:var(--txt-dim)">Carregando...</p>';
+  document.getElementById('ov-notas').classList.add('open');
+  await recarregarNotasCard_();
+}
+
+function fecharNotasCard_(){
+  document.getElementById('ov-notas').classList.remove('open');
+  detNotasAtual = null;
+}
+
+async function recarregarNotasCard_(){
+  if (!detNotasAtual) return;
+  var alvo = detNotasAtual;
+  try {
+    var res = await apiFetch(API_BASE + '/kanban/' + encodeURIComponent(alvo.empresa) + '/' + encodeURIComponent(alvo.codigo) + '/notas');
+    var notas = await res.json();
+    if (!Array.isArray(notas)) notas = [];
+    renderizarListaNotas_(notas);
+    var card = detCardsTodos.find(function(c){ return c.empresa === alvo.empresa && String(c.codigo) === String(alvo.codigo); });
+    if (card) { card.notas = notas; renderizarTabelaDetalhamento_(); }
+  } catch (err) {
+    document.getElementById('ov-notas-lista').innerHTML = '<p style="font-size:11px;color:var(--red)">Erro ao carregar observações.</p>';
+  }
+}
+
+function renderizarListaNotas_(notas){
+  var ordenadas = notas.slice().sort(function(a,b){ return String(b.criado_em||'').localeCompare(String(a.criado_em||'')); });
+  document.getElementById('ov-notas-lista').innerHTML = ordenadas.length ? ordenadas.map(function(n){
+    var d = n.criado_em ? new Date(n.criado_em) : null;
+    var pad = function(v){ return String(v).padStart(2,'0'); };
+    var dataStr = d ? (pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())) : '';
+    return '<div class="obs-nota"><div class="obs-nota-meta">'+e(dataStr)+(n.autor ? ' — <span class="obs-nota-autor">'+e(n.autor)+'</span>' : '')+'</div>'+
+      '<div class="obs-nota-texto">'+e(n.texto)+'</div></div>';
+  }).join('') : '<p style="font-size:11px;color:var(--txt-dim)">Nenhuma observação registrada ainda.</p>';
+}
+
+async function adicionarNotaCard_(){
+  if (!detNotasAtual) return;
+  var input = document.getElementById('ov-notas-input');
+  var btn = document.getElementById('ov-notas-btn');
+  // Trava contra clique repetido/duplo-clique enquanto o pedido anterior
+  // ainda está em voo — mesmo bug já corrigido em Cotações nesta sessão.
+  if (btn.disabled) return;
+  var texto = input.value.trim();
+  if (!texto) return;
+  var alvo = detNotasAtual;
+  var autor = nomeUsuarioAtual() || 'Desconhecido';
+  input.disabled = true;
+  btn.disabled = true;
+  try {
+    var res = await apiFetch(API_BASE + '/kanban/' + encodeURIComponent(alvo.empresa) + '/' + encodeURIComponent(alvo.codigo) + '/notas', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ autor: autor, texto: texto }),
+    });
+    var j = await res.json().catch(function(){ return {}; });
+    if (res.ok) {
+      input.value = '';
+      await recarregarNotasCard_();
+    } else {
+      alert('Erro ao salvar observação: ' + (j.error || 'desconhecido'));
+    }
+  } catch (err) {
+    alert('Erro de conexão ao salvar observação.');
+  }
+  input.disabled = false;
+  btn.disabled = false;
 }
 
 document.addEventListener('DOMContentLoaded', function(){
