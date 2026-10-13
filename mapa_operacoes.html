@@ -1027,7 +1027,13 @@ function abrirDetalheChecklistIndice_(i){
 function abrirDetalheChecklistCard_(empresa, codigo){
   var card = detCardsTodos.find(function(c){ return c.empresa === empresa && String(c.codigo) === String(codigo); });
   var checklist = card ? ultimoChecklist_(card) : null;
-  if (checklist) renderizarModalChecklist_(checklist);
+  if (!checklist) return;
+  // O checklist embutido no card (c.checklists, mesmo padrão de c.notas)
+  // só traz id/status/respostas/criado_em — sem o código. Sem isso, o
+  // modal buscava os anexos com "codigo=undefined" e sempre mostrava
+  // "nenhum anexo", mesmo quando o motorista tinha enviado.
+  checklist.codigo = card.codigo;
+  renderizarModalChecklist_(checklist);
 }
 
 async function renderizarModalChecklist_(checklist){
