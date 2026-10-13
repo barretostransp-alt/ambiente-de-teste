@@ -117,6 +117,12 @@ body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);
   padding:5px 8px;font-size:11px;font-family:'DM Sans',sans-serif;max-width:190px;width:100%;}
 .det-select:focus{outline:none;border-color:var(--gold-b);}
 .det-select:disabled{opacity:.6;}
+/* Chips de Empresa/Status do Detalhamento não têm cor própria (ao
+   contrário dos de vendedor no Mapa, que ganham background inline) — sem
+   isso, .chip.ativo (texto quase preto, pensado pra ficar sobre um fundo
+   colorido) ficava ilegível em cima do --card escuro. */
+#det-chips-empresa .chip.ativo,
+#det-chips-status .chip.ativo{color:var(--txt);background:var(--gold-dim);border-color:var(--gold);font-weight:700;}
 .det-vazio{color:var(--txt-dim);padding:18px 10px!important;text-align:center;}
 .det-btn-obs{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--txt-mid);
   padding:4px 9px;font-size:10.5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
@@ -396,10 +402,10 @@ var filtroStatus = null;
 var EMPRESAS = ['GONCALVES', 'INFRA', "BARRETO'S", 'PINHEIRO'];
 var STATUS_ABERTOS = ['OPERACIONAL', 'COLETA', 'FATURADO'];
 
-// Mesmas listas usadas no quadro Kanban (pinheiro.html/infra.html/etc,
-// idênticas nos 4) — a aba Detalhamento edita o mesmo campo, então usa
-// exatamente as mesmas opções.
-var STATUS_LIST = ["OPERACIONAL","COLETA","FATURADO","FINALIZADO"];
+// Mesma lista de etiquetas usada no quadro Kanban (pinheiro.html/infra.html/
+// etc, idêntica nos 4) — a aba Detalhamento edita o mesmo campo, então usa
+// exatamente as mesmas opções. Status usa STATUS_ABERTOS (acima): card
+// FINALIZADO não entra no Detalhamento, então nem aparece como filtro.
 var AO = ["","EM ROTA DE COLETA","AGUARDANDO CARREGAMENTO","CARREGANDO","EM ROTA DE ENTREGA","DESCARREGANDO","CONCLUIDO","NECESSARIO TRANSBORDO","RETOMAR CONTRATAÇÃO","SEM CONTATO"];
 
 function nomeUsuarioAtual() {
@@ -588,7 +594,10 @@ async function buscarTodosCardsDetalhamento_(){
     return apiFetch(API_BASE + '/kanban?empresa=' + encodeURIComponent(emp)).then(function(r){ return r.json(); }).catch(function(){ return []; });
   });
   var listas = await Promise.all(promessas);
-  return [].concat.apply([], listas);
+  var todos = [].concat.apply([], listas);
+  // Card finalizado no quadro Kanban não entra no Detalhamento — essa
+  // tela é pra operação em andamento, não histórico.
+  return todos.filter(function(c){ return c.status !== 'FINALIZADO'; });
 }
 
 async function carregarDetalhamento_(){
@@ -605,7 +614,7 @@ function renderizarFiltrosDetalhamento_(){
     return '<span class="chip" data-emp="'+e(emp)+'" onclick="toggleFiltroEmpresaDet_(\''+e(emp).replace(/'/g,"\\'")+'\')">'+e(emp)+'</span>';
   }).join('');
   var elS = document.getElementById('det-chips-status');
-  elS.innerHTML = STATUS_LIST.map(function(s){
+  elS.innerHTML = STATUS_ABERTOS.map(function(s){
     return '<span class="chip" data-s="'+s+'" onclick="toggleFiltroStatusDet_(\''+s+'\')">'+s+'</span>';
   }).join('');
   atualizarClassesChipsDet_();
@@ -630,9 +639,9 @@ function toggleFiltroEmpresaDet_(emp){
   renderizarTabelaDetalhamento_();
 }
 function toggleFiltroStatusDet_(s){
-  if (!detFiltroStatus) detFiltroStatus = new Set(STATUS_LIST);
+  if (!detFiltroStatus) detFiltroStatus = new Set(STATUS_ABERTOS);
   if (detFiltroStatus.has(s)) detFiltroStatus.delete(s); else detFiltroStatus.add(s);
-  if (detFiltroStatus.size === STATUS_LIST.length) detFiltroStatus = null;
+  if (detFiltroStatus.size === STATUS_ABERTOS.length) detFiltroStatus = null;
   atualizarClassesChipsDet_();
   renderizarTabelaDetalhamento_();
 }
