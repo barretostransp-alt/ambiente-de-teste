@@ -106,6 +106,18 @@ var API_BASE = 'https://barretos-backend.onrender.com/api/checklist-publico';
 
 function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+// Mesma lógica de mapa_operacoes.html (enderecoResumo_) — reduz o
+// endereço completo do card a "Cidade/UF" pra pré-preencher as
+// perguntas 9 e 10 sem o motorista ter que digitar uma rota que o
+// sistema já sabe.
+function enderecoResumo_(endereco, ufFallback){
+  var partes = String(endereco||'').split(/,|—/).map(function(s){return s.trim();}).filter(Boolean);
+  if (!partes.length) return '';
+  if (partes.length===1) return partes[0] + (ufFallback ? '/'+ufFallback : '');
+  var cidade = partes[partes.length-2], uf = partes[partes.length-1];
+  return cidade + (uf ? '/'+uf : '');
+}
+
 var CAMPOS = [
   { grupo: 'Quem está preenchendo', chave: 'tipo_contratante', questao: '1. Você é o motorista ou proprietário do veículo?', tipo: 'radio', opcoes: ['Motorista','Proprietário'], obrigatorio: true },
   { chave: 'nome_motorista', questao: '2. Qual o nome do motorista que vai carregar?', tipo: 'texto', obrigatorio: true },
@@ -227,10 +239,23 @@ async function carregarChecklist_(){
     document.getElementById('topo-sub').textContent = 'Card ' + dados.codigo + ' · ' + dados.empresa;
     if (dados.status === 'respondido') { mostrarEstado_('estado-respondido'); return; }
     renderCampos_();
+    preencherRotaDoCard_(dados);
     mostrarEstado_('form-checklist');
   } catch (err) {
     mostrarEstado_('estado-erro');
   }
+}
+
+// Pré-preenche (ainda editável, pra corrigir se precisar) — não trava
+// o campo, só evita o motorista ter que digitar uma rota que o
+// vínculo com o card já sabe.
+function preencherRotaDoCard_(dados){
+  var coleta = enderecoResumo_(dados.enderecoOrigem, dados.ufOrigem);
+  var entrega = enderecoResumo_(dados.enderecoDestino, dados.ufDestino);
+  var inColeta = document.getElementById('campo-cidade_uf_coleta');
+  var inEntrega = document.getElementById('campo-cidade_uf_entrega');
+  if (inColeta && coleta) inColeta.value = coleta;
+  if (inEntrega && entrega) inEntrega.value = entrega;
 }
 
 document.getElementById('form-checklist').addEventListener('submit', async function(ev){
