@@ -31,8 +31,11 @@ body{display:flex;justify-content:center;padding:20px 14px 40px;}
 [hidden]{display:none!important}
 
 .q{margin-bottom:16px;}
-.q-lbl{font-size:12.5px;font-weight:600;margin-bottom:7px;line-height:1.4;}
-.q-lbl .req{color:var(--gold);}
+.q-titulo{font-size:12.5px;font-weight:600;margin-bottom:9px;line-height:1.4;}
+.q-titulo .req{color:var(--gold);}
+.q.q-sub{margin-bottom:10px;}
+.q-sub-lbl{font-size:10.5px;color:var(--txt-mid);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.q-sub-lbl .req{color:var(--gold);}
 .fi{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;transition:border-color .15s;}
 .fi:focus{border-color:var(--gold);}
 .radios{display:flex;gap:8px;flex-wrap:wrap;}
@@ -104,32 +107,45 @@ var API_BASE = 'https://barretos-backend.onrender.com/api/checklist-publico';
 function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
 var CAMPOS = [
-  { grupo: 'Quem está preenchendo', chave: 'tipo_contratante', label: '1. Você é o motorista ou proprietário do veículo?', tipo: 'radio', opcoes: ['Motorista','Proprietário'], obrigatorio: true },
-  { chave: 'nome_motorista', label: '2. Qual o nome do motorista que vai carregar?', tipo: 'texto', obrigatorio: true },
-  { chave: 'telefone_proprietario', label: '3. Se o motorista for diferente do proprietário, telefone do proprietário', tipo: 'texto', obrigatorio: true },
-  { chave: 'endereco_proprietario', label: '4. Endereço residencial do proprietário', tipo: 'texto', obrigatorio: true },
-  { chave: 'endereco_motorista', label: '5. Endereço residencial do motorista', tipo: 'texto', obrigatorio: false },
+  { grupo: 'Quem está preenchendo', chave: 'tipo_contratante', questao: '1. Você é o motorista ou proprietário do veículo?', tipo: 'radio', opcoes: ['Motorista','Proprietário'], obrigatorio: true },
+  { chave: 'nome_motorista', questao: '2. Qual o nome do motorista que vai carregar?', tipo: 'texto', obrigatorio: true },
+  { chave: 'telefone_proprietario', questao: '3. Se o motorista for diferente do proprietário, telefone do proprietário', tipo: 'texto', obrigatorio: true },
+  { chave: 'endereco_proprietario', questao: '4. Endereço residencial do proprietário', tipo: 'texto', obrigatorio: true },
+  { chave: 'endereco_motorista', questao: '5. Endereço residencial do motorista', tipo: 'texto', obrigatorio: false },
 
-  { grupo: 'Dados para pagamento', chave: 'conta_agencia_banco', label: '6. Conta bancária do motorista — agência e banco', tipo: 'texto', obrigatorio: true },
-  { chave: 'conta_numero_tipo', label: '6. Conta bancária do motorista — número da conta e tipo', tipo: 'texto', obrigatorio: true },
-  { chave: 'pix_favorecido', label: '7. Dados Pix — favorecido', tipo: 'texto', obrigatorio: true },
-  { chave: 'pix_chave', label: '7. Dados Pix — chave Pix', tipo: 'texto', obrigatorio: true },
-  { chave: 'pix_tipo_chave', label: '7. Dados Pix — tipo de chave (CPF, e-mail, telefone, aleatória...)', tipo: 'texto', obrigatorio: true },
-  { chave: 'pix_banco', label: '7. Dados Pix — banco', tipo: 'texto', obrigatorio: true },
+  { grupo: 'Dados para pagamento', chave: 'conta_banco', questao: '6. Conta bancária do motorista', subLabel: 'Banco', tipo: 'texto', obrigatorio: true },
+  { chave: 'conta_agencia', questao: '6. Conta bancária do motorista', subLabel: 'Agência', tipo: 'texto', obrigatorio: true },
+  { chave: 'conta_numero', questao: '6. Conta bancária do motorista', subLabel: 'Número da conta', tipo: 'texto', obrigatorio: true },
+  { chave: 'conta_tipo', questao: '6. Conta bancária do motorista', subLabel: 'Tipo de conta', tipo: 'texto', obrigatorio: true },
 
-  { grupo: 'Operação', chave: 'vale_pedagio_tag', label: '8. Qual a tag para o vale pedágio?', tipo: 'texto', obrigatorio: true },
-  { chave: 'cidade_uf_coleta', label: '9. Cidade/UF de coleta', tipo: 'texto', obrigatorio: false },
-  { chave: 'cidade_uf_entrega', label: '10. Cidade/UF de entrega', tipo: 'texto', obrigatorio: false },
+  { chave: 'pix_favorecido', questao: '7. Dados para pagamento via Pix', subLabel: 'Favorecido', tipo: 'texto', obrigatorio: true },
+  { chave: 'pix_chave', questao: '7. Dados para pagamento via Pix', subLabel: 'Chave Pix', tipo: 'texto', obrigatorio: true },
+  { chave: 'pix_tipo_chave', questao: '7. Dados para pagamento via Pix', subLabel: 'Tipo de chave (CPF, e-mail, telefone, aleatória...)', tipo: 'texto', obrigatorio: true },
+  { chave: 'pix_banco', questao: '7. Dados para pagamento via Pix', subLabel: 'Banco', tipo: 'texto', obrigatorio: true },
 
-  { grupo: 'Ciência', chave: 'ciente_prazo_entrega', label: '11. Está ciente da data de entrega?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
-  { chave: 'ciente_pagamento_conta', label: '12. Está ciente que o pagamento só pode ser realizado em conta com titularidade do motorista ou proprietário do caminhão?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
-  { chave: 'ciente_adiantamento', label: '13. Está ciente que o adiantamento só será realizado após a comprovação de carregamento e o saldo com a comprovação de entrega?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
-  { chave: 'de_acordo', label: '14. Está de acordo com todos os itens?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: false },
+  { grupo: 'Operação', chave: 'vale_pedagio_tag', questao: '8. Qual a tag para o vale pedágio?', tipo: 'texto', obrigatorio: true },
+  { chave: 'cidade_uf_coleta', questao: '9. Cidade/UF de coleta', tipo: 'texto', obrigatorio: false },
+  { chave: 'cidade_uf_entrega', questao: '10. Cidade/UF de entrega', tipo: 'texto', obrigatorio: false },
+
+  { grupo: 'Ciência', chave: 'ciente_prazo_entrega', questao: '11. Está ciente da data de entrega?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
+  { chave: 'ciente_pagamento_conta', questao: '12. Está ciente que o pagamento só pode ser realizado em conta com titularidade do motorista ou proprietário do caminhão?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
+  { chave: 'ciente_adiantamento', questao: '13. Está ciente que o adiantamento só será realizado após a comprovação de carregamento e o saldo com a comprovação de entrega?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
+  { chave: 'de_acordo', questao: '14. Está de acordo com todos os itens?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: false },
 ];
 
+// Pergunta repetida (ex: 6 e 7, cada uma com vários campos) mostra o
+// texto da pergunta UMA vez só, com os campos embaixo rotulados pelo
+// subLabel curto — em vez de repetir "6. Conta bancária..." em cada
+// input, que ficava com cara de pergunta duplicada.
 function renderCampos_(){
+  var questaoAnterior = null;
   var html = CAMPOS.map(function(c){
     var grupoHtml = c.grupo ? '<div class="grupo-titulo">'+e(c.grupo)+'</div>' : '';
+    var questaoHtml = '';
+    if (c.questao !== questaoAnterior) {
+      questaoHtml = '<div class="q-titulo">'+e(c.questao)+(c.obrigatorio && !c.subLabel ? ' <span class="req">*</span>' : '')+'</div>';
+      questaoAnterior = c.questao;
+    }
     var campoHtml;
     if (c.tipo === 'radio') {
       campoHtml = '<div class="radios">' + c.opcoes.map(function(op){
@@ -140,9 +156,10 @@ function renderCampos_(){
         '</div>';
       }).join('') + '</div>';
     } else {
-      campoHtml = '<input type="text" class="fi" id="campo-'+e(c.chave)+'" name="'+e(c.chave)+'"'+(c.obrigatorio?' required':'')+'>';
+      campoHtml = '<input type="text" class="fi" id="campo-'+e(c.chave)+'" name="'+e(c.chave)+'"'+(c.obrigatorio?' required':'')+(c.subLabel?' placeholder="'+e(c.subLabel)+'"':'')+'>';
     }
-    return grupoHtml + '<div class="q"><div class="q-lbl">'+e(c.label)+(c.obrigatorio?' <span class="req">*</span>':'')+'</div>'+campoHtml+'</div>';
+    var subLabelHtml = c.subLabel ? '<div class="q-sub-lbl">'+e(c.subLabel)+(c.obrigatorio?' <span class="req">*</span>':'')+'</div>' : '';
+    return grupoHtml + questaoHtml + '<div class="q'+(c.subLabel?' q-sub':'')+'">'+subLabelHtml+campoHtml+'</div>';
   }).join('');
   document.getElementById('campos-wrap').innerHTML = html;
 }
