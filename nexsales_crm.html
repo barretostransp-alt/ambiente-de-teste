@@ -1108,14 +1108,30 @@ async function tentarRenovarToken() {
   } catch (e) { return false; }
 }
 
+// Sem timeout, uma rede instável ou o backend acordando do sleep do Render
+// (cold start) deixava o fetch esperando indefinidamente — mesmo problema
+// corrigido em cotacao_comercial.html (tela ficava "carregando" pra
+// sempre, ex: ao enviar observação, sem jeito de recuperar sozinha). Ver
+// comentário lá.
+function fetchComTimeout_(url, options, ms) {
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function(){ controller.abort(); }, ms || 25000);
+  return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+    .catch(function(err) {
+      if (err.name === 'AbortError') throw new Error('Tempo esgotado ao conectar com o servidor. Tente novamente.');
+      throw err;
+    })
+    .finally(function(){ clearTimeout(timeoutId); });
+}
+
 async function apiFetch(url, options) {
   options = options || {};
   var headers = Object.assign({}, options.headers, { Authorization: 'Bearer ' + getAuthToken() });
-  var res = await fetch(url, Object.assign({}, options, { headers: headers }));
+  var res = await fetchComTimeout_(url, Object.assign({}, options, { headers: headers }));
   if (res.status === 401) {
     if (await tentarRenovarToken()) {
       headers.Authorization = 'Bearer ' + getAuthToken();
-      res = await fetch(url, Object.assign({}, options, { headers: headers }));
+      res = await fetchComTimeout_(url, Object.assign({}, options, { headers: headers }));
     }
     if (res.status === 401) {
       mostrarTelaSemAcesso();
@@ -2632,10 +2648,14 @@ async function adicionarNotaCotacaoCRM_(numero) {
       toast(json.error || 'Não foi possível salvar a observação.', 'error');
     }
   } catch(e) {
-    toast('Erro de conexão ao salvar observação.', 'error');
+    toast('Erro de conexão ao salvar observação: ' + (e.message || 'tente novamente.'), 'error');
+  } finally {
+    // finally (não só "depois do try/catch") pra garantir que o campo
+    // nunca fique travado desabilitado, mesmo se algo inesperado além do
+    // fetch (ex: renderCotacoes/viewCotacao) lançar um erro.
+    input.disabled = false;
+    if (btn) btn.disabled = false;
   }
-  input.disabled = false;
-  if (btn) btn.disabled = false;
 }
 
 // Mesma regra do cotacao_comercial.html: cotações antigas (antes do nº 336)
