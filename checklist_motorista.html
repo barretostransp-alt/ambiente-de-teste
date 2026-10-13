@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Checklist para Contratação de Frete</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#090A0D;--surface:#0F1117;--card:#151820;--border:#1E2130;
+  --gold:#F5B800;--gold-dim:rgba(245,184,0,.12);
+  --txt:#E8EAF0;--txt-dim:#6B7280;--txt-mid:#9CA3AF;
+  --green:#22C55E;--red:#EF4444;--r:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif}
+body{display:flex;justify-content:center;padding:20px 14px 40px;}
+.wrap{width:100%;max-width:460px;}
+.topo{text-align:center;margin-bottom:22px;}
+.topo .logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--gold);letter-spacing:.03em;}
+.topo h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-top:10px;}
+.topo .sub{font-size:12px;color:var(--txt-dim);margin-top:4px;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;}
+.card h2{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;}
+.card .sub{font-size:11.5px;color:var(--txt-dim);}
+
+.estado{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:40px 14px;color:var(--txt-mid);font-size:13px;}
+.estado i{font-size:30px;color:var(--gold);}
+[hidden]{display:none!important}
+
+.q{margin-bottom:16px;}
+.q-lbl{font-size:12.5px;font-weight:600;margin-bottom:7px;line-height:1.4;}
+.q-lbl .req{color:var(--gold);}
+.fi{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;transition:border-color .15s;}
+.fi:focus{border-color:var(--gold);}
+.radios{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-opt{flex:1;min-width:90px;}
+.radio-opt input{position:absolute;opacity:0;pointer-events:none;}
+.radio-opt label{display:block;text-align:center;border:1px solid var(--border);background:var(--card);border-radius:8px;padding:9px 8px;font-size:12.5px;color:var(--txt-mid);cursor:pointer;transition:all .15s;}
+.radio-opt input:checked + label{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);font-weight:700;}
+
+.grupo-titulo{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-dim);margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border);}
+.grupo-titulo:first-child{margin-top:0;padding-top:0;border-top:none;}
+
+.anexo-row{display:flex;align-items:center;gap:8px;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px;color:var(--txt-mid);}
+.anexo-row i{color:var(--gold);font-size:16px;}
+.anexo-row .nome{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.anexo-row .rm{cursor:pointer;color:var(--red);}
+.btn-anexo{width:100%;background:var(--card);border:1px dashed var(--border);border-radius:8px;color:var(--txt-mid);padding:12px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;font-family:'DM Sans',sans-serif;}
+.btn-anexo:hover{border-color:var(--gold);color:var(--gold);}
+
+.btn{width:100%;padding:13px;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--gold);color:#111;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;}
+.btn:disabled{opacity:.5;cursor:default;}
+.msg-err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--red);margin-bottom:14px;}
+.rodape{text-align:center;font-size:10px;color:var(--txt-dim);margin-top:18px;letter-spacing:.03em;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topo">
+    <div class="logo">BT WORKSPACE</div>
+    <h1>Checklist para Contratação de Frete</h1>
+    <div class="sub" id="topo-sub">Carregando...</div>
+  </div>
+
+  <div class="estado" id="estado-carregando">
+    <i class="ti ti-loader-2"></i>
+    <span>Carregando checklist...</span>
+  </div>
+
+  <div class="estado" id="estado-erro" hidden>
+    <i class="ti ti-alert-triangle"></i>
+    <span>Link inválido ou expirado. Confirme com quem te enviou o link.</span>
+  </div>
+
+  <div class="estado" id="estado-respondido" hidden>
+    <i class="ti ti-circle-check" style="color:var(--green)"></i>
+    <span>Esse checklist já foi enviado. Obrigado!</span>
+  </div>
+
+  <form class="card" id="form-checklist" hidden>
+    <div id="campos-wrap"></div>
+
+    <div class="grupo-titulo">Anexos (foto de documento, CNH, etc. — opcional)</div>
+    <div id="anexos-lista"></div>
+    <input type="file" id="input-anexo" accept="image/*,application/pdf" multiple hidden>
+    <button type="button" class="btn-anexo" id="btn-escolher-anexo"><i class="ti ti-paperclip"></i> Adicionar arquivo</button>
+
+    <div class="msg-err" id="msg-erro" hidden></div>
+    <div style="margin-top:18px">
+      <button type="submit" class="btn" id="btn-enviar"><i class="ti ti-send"></i> Enviar checklist</button>
+    </div>
+  </form>
+
+  <div class="rodape">Grupo Barreto's · dados protegidos, usados só pra essa contratação</div>
+</div>
+
+<script>
+var API_BASE = 'https://barretos-backend.onrender.com/api/checklist-publico';
+
+function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+var CAMPOS = [
+  { grupo: 'Quem está preenchendo', chave: 'tipo_contratante', label: '1. Você é o motorista ou proprietário do veículo?', tipo: 'radio', opcoes: ['Motorista','Proprietário'], obrigatorio: true },
+  { chave: 'nome_motorista', label: '2. Qual o nome do motorista que vai carregar?', tipo: 'texto', obrigatorio: true },
+  { chave: 'telefone_proprietario', label: '3. Se o motorista for diferente do proprietário, telefone do proprietário', tipo: 'texto', obrigatorio: true },
+  { chave: 'endereco_proprietario', label: '4. Endereço residencial do proprietário', tipo: 'texto', obrigatorio: true },
+  { chave: 'endereco_motorista', label: '5. Endereço residencial do motorista', tipo: 'texto', obrigatorio: false },
+
+  { grupo: 'Dados para pagamento', chave: 'conta_agencia_banco', label: '6. Conta bancária do motorista — agência e banco', tipo: 'texto', obrigatorio: true },
+  { chave: 'conta_numero_tipo', label: '6. Conta bancária do motorista — número da conta e tipo', tipo: 'texto', obrigatorio: true },
+  { chave: 'pix_favorecido', label: '7. Dados Pix — favorecido', tipo: 'texto', obrigatorio: true },
+  { chave: 'pix_chave', label: '7. Dados Pix — chave Pix', tipo: 'texto', obrigatorio: true },
+  { chave: 'pix_tipo_chave', label: '7. Dados Pix — tipo de chave (CPF, e-mail, telefone, aleatória...)', tipo: 'texto', obrigatorio: true },
+  { chave: 'pix_banco', label: '7. Dados Pix — banco', tipo: 'texto', obrigatorio: true },
+
+  { grupo: 'Operação', chave: 'vale_pedagio_tag', label: '8. Qual a tag para o vale pedágio?', tipo: 'texto', obrigatorio: true },
+  { chave: 'cidade_uf_coleta', label: '9. Cidade/UF de coleta', tipo: 'texto', obrigatorio: false },
+  { chave: 'cidade_uf_entrega', label: '10. Cidade/UF de entrega', tipo: 'texto', obrigatorio: false },
+
+  { grupo: 'Ciência', chave: 'ciente_prazo_entrega', label: '11. Está ciente da data de entrega?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
+  { chave: 'ciente_pagamento_conta', label: '12. Está ciente que o pagamento só pode ser realizado em conta com titularidade do motorista ou proprietário do caminhão?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
+  { chave: 'ciente_adiantamento', label: '13. Está ciente que o adiantamento só será realizado após a comprovação de carregamento e o saldo com a comprovação de entrega?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: true },
+  { chave: 'de_acordo', label: '14. Está de acordo com todos os itens?', tipo: 'radio', opcoes: ['Sim','Não'], obrigatorio: false },
+];
+
+function renderCampos_(){
+  var html = CAMPOS.map(function(c){
+    var grupoHtml = c.grupo ? '<div class="grupo-titulo">'+e(c.grupo)+'</div>' : '';
+    var campoHtml;
+    if (c.tipo === 'radio') {
+      campoHtml = '<div class="radios">' + c.opcoes.map(function(op){
+        var id = 'campo-' + c.chave + '-' + op;
+        return '<div class="radio-opt">'+
+          '<input type="radio" name="'+e(c.chave)+'" id="'+e(id)+'" value="'+e(op)+'"'+(c.obrigatorio?' required':'')+'>'+
+          '<label for="'+e(id)+'">'+e(op)+'</label>'+
+        '</div>';
+      }).join('') + '</div>';
+    } else {
+      campoHtml = '<input type="text" class="fi" id="campo-'+e(c.chave)+'" name="'+e(c.chave)+'"'+(c.obrigatorio?' required':'')+'>';
+    }
+    return grupoHtml + '<div class="q"><div class="q-lbl">'+e(c.label)+(c.obrigatorio?' <span class="req">*</span>':'')+'</div>'+campoHtml+'</div>';
+  }).join('');
+  document.getElementById('campos-wrap').innerHTML = html;
+}
+
+function coletarRespostas_(){
+  var respostas = {};
+  CAMPOS.forEach(function(c){
+    if (c.tipo === 'radio') {
+      var marcado = document.querySelector('input[name="'+c.chave+'"]:checked');
+      respostas[c.chave] = marcado ? marcado.value : '';
+    } else {
+      var input = document.getElementById('campo-' + c.chave);
+      respostas[c.chave] = input ? input.value.trim() : '';
+    }
+  });
+  return respostas;
+}
+
+var anexosSelecionados = [];
+function renderAnexos_(){
+  var lista = document.getElementById('anexos-lista');
+  lista.innerHTML = anexosSelecionados.map(function(f, i){
+    return '<div class="anexo-row"><i class="ti ti-paperclip"></i><span class="nome">'+e(f.name)+'</span>'+
+      '<span class="rm" onclick="removerAnexo_('+i+')"><i class="ti ti-x"></i></span></div>';
+  }).join('');
+}
+function removerAnexo_(i){
+  anexosSelecionados.splice(i, 1);
+  renderAnexos_();
+}
+document.getElementById('btn-escolher-anexo').addEventListener('click', function(){
+  document.getElementById('input-anexo').click();
+});
+document.getElementById('input-anexo').addEventListener('change', function(){
+  anexosSelecionados = anexosSelecionados.concat(Array.from(this.files || []));
+  this.value = '';
+  renderAnexos_();
+});
+
+function arquivoParaBase64_(file){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(ev){ resolve(ev.target.result.split(',')[1]); };
+    reader.onerror = function(){ reject(new Error('Falha ao ler ' + file.name)); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function mostrarEstado_(id){
+  ['estado-carregando','estado-erro','estado-respondido','form-checklist'].forEach(function(s){
+    document.getElementById(s).hidden = (s !== id);
+  });
+}
+
+var tokenAtual = null;
+
+async function carregarChecklist_(){
+  var params = new URLSearchParams(location.search);
+  tokenAtual = params.get('token');
+  if (!tokenAtual) { mostrarEstado_('estado-erro'); return; }
+  try {
+    var res = await fetch(API_BASE + '/' + encodeURIComponent(tokenAtual));
+    if (!res.ok) { mostrarEstado_('estado-erro'); return; }
+    var dados = await res.json();
+    document.getElementById('topo-sub').textContent = 'Card ' + dados.codigo + ' · ' + dados.empresa;
+    if (dados.status === 'respondido') { mostrarEstado_('estado-respondido'); return; }
+    renderCampos_();
+    mostrarEstado_('form-checklist');
+  } catch (err) {
+    mostrarEstado_('estado-erro');
+  }
+}
+
+document.getElementById('form-checklist').addEventListener('submit', async function(ev){
+  ev.preventDefault();
+  var btn = document.getElementById('btn-enviar');
+  var msgErro = document.getElementById('msg-erro');
+  // Trava contra clique repetido/duplo-clique enquanto o envio ainda
+  // está em andamento — mesmo cuidado já aplicado em Cotações.
+  if (btn.disabled) return;
+  msgErro.hidden = true;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando...';
+  try {
+    var respostas = coletarRespostas_();
+    var anexos = [];
+    for (var i = 0; i < anexosSelecionados.length; i++) {
+      var f = anexosSelecionados[i];
+      btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando anexo ' + (i+1) + '/' + anexosSelecionados.length + '...';
+      var base64 = await arquivoParaBase64_(f);
+      anexos.push({ nome: f.name, data: base64, mimeType: f.type || 'application/octet-stream' });
+    }
+    btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando...';
+    var res = await fetch(API_BASE + '/' + encodeURIComponent(tokenAtual) + '/responder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ respostas: respostas, anexos: anexos }),
+    });
+    var json = await res.json().catch(function(){ return {}; });
+    if (res.ok) {
+      mostrarEstado_('estado-respondido');
+    } else {
+      msgErro.textContent = json.error || 'Não foi possível enviar. Tente novamente.';
+      msgErro.hidden = false;
+    }
+  } catch (err) {
+    msgErro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    msgErro.hidden = false;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-send"></i> Enviar checklist';
+});
+
+carregarChecklist_();
+</script>
+</body>
+</html>

@@ -158,6 +158,35 @@ body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);
 .obs-nota-meta{font-size:10px;color:var(--txt-dim);margin-bottom:4px;}
 .obs-nota-autor{color:var(--txt-mid);font-weight:600;}
 .obs-nota-texto{font-size:12px;color:var(--txt);white-space:pre-wrap;word-break:break-word;}
+
+/* ── Aba Gerar Checklist ── */
+.gc-view{height:calc(100vh - 52px);display:none;overflow-y:auto;padding:22px;}
+.gc-wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+.gc-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.gc-card h3{font-size:13.5px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.gc-card-sub{font-size:11.5px;color:var(--txt-dim);margin-bottom:14px;}
+.gc-form-row{display:flex;gap:8px;flex-wrap:wrap;}
+.gc-form-row .det-busca-input{flex:1;min-width:160px;margin-left:0;}
+.gc-form-row .det-select{width:auto;max-width:140px;}
+.gc-erro{margin-top:10px;font-size:11.5px;color:var(--red);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:6px;padding:8px 10px;}
+.gc-link-box{margin-top:12px;display:flex;gap:8px;}
+.gc-link-box input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--txt);
+  padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;}
+.gc-hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);
+  border-radius:8px;margin-bottom:8px;cursor:pointer;font-size:12px;color:var(--txt);transition:border-color .15s;}
+.gc-hist-item:hover{border-color:var(--gold-b);}
+.gc-hist-pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;}
+.gc-hist-pill.pendente{background:var(--gold-dim);color:var(--gold);}
+.gc-hist-pill.respondido{background:rgba(34,197,94,.12);color:#22C55E;}
+
+/* ── Detalhe do checklist (reaproveita o modal .ov-notas) ── */
+.chk-campo{border-bottom:1px solid var(--border);padding:9px 0;}
+.chk-campo:last-child{border-bottom:none;}
+.chk-campo-lbl{font-size:10px;color:var(--txt-dim);margin-bottom:3px;}
+.chk-campo-val{font-size:12.5px;color:var(--txt);}
+.chk-campo-val.vazio{color:var(--txt-dim);font-style:italic;}
+.chk-anexos{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.chk-anexo-link{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gold);text-decoration:none;padding:6px 0;}
 </style>
 </head>
 <body>
@@ -169,6 +198,7 @@ body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);
   <div class="tb-tabs">
     <button class="tb-tab ativo" id="tab-mapa" onclick="mudarAba_('mapa')">Mapa</button>
     <button class="tb-tab" id="tab-detalhamento" onclick="mudarAba_('detalhamento')">Detalhamento</button>
+    <button class="tb-tab" id="tab-checklist" onclick="mudarAba_('checklist')">Gerar Checklist</button>
   </div>
   <div class="tb-r">
     <button class="bsm" onclick="carregarTudo()"><i class="ti ti-refresh"></i> Atualizar</button>
@@ -214,11 +244,45 @@ body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);
       <thead>
         <tr>
           <th>Número</th><th>Cliente</th><th>Rota</th><th>Empresa</th>
-          <th>Acompanhamento</th><th>Motorista</th><th>Telefone</th><th>Obs.</th>
+          <th>Acompanhamento</th><th>Motorista</th><th>Telefone</th><th>Obs.</th><th>Checklist</th>
         </tr>
       </thead>
-      <tbody id="det-tabela-corpo"><tr><td colspan="8" class="det-vazio">Carregando...</td></tr></tbody>
+      <tbody id="det-tabela-corpo"><tr><td colspan="9" class="det-vazio">Carregando...</td></tr></tbody>
     </table>
+  </div>
+</div>
+
+<div class="gc-view" id="checklist-view">
+  <div class="gc-wrap">
+    <div class="gc-card">
+      <h3><i class="ti ti-clipboard-text"></i> Gerar link de checklist</h3>
+      <p class="gc-card-sub">Vincula um checklist novo ao card e gera um link pra mandar pro motorista preencher (sem precisar de login).</p>
+      <div class="gc-form-row">
+        <select id="gc-empresa" class="det-select"></select>
+        <input type="text" id="gc-codigo" class="det-busca-input" placeholder="Código do card (ex: G261014)" style="margin-left:0">
+        <button class="bsm" onclick="gerarChecklist_()" id="gc-btn-gerar"><i class="ti ti-link"></i> Gerar link</button>
+      </div>
+      <div id="gc-erro" class="gc-erro" hidden></div>
+      <div id="gc-resultado" class="gc-link-box" hidden>
+        <input type="text" id="gc-link-gerado" readonly>
+        <button class="bsm" onclick="copiarLinkChecklist_()"><i class="ti ti-copy"></i> Copiar</button>
+      </div>
+    </div>
+
+    <div class="gc-card">
+      <h3><i class="ti ti-history"></i> Checklists do card buscado</h3>
+      <div id="gc-historico"><p class="det-vazio">Busque um card acima pra ver o histórico.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="ov-notas" id="ov-checklist">
+  <div class="ov-notas-box" style="width:520px">
+    <div class="ov-notas-head">
+      <h4 id="ov-checklist-titulo">Checklist</h4>
+      <button class="fechar" onclick="fecharDetalheChecklist_()">&times;</button>
+    </div>
+    <div class="ov-notas-body" id="ov-checklist-body"></div>
   </div>
 </div>
 
@@ -625,9 +689,12 @@ var detNotasAtual = null; // {empresa, codigo} do card com o modal de observaç�
 function mudarAba_(aba){
   document.getElementById('tab-mapa').classList.toggle('ativo', aba === 'mapa');
   document.getElementById('tab-detalhamento').classList.toggle('ativo', aba === 'detalhamento');
+  document.getElementById('tab-checklist').classList.toggle('ativo', aba === 'checklist');
   document.querySelector('.corpo').style.display = aba === 'mapa' ? 'flex' : 'none';
   document.getElementById('detalhamento-view').style.display = aba === 'detalhamento' ? 'flex' : 'none';
+  document.getElementById('checklist-view').style.display = aba === 'checklist' ? 'block' : 'none';
   if (aba === 'detalhamento' && !detCarregado) carregarDetalhamento_();
+  if (aba === 'checklist' && !document.getElementById('gc-empresa').options.length) popularEmpresasChecklist_();
 }
 
 async function buscarTodosCardsDetalhamento_(){
@@ -642,7 +709,7 @@ async function buscarTodosCardsDetalhamento_(){
 }
 
 async function carregarDetalhamento_(){
-  document.getElementById('det-tabela-corpo').innerHTML = '<tr><td colspan="8" class="det-vazio">Carregando...</td></tr>';
+  document.getElementById('det-tabela-corpo').innerHTML = '<tr><td colspan="9" class="det-vazio">Carregando...</td></tr>';
   detCardsTodos = await buscarTodosCardsDetalhamento_();
   detCarregado = true;
   renderizarFiltrosDetalhamento_();
@@ -703,7 +770,7 @@ function filtrarCardsDetalhamento_(){
 function renderizarTabelaDetalhamento_(){
   var corpo = document.getElementById('det-tabela-corpo');
   var lista = filtrarCardsDetalhamento_();
-  if (!lista.length) { corpo.innerHTML = '<tr><td colspan="8" class="det-vazio">Nenhum card encontrado com esse filtro.</td></tr>'; return; }
+  if (!lista.length) { corpo.innerHTML = '<tr><td colspan="9" class="det-vazio">Nenhum card encontrado com esse filtro.</td></tr>'; return; }
   corpo.innerHTML = lista.map(function(c){
     var origemResumo = enderecoResumo_(c.endereco_origem, c.uf_origem);
     var destinoResumo = enderecoResumo_(c.endereco_destino, c.uf_destino);
@@ -714,6 +781,10 @@ function renderizarTabelaDetalhamento_(){
       return '<option value="'+e(op)+'"'+(op === (c.acompanhamento||'') ? ' selected' : '')+'>'+e(op || '(sem etiqueta)')+'</option>';
     }).join('');
     var qtdNotas = (c.notas && c.notas.length) || 0;
+    var ultimoChecklist = ultimoChecklist_(c);
+    var celulaChecklist = ultimoChecklist
+      ? '<button class="det-btn-obs" onclick="abrirDetalheChecklistCard_(\''+empresaAttr+'\',\''+codigoAttr+'\')"><i class="ti ti-clipboard-text"></i> '+contarRespostasPreenchidas_(ultimoChecklist.respostas)+'/'+CAMPOS_CHECKLIST.length+' · '+(ultimoChecklist.status === 'respondido' ? 'Respondido' : 'Pendente')+'</button>'
+      : '<span class="det-vazio" style="padding:0">—</span>';
     return '<tr>'+
       '<td class="det-codigo">'+e(c.codigo)+'</td>'+
       '<td>'+e(c.cliente || '—')+'</td>'+
@@ -723,6 +794,7 @@ function renderizarTabelaDetalhamento_(){
       '<td>'+e(c.motorista || '—')+'</td>'+
       '<td>'+e(c.telefone_motorista || '—')+'</td>'+
       '<td><button class="det-btn-obs" onclick="abrirNotasCard_(\''+empresaAttr+'\',\''+codigoAttr+'\')"><i class="ti ti-notes"></i> '+qtdNotas+'</button></td>'+
+      '<td>'+celulaChecklist+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -822,6 +894,165 @@ async function adicionarNotaCard_(){
   }
   input.disabled = false;
   btn.disabled = false;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ABA GERAR CHECKLIST — vincula um checklist novo a um card, gera o
+   link público (sem login) pro motorista preencher, e mostra o
+   histórico de checklists já gerados pra esse card. O mesmo detalhe
+   (modal) também é usado pela coluna "Checklist" do Detalhamento.
+   ══════════════════════════════════════════════════════════════ */
+
+// Mesmas chaves/rótulos usados em checklist_motorista.html (página
+// pública que o motorista preenche) — duplicado aqui de propósito,
+// mesmo padrão já usado pra AO/STATUS_LIST entre os arquivos do
+// Kanban: são telas diferentes, cada uma com sua cópia da mesma lista.
+var CAMPOS_CHECKLIST = [
+  { chave: 'tipo_contratante', label: '1. Motorista ou proprietário?' },
+  { chave: 'nome_motorista', label: '2. Nome do motorista' },
+  { chave: 'telefone_proprietario', label: '3. Telefone do proprietário' },
+  { chave: 'endereco_proprietario', label: '4. Endereço do proprietário' },
+  { chave: 'endereco_motorista', label: '5. Endereço do motorista' },
+  { chave: 'conta_agencia_banco', label: '6. Conta bancária — agência e banco' },
+  { chave: 'conta_numero_tipo', label: '6. Conta bancária — número e tipo' },
+  { chave: 'pix_favorecido', label: '7. Pix — favorecido' },
+  { chave: 'pix_chave', label: '7. Pix — chave' },
+  { chave: 'pix_tipo_chave', label: '7. Pix — tipo de chave' },
+  { chave: 'pix_banco', label: '7. Pix — banco' },
+  { chave: 'vale_pedagio_tag', label: '8. Tag do vale pedágio' },
+  { chave: 'cidade_uf_coleta', label: '9. Cidade/UF de coleta' },
+  { chave: 'cidade_uf_entrega', label: '10. Cidade/UF de entrega' },
+  { chave: 'ciente_prazo_entrega', label: '11. Ciente da data de entrega?' },
+  { chave: 'ciente_pagamento_conta', label: '12. Ciente que o pagamento só vai pra conta do motorista/proprietário?' },
+  { chave: 'ciente_adiantamento', label: '13. Ciente das condições do adiantamento?' },
+  { chave: 'de_acordo', label: '14. De acordo com todos os itens?' },
+];
+
+function contarRespostasPreenchidas_(respostas){
+  if (!respostas) return 0;
+  return CAMPOS_CHECKLIST.filter(function(c){ return respostas[c.chave]; }).length;
+}
+
+// Card do Detalhamento já vem com c.checklists embutido (mesmo padrão
+// de c.notas) — pega o mais recente, já que pode ter mais de um ao
+// longo do tempo (ex: reenvio).
+function ultimoChecklist_(card){
+  if (!card.checklists || !card.checklists.length) return null;
+  return card.checklists.slice().sort(function(a,b){ return String(b.criado_em||'').localeCompare(String(a.criado_em||'')); })[0];
+}
+
+function popularEmpresasChecklist_(){
+  document.getElementById('gc-empresa').innerHTML = EMPRESAS.map(function(emp){
+    return '<option value="'+e(emp)+'">'+e(emp)+'</option>';
+  }).join('');
+}
+
+var gcHistoricoAtual = [];
+
+async function gerarChecklist_(){
+  var empresa = document.getElementById('gc-empresa').value;
+  var codigo = document.getElementById('gc-codigo').value.trim();
+  var btn = document.getElementById('gc-btn-gerar');
+  var erroEl = document.getElementById('gc-erro');
+  erroEl.hidden = true;
+  if (!codigo) { erroEl.textContent = 'Informe o código do card.'; erroEl.hidden = false; return; }
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    var res = await apiFetch(API_BASE + '/kanban/' + encodeURIComponent(empresa) + '/' + encodeURIComponent(codigo) + '/checklist', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ criadoPor: nomeUsuarioAtual() }),
+    });
+    var json = await res.json();
+    if (res.ok) {
+      var link = location.origin + '/checklist_motorista.html?token=' + json.token;
+      document.getElementById('gc-link-gerado').value = link;
+      document.getElementById('gc-resultado').hidden = false;
+      await buscarHistoricoChecklist_(empresa, codigo);
+    } else {
+      erroEl.textContent = json.error || 'Erro ao gerar link.';
+      erroEl.hidden = false;
+    }
+  } catch (err) {
+    erroEl.textContent = 'Erro de conexão.';
+    erroEl.hidden = false;
+  }
+  btn.disabled = false;
+}
+
+function copiarLinkChecklist_(){
+  var input = document.getElementById('gc-link-gerado');
+  input.select();
+  try { navigator.clipboard.writeText(input.value); } catch (err) { document.execCommand('copy'); }
+}
+
+async function buscarHistoricoChecklist_(empresa, codigo){
+  var wrap = document.getElementById('gc-historico');
+  wrap.innerHTML = '<p class="det-vazio">Carregando...</p>';
+  try {
+    var res = await apiFetch(API_BASE + '/kanban/' + encodeURIComponent(empresa) + '/' + encodeURIComponent(codigo) + '/checklist');
+    var lista = await res.json();
+    gcHistoricoAtual = Array.isArray(lista) ? lista : [];
+    if (!gcHistoricoAtual.length) { wrap.innerHTML = '<p class="det-vazio">Nenhum checklist gerado ainda pra esse card.</p>'; return; }
+    wrap.innerHTML = gcHistoricoAtual.map(function(c, i){
+      var qtd = contarRespostasPreenchidas_(c.respostas);
+      var dataStr = c.criado_em ? new Date(c.criado_em).toLocaleDateString('pt-BR') : '';
+      return '<div class="gc-hist-item" onclick="abrirDetalheChecklistIndice_('+i+')">'+
+        '<span>'+qtd+'/'+CAMPOS_CHECKLIST.length+' preenchido · '+dataStr+'</span>'+
+        '<span class="gc-hist-pill '+(c.status === 'respondido' ? 'respondido' : 'pendente')+'">'+(c.status === 'respondido' ? 'Respondido' : 'Pendente')+'</span>'+
+      '</div>';
+    }).join('');
+  } catch (err) {
+    wrap.innerHTML = '<p class="det-vazio">Erro ao carregar histórico.</p>';
+  }
+}
+
+function abrirDetalheChecklistIndice_(i){
+  var checklist = gcHistoricoAtual[i];
+  if (checklist) renderizarModalChecklist_(checklist);
+}
+
+// Chamada pela coluna "Checklist" do Detalhamento — busca o card já
+// carregado em detCardsTodos (mesma lista da tabela) e abre o mais
+// recente dos checklists embutidos nele.
+function abrirDetalheChecklistCard_(empresa, codigo){
+  var card = detCardsTodos.find(function(c){ return c.empresa === empresa && String(c.codigo) === String(codigo); });
+  var checklist = card ? ultimoChecklist_(card) : null;
+  if (checklist) renderizarModalChecklist_(checklist);
+}
+
+async function renderizarModalChecklist_(checklist){
+  document.getElementById('ov-checklist-titulo').textContent = 'Checklist — ' + checklist.codigo + ' (' + (checklist.status === 'respondido' ? 'Respondido' : 'Pendente') + ')';
+  var respostas = checklist.respostas || {};
+  var corpo = CAMPOS_CHECKLIST.map(function(c){
+    var valor = respostas[c.chave];
+    return '<div class="chk-campo"><div class="chk-campo-lbl">'+e(c.label)+'</div>'+
+      '<div class="chk-campo-val'+(valor ? '' : ' vazio')+'">'+e(valor || 'Não respondido')+'</div></div>';
+  }).join('');
+  document.getElementById('ov-checklist-body').innerHTML = corpo + '<div class="chk-anexos" id="chk-anexos-wrap"><p class="det-vazio">Carregando anexos...</p></div>';
+  document.getElementById('ov-checklist').classList.add('open');
+
+  // Anexos do checklist vivem junto dos anexos do próprio card (mesma
+  // pasta no Storage — uploadAnexo já cuida disso no backend), então
+  // reaproveita a listagem que já existe pra anexos de card.
+  try {
+    var res = await apiFetch(API_BASE + '/kanban/anexos?codigo=' + encodeURIComponent(checklist.codigo));
+    var json = await res.json();
+    var anexos = (json && json.anexos) || [];
+    var wrap = document.getElementById('chk-anexos-wrap');
+    wrap.innerHTML = '<div class="chk-campo-lbl" style="margin-bottom:8px">Anexos do card</div>' + (
+      anexos.length
+        ? anexos.map(function(a){ return '<a class="chk-anexo-link" href="'+e(a.url)+'" target="_blank" rel="noopener"><i class="ti ti-paperclip"></i>'+e(a.nome)+'</a>'; }).join('')
+        : '<p class="det-vazio" style="padding:0">Nenhum anexo.</p>'
+    );
+  } catch (err) {
+    var wrapErro = document.getElementById('chk-anexos-wrap');
+    if (wrapErro) wrapErro.innerHTML = '<p class="det-vazio" style="padding:0">Erro ao carregar anexos.</p>';
+  }
+}
+
+function fecharDetalheChecklist_(){
+  document.getElementById('ov-checklist').classList.remove('open');
 }
 
 document.addEventListener('DOMContentLoaded', function(){
