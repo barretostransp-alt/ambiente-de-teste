@@ -117,6 +117,14 @@ body.tema-claro .leaflet-tooltip.rota-tip{box-shadow:0 6px 20px rgba(0,0,0,.15);
   padding:5px 8px;font-size:11px;font-family:'DM Sans',sans-serif;max-width:190px;width:100%;}
 .det-select:focus{outline:none;border-color:var(--gold-b);}
 .det-select:disabled{opacity:.6;}
+/* Cor por grupo de etiqueta de acompanhamento — pra bater o olho na
+   coluna inteira e já saber o estágio de cada operação sem ler linha por
+   linha. Mesmas 4 cores já usadas no resto do sistema (gold/green/blue/
+   red), não cores novas. */
+.det-select.cor-amarelo{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
+.det-select.cor-verde{border-color:#22C55E;color:#22C55E;background:rgba(34,197,94,.12);}
+.det-select.cor-azul{border-color:#3B82F6;color:#3B82F6;background:rgba(59,130,246,.12);}
+.det-select.cor-vermelho{border-color:#EF4444;color:#EF4444;background:rgba(239,68,68,.12);}
 /* Chips de Empresa/Status do Detalhamento não têm cor própria (ao
    contrário dos de vendedor no Mapa, que ganham background inline) — sem
    isso, .chip.ativo (texto quase preto, pensado pra ficar sobre um fundo
@@ -421,6 +429,26 @@ var STATUS_ABERTOS = ['OPERACIONAL', 'COLETA', 'FATURADO'];
 // FINALIZADO não entra no Detalhamento, então nem aparece como filtro.
 var AO = ["","EM ROTA DE COLETA","AGUARDANDO CARREGAMENTO","CARREGANDO","EM ROTA DE ENTREGA","DESCARREGANDO","CONCLUIDO","NECESSARIO TRANSBORDO","RETOMAR CONTRATAÇÃO","SEM CONTATO"];
 
+// Agrupamento visual das etiquetas de acompanhamento, escolhido pelo Alex
+// (amarelo = carregamento/coleta em andamento ou pendência; verde = em
+// rota de entrega/descarregando; azul = concluído; vermelho = precisa de
+// atenção/sem contato).
+var COR_ACOMPANHAMENTO = {
+  'EM ROTA DE COLETA': 'amarelo',
+  'AGUARDANDO CARREGAMENTO': 'amarelo',
+  'CARREGANDO': 'amarelo',
+  'NECESSARIO TRANSBORDO': 'amarelo',
+  'EM ROTA DE ENTREGA': 'verde',
+  'DESCARREGANDO': 'verde',
+  'CONCLUIDO': 'azul',
+  'RETOMAR CONTRATAÇÃO': 'vermelho',
+  'SEM CONTATO': 'vermelho',
+};
+function classeAcompanhamento_(valor){
+  var cor = COR_ACOMPANHAMENTO[valor];
+  return cor ? 'cor-' + cor : '';
+}
+
 function nomeUsuarioAtual() {
   try {
     var raw = sessionStorage.getItem('barretos_user') || localStorage.getItem('barretos_user');
@@ -691,7 +719,7 @@ function renderizarTabelaDetalhamento_(){
       '<td>'+e(c.cliente || '—')+'</td>'+
       '<td>'+e(rota || '—')+'</td>'+
       '<td>'+e(c.empresa)+'</td>'+
-      '<td><select class="det-select" onchange="salvarAcompanhamento_(\''+empresaAttr+'\',\''+codigoAttr+'\',this.value,this)">'+opcoesAO+'</select></td>'+
+      '<td><select class="det-select '+classeAcompanhamento_(c.acompanhamento)+'" onchange="this.className=\'det-select \'+classeAcompanhamento_(this.value);salvarAcompanhamento_(\''+empresaAttr+'\',\''+codigoAttr+'\',this.value,this)">'+opcoesAO+'</select></td>'+
       '<td>'+e(c.motorista || '—')+'</td>'+
       '<td>'+e(c.telefone_motorista || '—')+'</td>'+
       '<td><button class="det-btn-obs" onclick="abrirNotasCard_(\''+empresaAttr+'\',\''+codigoAttr+'\')"><i class="ti ti-notes"></i> '+qtdNotas+'</button></td>'+
