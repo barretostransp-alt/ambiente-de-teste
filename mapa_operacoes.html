@@ -965,7 +965,14 @@ async function gerarChecklist_(){
     });
     var json = await res.json();
     if (res.ok) {
-      var link = location.origin + '/checklist_motorista.html?token=' + json.token;
+      // location.origin sozinho só dá "https://host" — no ambiente de
+      // teste (GitHub Pages de projeto) o site fica num subcaminho
+      // (".../ambiente-de-teste/"), então o link saía sem esse pedaço e
+      // dava 404. Pega o diretório da própria página atual em vez de
+      // supor que está na raiz — funciona tanto no subcaminho do teste
+      // quanto no domínio próprio da produção (que não tem subcaminho).
+      var diretorioAtual = location.pathname.replace(/[^/]*$/, '');
+      var link = location.origin + diretorioAtual + 'checklist_motorista.html?token=' + json.token;
       document.getElementById('gc-link-gerado').value = link;
       document.getElementById('gc-resultado').hidden = false;
       await buscarHistoricoChecklist_(empresa, codigo);
