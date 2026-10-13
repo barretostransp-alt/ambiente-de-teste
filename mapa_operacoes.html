@@ -310,6 +310,19 @@ function mostrarTelaSemPermissao() {
 
 function e(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+// Pra montar um argumento dentro de onclick="algo('...')" (aspa simples
+// dentro de atributo com aspa dupla): precisa escapar pra JS (barra
+// invertida, aspa simples) ANTES de escapar pra HTML — escapar com e()
+// primeiro transforma a aspa simples em "&#39;", e um .replace(/'/g,...)
+// depois disso não acha mais nenhuma aspa simples literal pra escapar.
+// O navegador decodifica a entidade e entrega uma aspa simples crua
+// dentro do literal JS, quebrando a sintaxe (foi exatamente o bug do
+// filtro "BARRETO'S" no Detalhamento: o onclick simplesmente não rodava).
+function attrJs_(s){
+  var v = String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return v.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 /* ── Cor = vendedor (cor fixa, escolhida pelo Alex); status = estilo do traço ── */
 var COR_VENDEDOR = {
   Diego: '#3B82F6',      // Azul
@@ -488,7 +501,7 @@ function renderizarFiltros(){
   var vendedoresPresentes = Array.from(new Set(todosOsCards.map(function(c){ return c.vendedor || '?'; })));
   var elV = document.getElementById('chips-vendedor');
   elV.innerHTML = vendedoresPresentes.map(function(v){
-    return '<span class="chip" data-v="'+e(v)+'" onclick="toggleFiltroVendedor(\''+e(v).replace(/'/g,"\\'")+'\')" style="margin-right:6px">'+
+    return '<span class="chip" data-v="'+e(v)+'" onclick="toggleFiltroVendedor(\''+attrJs_(v)+'\')" style="margin-right:6px">'+
       '<span class="dot" style="background:'+corDoVendedor(v==='?'?undefined:v)+'"></span>'+e(v)+'</span>';
   }).join('');
   var elS = document.getElementById('chips-status');
@@ -611,7 +624,7 @@ async function carregarDetalhamento_(){
 function renderizarFiltrosDetalhamento_(){
   var elE = document.getElementById('det-chips-empresa');
   elE.innerHTML = EMPRESAS.map(function(emp){
-    return '<span class="chip" data-emp="'+e(emp)+'" onclick="toggleFiltroEmpresaDet_(\''+e(emp).replace(/'/g,"\\'")+'\')">'+e(emp)+'</span>';
+    return '<span class="chip" data-emp="'+e(emp)+'" onclick="toggleFiltroEmpresaDet_(\''+attrJs_(emp)+'\')">'+e(emp)+'</span>';
   }).join('');
   var elS = document.getElementById('det-chips-status');
   elS.innerHTML = STATUS_ABERTOS.map(function(s){
@@ -667,8 +680,8 @@ function renderizarTabelaDetalhamento_(){
     var origemResumo = enderecoResumo_(c.endereco_origem, c.uf_origem);
     var destinoResumo = enderecoResumo_(c.endereco_destino, c.uf_destino);
     var rota = origemResumo + (destinoResumo ? ' → ' + destinoResumo : '');
-    var codigoAttr = e(String(c.codigo)).replace(/'/g,"\\'");
-    var empresaAttr = e(c.empresa).replace(/'/g,"\\'");
+    var codigoAttr = attrJs_(String(c.codigo));
+    var empresaAttr = attrJs_(c.empresa);
     var opcoesAO = AO.map(function(op){
       return '<option value="'+e(op)+'"'+(op === (c.acompanhamento||'') ? ' selected' : '')+'>'+e(op || '(sem etiqueta)')+'</option>';
     }).join('');
