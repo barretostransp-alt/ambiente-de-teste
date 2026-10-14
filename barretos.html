@@ -136,6 +136,22 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .obs-nota-meta{font-size:10px;color:var(--txt-dim);margin-bottom:4px;}
 .obs-nota-autor{color:var(--txt-mid);font-weight:600;}
 .obs-nota-texto{font-size:12px;color:var(--txt);white-space:pre-wrap;word-break:break-word;}
+.btn-obs-card{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--txt-mid);
+  padding:7px 11px;font-size:11.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-obs-card:hover{border-color:var(--gold-b);color:var(--gold);}
+/* Modal de observações (botão de atalho acima) — fica fora do #mbody de
+   propósito, pra não ser apagado toda vez que o form do card é
+   reconstruído (buildForm faz innerHTML no #mbody inteiro). */
+.ov-notas{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:500;}
+.ov-notas.open{display:flex;}
+.ov-notas-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:420px;
+  max-width:92vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;}
+.ov-notas-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ov-notas-head h4{font-size:13px;font-weight:700;color:var(--txt);}
+.ov-notas-head .fechar{cursor:pointer;color:var(--txt-dim);background:none;border:none;font-size:20px;line-height:1;}
+.ov-notas-head .fechar:hover{color:var(--txt);}
+.ov-notas-body{padding:14px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;}
 .cod-ok{font-size:10px;color:var(--green);margin-top:3px;display:flex;align-items:center;gap:3px;}
 .cod-err{font-size:10px;color:var(--red);margin-top:3px;display:none;align-items:center;gap:3px;font-weight:600;}
 .cod-inp-dup{border-color:var(--red)!important;}.vw{position:relative;}
@@ -276,7 +292,21 @@ body.tema-claro .kcard-foot .ktag[style*="22C55E"]{
   </div>
 </div>
 
-
+<div class="ov-notas" id="ov-notas-card">
+  <div class="ov-notas-box">
+    <div class="ov-notas-head">
+      <h4 id="ov-notas-card-titulo">Observações</h4>
+      <button class="fechar" onclick="fecharObsCardModal_()">&times;</button>
+    </div>
+    <div class="ov-notas-body">
+      <div class="obs-add-row">
+        <input type="text" id="mcard-nota-input" placeholder="Escrever uma observação...">
+        <button type="button" id="mcard-nota-btn" onclick="adicionarNotaCardModal_()"><i class="ti ti-plus" style="font-size:13px"></i></button>
+      </div>
+      <div id="mcard-notas-lista"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 var ABA="BARRETO'S", PFX="B", SK="jira_url_BARRETOS", ATK="att_BAR_", EXTK="extra_BAR_";
@@ -899,7 +929,7 @@ function openEdit(key){
   document.getElementById("btn-del").style.display="flex";
   document.getElementById("mmsg").textContent="";document.getElementById("mmsg").className="mmsg";
   buildForm(card,false);
-  carregarNotasCardModal_(key);
+  _notaCardModalCodigoAtual = key; // só guarda — a thread só carrega se o botão "Observações" for clicado
   document.getElementById("card-modal").classList.add("open");
 }
 
@@ -912,10 +942,25 @@ function nomeUsuarioAtual() {
   } catch (e) { return ''; }
 }
 
-// Histórico de observação do card, direto no modal de editar — mesma
-// rota/tabela (kanban_card_notas) que a aba Detalhamento do Mapa das
-// Operações já usa: GET/POST /kanban/:empresa/:codigo/notas.
+// Histórico de observação do card, aberto num modal à parte por um
+// botão de atalho (igual a aba Detalhamento do Mapa das Operações) —
+// mesma rota/tabela (kanban_card_notas): GET/POST
+// /kanban/:empresa/:codigo/notas.
 var _notaCardModalCodigoAtual = null;
+
+function abrirObsCardModal_(){
+  var codigo = _notaCardModalCodigoAtual;
+  if (!codigo) return;
+  document.getElementById('ov-notas-card-titulo').textContent = 'Observações — ' + codigo;
+  document.getElementById('mcard-nota-input').value = '';
+  document.getElementById('mcard-notas-lista').innerHTML = '<p style="font-size:11px;color:var(--txt-dim)">Carregando...</p>';
+  document.getElementById('ov-notas-card').classList.add('open');
+  carregarNotasCardModal_(codigo);
+}
+
+function fecharObsCardModal_(){
+  document.getElementById('ov-notas-card').classList.remove('open');
+}
 
 async function carregarNotasCardModal_(codigo){
   _notaCardModalCodigoAtual = codigo;
@@ -1032,15 +1077,8 @@ function buildForm(data,isNew){
     "<div class=\"fg\"><label>Status</label>"+sel("Status",STATUS_LIST,isNew?(data["Status"]||"OPERACIONAL"):"")+"</div>"+
     "<div class=\"fg\"><label>Acompanhamento</label>"+sel("ACOMPANHAMENTO",AO,"")+"</div>"+"<div class=\"fg-grid\" style=\"margin-top:9px\">"+"<div class=\"fg full\"><label>Título do Card</label>"+inp("TITULO","Descreva brevemente...")+"</div>"+"</div>"+
   (isNew?"":(
-    "<div class=\"fg-grid\" style=\"margin-top:9px\">"+
-      "<div class=\"fg full\">"+
-        "<label>Observações</label>"+
-        "<div class=\"obs-add-row\">"+
-          "<input type=\"text\" id=\"mcard-nota-input\" placeholder=\"Escrever uma observação...\">"+
-          "<button type=\"button\" id=\"mcard-nota-btn\" onclick=\"adicionarNotaCardModal_()\"><i class=\"ti ti-plus\" style=\"font-size:13px\"></i></button>"+
-        "</div>"+
-        "<div id=\"mcard-notas-lista\"><p style=\"font-size:11px;color:var(--txt-dim)\">Carregando...</p></div>"+
-      "</div>"+
+    "<div style=\"margin-top:9px\">"+
+      "<button type=\"button\" class=\"btn-obs-card\" onclick=\"abrirObsCardModal_()\"><i class=\"ti ti-notes\" style=\"font-size:13px\"></i> Observações</button>"+
     "</div>"
   ))+
   "</div>"+
