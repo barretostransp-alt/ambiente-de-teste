@@ -1075,12 +1075,13 @@ function buildForm(data,isNew){
       "<div class=\"cod-err\" id=\"cod-err\"><i class='ti ti-alert-triangle' style='font-size:10px'></i> Código já utilizado! Escolha outro.</div>"+
     "</div>"+
     "<div class=\"fg\"><label>Status</label>"+sel("Status",STATUS_LIST,isNew?(data["Status"]||"OPERACIONAL"):"")+"</div>"+
-    "<div class=\"fg\"><label>Acompanhamento</label>"+sel("ACOMPANHAMENTO",AO,"")+"</div>"+"<div class=\"fg-grid\" style=\"margin-top:9px\">"+"<div class=\"fg full\"><label>Título do Card</label>"+inp("TITULO","Descreva brevemente...")+"</div>"+"</div>"+
+    "<div class=\"fg\"><label>Acompanhamento</label>"+sel("ACOMPANHAMENTO",AO,"")+"</div>"+"<div class=\"fg-grid\" style=\"margin-top:9px\">"+"<div class=\""+(isNew?"fg full":"fg")+"\"><label>Título do Card</label>"+inp("TITULO","Descreva brevemente...")+"</div>"+
   (isNew?"":(
-    "<div style=\"margin-top:9px\">"+
+    "<div class=\"fg\"><label>&nbsp;</label>"+
       "<button type=\"button\" class=\"btn-obs-card\" onclick=\"abrirObsCardModal_()\"><i class=\"ti ti-notes\" style=\"font-size:13px\"></i> Observações</button>"+
     "</div>"
   ))+
+  "</div>"+
   "</div>"+
 
   // ── COMERCIAL
