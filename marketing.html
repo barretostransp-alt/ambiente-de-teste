@@ -619,17 +619,18 @@ async function excluirGasto(id) {
 }
 
 /* ═══════════════════════════════════════
-   LEADS — reaproveita o CRM já existente (crm_clientes), não cria
-   cadastro próprio. Requer que o usuário também tenha a ferramenta
-   "crm" (ver aviso em configuracoes.html).
+   LEADS — reaproveita o CRM já existente (crm_clientes) por baixo, mas
+   passa pela própria API do Marketing (/api/marketing/leads) em vez de
+   chamar /api/crm/clientes direto — assim um usuário só com a
+   ferramenta "marketing" não precisa também de "crm" pra isso funcionar.
 ════════════════════════════════════════ */
 async function carregarLeads() {
   leadsCarregados = true;
   try {
-    var r = await apiFetch(API_BASE + '/crm/clientes');
+    var r = await apiFetch(API_MKT + '/leads');
     if (!r.ok) { db.leads = []; renderLeads(); return; }
     var clientes = await r.json();
-    db.leads = (Array.isArray(clientes) ? clientes : []).filter(function(c){ return !!c.campanha_id; });
+    db.leads = Array.isArray(clientes) ? clientes : [];
   } catch (e) { db.leads = []; }
   renderLeads();
 }
@@ -668,12 +669,8 @@ async function salvarLead() {
     data_cadastro: hoje,
   };
   try {
-    var r = await apiFetch(API_BASE + '/crm/clientes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    var r = await apiFetch(API_MKT + '/leads', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao criar lead: ' + (j.error || '')); return; }
-    var criado = await r.json();
-    await apiFetch(API_BASE + '/crm/clientes/' + criado.id + '/status-historico', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status:'Novo', data: hoje })
-    }).catch(function(){});
     document.getElementById('modal-novo-lead').classList.remove('open');
     await carregarLeads();
   } catch (e) { alert('Erro de conexão ao criar lead.'); }
