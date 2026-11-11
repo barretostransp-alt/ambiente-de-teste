@@ -193,6 +193,7 @@ const TOOLS_LIST = [
   { key:"torre_controle", label:"Torre de Controle", icon:"ti-device-tv",        cat:"" },
   { key:"calendario", label:"Calendário",             icon:"ti-calendar",         cat:"Geral" },
   { key:"despesas",   label:"Despesas",              icon:"ti-wallet",           cat:"Geral" },
+  { key:"marketing",  label:"Marketing",              icon:"ti-speakerphone",     cat:"Geral" },
   { key:"diarias",    label:"Diárias de Motoristas",  icon:"ti-calendar-check",   cat:"RH" },
   { key:"rh_colaboradores", label:"RH", icon:"ti-users-group",   cat:"RH" },
   { key:"recrutamento", label:"Recrutamento e Seleção", icon:"ti-user-search",   cat:"RH" },
@@ -316,7 +317,8 @@ async function verificarSeSouAdmin(){
     souAdminAgora = res.ok && !!dados.eh_admin;
     if (souAdminAgora) {
       document.getElementById("nu-tools").innerHTML = TOOLS_LIST.map(function(t){
-        return '<div class="tool-toggle" onclick="this.classList.toggle(\'active\')" data-tool="' + t.key + '">'
+        return '<div class="tool-toggle" onclick="this.classList.toggle(\'active\')" data-tool="' + t.key + '"'
+             + (t.key === "marketing" ? ' title="Para a aba Leads funcionar, o usuário também precisa da ferramenta CRM"' : "") + '>'
              + '<i class="ti ' + t.icon + '"></i>'
              + '<span class="tool-name">' + t.label + (t.cat ? ' <span style="opacity:.5;font-size:9px">'+t.cat+'</span>' : "") + '</span>'
              + '<div class="toggle-switch"></div>'
@@ -407,7 +409,8 @@ function renderUsuarios(){
       const ativo = perms.includes(t.key);
       return '<div class="tool-toggle ' + (ativo?"active":"") + '" '
            + 'onclick="toggleTool(\'' + login + '\',\'' + t.key + '\')" '
-           + 'id="tt-' + login.replace(/\s/g,"_") + '-' + t.key + '">'
+           + 'id="tt-' + login.replace(/\s/g,"_") + '-' + t.key + '"'
+           + (t.key === "marketing" ? ' title="Para a aba Leads funcionar, o usuário também precisa da ferramenta CRM"' : "") + '>'
            + '<i class="ti ' + t.icon + '"></i>'
            + '<span class="tool-name">' + t.label + (t.cat ? ' <span style="opacity:.5;font-size:9px">'+t.cat+'</span>' : "") + '</span>'
            + '<div class="toggle-switch"></div>'

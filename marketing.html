@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing — Barreto's</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root {
+  --gold:#F5B800; --gold-dim:rgba(245,184,0,.12); --gold-border:rgba(245,184,0,.3);
+  --bg:#0E0F12; --surface:#161820; --surface2:#1D1F27; --surface3:#252731;
+  --border:#2A2D38; --border2:#353848;
+  --txt:#E4E6F0; --txt-dim:#7B7F96; --txt-muted:#4A4E63;
+  --red:#E24B4A; --red-dim:rgba(226,75,74,.12); --red-border:rgba(226,75,74,.3);
+  --green:#2EBD85; --green-dim:rgba(46,189,133,.1); --green-border:rgba(46,189,133,.3);
+  --blue:#4A8FE8; --blue-dim:rgba(74,143,232,.1); --orange:#F5832A;
+  --radius:8px; --radius-lg:12px; --sidebar-w:220px;
+  font-family:'Barlow',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);min-height:100vh;display:flex;overflow:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:18px 14px 14px;border-bottom:1px solid var(--border)}
+.sidebar-logo-text{font-size:13px;font-weight:800;letter-spacing:.04em}
+.sidebar-section{padding:14px 14px 4px;font-size:9px;font-weight:700;color:var(--txt-muted);
+  letter-spacing:.1em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 12px;margin:1px 6px;
+  border-radius:7px;cursor:pointer;color:var(--txt-dim);font-size:12px;font-weight:500;
+  transition:all .15s;position:relative;user-select:none}
+.nav-item i{font-size:16px;flex-shrink:0}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--txt)}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.nav-item.active i{color:var(--gold)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px}
+.topbar-title i{color:var(--gold);font-size:18px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;
+  font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--gold);color:#111}
+.btn-primary:hover{opacity:.88}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--txt-dim)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-danger{background:var(--red-dim);border:1px solid var(--red-border);color:var(--red)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+.view{display:none}
+.view.active{display:block}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px}
+.panel-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.panel-title{font-size:13px;font-weight:700;color:var(--txt);flex:1}
+.panel-body{padding:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--txt-dim);border-bottom:2px solid var(--border);
+  white-space:nowrap;background:var(--surface2)}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tbl-empty{text-align:center;padding:32px;color:var(--txt-dim);font-size:13px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;
+  font-size:10px;font-weight:700;letter-spacing:.04em}
+.badge-green{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border)}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid var(--red-border)}
+.badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(74,143,232,.3)}
+.badge-gray{background:rgba(123,127,150,.1);color:var(--txt-dim);border:1px solid var(--border)}
+.form-grid{display:grid;gap:12px}
+.form-grid-2{grid-template-columns:1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-dim)}
+.form-input{background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+  padding:8px 12px;font-size:13px;color:var(--txt);font-family:inherit;transition:all .15s;width:100%}
+.form-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(245,184,0,.1)}
+.form-input::placeholder{color:var(--txt-muted)}
+select.form-input option{background:var(--surface2);color:var(--txt)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);
+  padding:20px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.modal-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.modal-title{font-size:15px;font-weight:700;flex:1}
+.modal-close{background:none;border:none;color:var(--txt-dim);cursor:pointer;
+  font-size:20px;padding:2px;border-radius:5px;transition:all .15s}
+.modal-close:hover{color:var(--txt);background:rgba(255,255,255,.06)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;
+  border-top:1px solid var(--border)}
+.loading-row{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:24px;color:var(--txt-dim);font-size:12px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.txt-right{text-align:right}
+.txt-green{color:var(--green)}
+.txt-red{color:var(--red)}
+.txt-dim{color:var(--txt-dim)}
+.materiais-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.material-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px;display:flex;flex-direction:column;gap:6px}
+.material-card i.ti-file-icon{font-size:28px;color:var(--gold)}
+.material-title{font-size:12px;font-weight:700;word-break:break-word}
+.material-tags{display:flex;flex-wrap:wrap;gap:4px}
+.material-actions{display:flex;gap:6px;margin-top:auto}
+.material-actions a, .material-actions button{flex:1;text-align:center;text-decoration:none}
+</style>
+<style>
+body.tema-claro{--bg:#F0F2F5;--surface:#FFFFFF;--border:#E2E6ED;--txt:#111827;--txt-dim:#6B7280;--txt-muted:#9CA3AF;--gold:#D97706;--green:#059669;--blue:#2563EB;--orange:#EA580C;--red:#DC2626;--gold-dim:rgba(217,119,6,.10);}
+body.tema-claro .topbar{background:#111827!important;border-bottom-color:#1F2937!important}
+body.tema-claro .topbar *{color:#E5E7EB!important}
+body.tema-claro .tbl th{background:#F8FAFC!important;color:#374151!important;border-color:#E5E7EB!important}
+body.tema-claro .tbl td{background:#FFFFFF!important;color:#111827!important;border-color:#F1F5F9!important}
+body.tema-claro .tbl tr:hover td{background:#F8FAFC!important}
+body.tema-claro .panel{background:#FFFFFF!important;border-color:#E2E8F0!important;box-shadow:0 1px 3px rgba(0,0,0,.06)!important}
+body.tema-claro .form-input{background:#F8FAFC!important;border-color:#E2E8F0!important;color:#111827!important}
+body.tema-claro select.form-input{background:#FFFFFF!important;color:#111827!important}
+body.tema-claro select.form-input option{background:#FFFFFF!important;color:#111827!important}
+body.tema-claro .modal{background:#FFFFFF!important;border-color:#E2E8F0!important}
+body.tema-claro .material-card{background:#F8FAFC!important;border-color:#E2E8F0!important}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><div class="sidebar-logo-text">Marketing</div></div>
+
+  <div class="sidebar-section">Planejamento</div>
+  <div class="nav-item active" onclick="showView('campanhas')">
+    <i class="ti ti-speakerphone"></i>Campanhas
+  </div>
+  <div class="nav-item" onclick="showView('orcamento')">
+    <i class="ti ti-cash"></i>Orçamento
+  </div>
+
+  <div class="sidebar-section">Relacionamento</div>
+  <div class="nav-item" onclick="showView('leads')">
+    <i class="ti ti-target-arrow"></i>Leads
+  </div>
+
+  <div class="sidebar-section">Conteúdo</div>
+  <div class="nav-item" onclick="showView('biblioteca')">
+    <i class="ti ti-photo"></i>Biblioteca
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title"><i class="ti ti-speakerphone" id="topbar-icon"></i><span id="topbar-title">Campanhas</span></div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="loadAllData()"><i class="ti ti-refresh" style="font-size:13px"></i> Atualizar</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ─── CAMPANHAS ─── -->
+    <div id="view-campanhas" class="view active">
+      <div class="panel">
+        <div class="panel-header">
+          <i class="ti ti-speakerphone" style="color:var(--gold)"></i>
+          <span class="panel-title">Calendário de Campanhas / Posts</span>
+        </div>
+        <div class="panel-body">
+          <div style="overflow-x:auto"><table class="tbl" id="tbl-campanhas">
+            <thead><tr>
+              <th>Nome</th><th>Tipo</th><th>Canal</th><th>Status</th>
+              <th>Data Planejada</th><th>Data Publicação</th><th>Responsável</th>
+              <th>Orçamento Previsto</th><th>Obs</th><th></th>
+            </tr></thead>
+            <tbody id="campanhas-tbody"><tr><td colspan="10" class="tbl-empty"><span class="spinner"></span> Carregando…</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="adicionarLinhaCampanha()"><i class="ti ti-plus" style="font-size:13px"></i> Nova campanha</button>
+    </div>
+
+    <!-- ─── ORÇAMENTO ─── -->
+    <div id="view-orcamento" class="view">
+      <div class="panel">
+        <div class="panel-header">
+          <i class="ti ti-chart-bar" style="color:var(--gold)"></i>
+          <span class="panel-title">Previsto × Gasto por Campanha</span>
+        </div>
+        <div class="panel-body">
+          <div style="overflow-x:auto"><table class="tbl" id="tbl-resumo-orcamento">
+            <thead><tr><th>Campanha</th><th class="txt-right">Previsto</th><th class="txt-right">Gasto</th><th class="txt-right">Saldo</th></tr></thead>
+            <tbody id="resumo-orcamento-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <i class="ti ti-receipt" style="color:var(--gold)"></i>
+          <span class="panel-title">Gastos de Mídia</span>
+        </div>
+        <div class="panel-body">
+          <div style="overflow-x:auto"><table class="tbl" id="tbl-gastos">
+            <thead><tr><th>Campanha</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Data</th><th>Canal</th><th></th></tr></thead>
+            <tbody id="gastos-tbody"><tr><td colspan="7" class="tbl-empty"><span class="spinner"></span> Carregando…</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="adicionarLinhaGasto()"><i class="ti ti-plus" style="font-size:13px"></i> Novo gasto</button>
+    </div>
+
+    <!-- ─── LEADS ─── -->
+    <div id="view-leads" class="view">
+      <div class="panel">
+        <div class="panel-header">
+          <i class="ti ti-target-arrow" style="color:var(--gold)"></i>
+          <span class="panel-title">Leads Gerados por Campanha</span>
+          <button class="btn btn-primary btn-sm" onclick="abrirModalNovoLead()"><i class="ti ti-plus" style="font-size:13px"></i> Novo Lead</button>
+        </div>
+        <div class="panel-body">
+          <div style="overflow-x:auto"><table class="tbl" id="tbl-leads">
+            <thead><tr><th>Empresa</th><th>Contato</th><th>Telefone</th><th>Campanha</th><th>Status</th><th>Data Cadastro</th></tr></thead>
+            <tbody id="leads-tbody"><tr><td colspan="6" class="tbl-empty"><span class="spinner"></span> Carregando…</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── BIBLIOTECA ─── -->
+    <div id="view-biblioteca" class="view">
+      <div class="panel">
+        <div class="panel-header">
+          <i class="ti ti-photo" style="color:var(--gold)"></i>
+          <span class="panel-title">Biblioteca de Materiais</span>
+          <button class="btn btn-primary btn-sm" onclick="abrirModalUploadMaterial()"><i class="ti ti-upload" style="font-size:13px"></i> Enviar material</button>
+        </div>
+        <div class="panel-body">
+          <div class="materiais-grid" id="materiais-grid"><div class="loading-row"><span class="spinner"></span> Carregando…</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Novo Lead -->
+<div id="modal-novo-lead" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-target-arrow" style="color:var(--gold);margin-right:6px"></i>Novo Lead</div>
+      <button class="modal-close" onclick="document.getElementById('modal-novo-lead').classList.remove('open')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Empresa<span class="req">*</span></label><input class="form-input" id="lead-empresa" placeholder="Nome da empresa"></div>
+        <div class="form-group"><label class="form-label">Contato<span class="req">*</span></label><input class="form-input" id="lead-contato" placeholder="Nome do contato"></div>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Telefone/WhatsApp</label><input class="form-input" id="lead-telefone" placeholder="(00) 00000-0000"></div>
+        <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" id="lead-email" placeholder="contato@empresa.com"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Campanha de origem</label>
+        <select class="form-input" id="lead-campanha"><option value="">— Sem campanha específica —</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-novo-lead').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarLead()"><i class="ti ti-device-floppy" style="font-size:13px"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Upload de Material -->
+<div id="modal-upload-material" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-upload" style="color:var(--gold);margin-right:6px"></i>Enviar Material</div>
+      <button class="modal-close" onclick="document.getElementById('modal-upload-material').classList.remove('open')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Título<span class="req">*</span></label><input class="form-input" id="mat-titulo" placeholder="Ex: Logo horizontal 2026"></div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Categoria</label>
+          <select class="form-input" id="mat-categoria">
+            <option value="Logo">Logo</option><option value="Foto">Foto</option><option value="Vídeo">Vídeo</option>
+            <option value="Arte Aprovada">Arte Aprovada</option><option value="Documento">Documento</option><option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Tags (separadas por vírgula)</label><input class="form-input" id="mat-tags" placeholder="instagram, aprovado"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Arquivo<span class="req">*</span> <span class="txt-dim" style="text-transform:none;font-weight:400">(máx. 10MB)</span></label><input class="form-input" type="file" id="mat-arquivo"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-upload-material').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" id="mat-btn-enviar" onclick="enviarMaterial()"><i class="ti ti-upload" style="font-size:13px"></i> Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   AUTH / API — mesmo padrão de todo módulo standalone
+════════════════════════════════════════ */
+var API_BASE = 'https://barretos-backend.onrender.com/api';
+var API_MKT  = API_BASE + '/marketing';
+var SUPABASE_URL      = 'https://qjwobkpgqmaqisphwonl.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_c4MrJXB6nTHY0a5ShAFRaQ_Jc4qDdPr';
+
+function getAuthToken()    { return localStorage.getItem('barretos_auth_token'); }
+function getRefreshToken() { return localStorage.getItem('barretos_auth_refresh'); }
+
+async function tentarRenovarToken() {
+  var refresh = getRefreshToken();
+  if (!refresh) return false;
+  var agora = Date.now();
+  var ultimaRenovacao = parseInt(localStorage.getItem('barretos_auth_renovado_em') || '0', 10);
+  if (agora - ultimaRenovacao < 5000) return !!getAuthToken();
+  try {
+    var r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: refresh }),
+    });
+    if (!r.ok) return false;
+    var j = await r.json();
+    localStorage.setItem('barretos_auth_token', j.access_token);
+    localStorage.setItem('barretos_auth_refresh', j.refresh_token);
+    localStorage.setItem('barretos_auth_renovado_em', String(Date.now()));
+    return true;
+  } catch (e) { return false; }
+}
+
+async function apiFetch(url, options) {
+  options = options || {};
+  var headers = Object.assign({}, options.headers, { Authorization: 'Bearer ' + getAuthToken() });
+  var res = await fetch(url, Object.assign({}, options, { headers: headers }));
+  if (res.status === 401) {
+    if (await tentarRenovarToken()) {
+      headers.Authorization = 'Bearer ' + getAuthToken();
+      res = await fetch(url, Object.assign({}, options, { headers: headers }));
+    }
+    if (res.status === 401) {
+      mostrarTelaSemAcesso();
+      throw new Error('Sessão expirada');
+    }
+  }
+  return res;
+}
+
+function mostrarTelaSemAcesso() {
+  var el = document.getElementById('sem-acesso-overlay');
+  if (el) { el.style.display = 'flex'; return; }
+  el = document.createElement('div');
+  el.id = 'sem-acesso-overlay';
+  el.style.cssText = 'position:fixed;inset:0;background:#0F1117;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#E8E9F0;text-align:center;padding:24px';
+  el.innerHTML = '<div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Sessão não encontrada</div>' +
+    '<div style="font-size:13px;color:#9CA3AF">Acesse esta tela pelo menu principal do sistema (shell.html), não direto por este arquivo.</div></div>';
+  document.body.appendChild(el);
+}
+
+/* ═══════════════════════════════════════
+   ESTADO / VIEWS
+════════════════════════════════════════ */
+var db = { campanhas: [], gastos: [], materiais: [], leads: [] };
+var leadsCarregados = false;
+
+var VIEWS = {
+  campanhas:  { title:'Campanhas',  icon:'ti-speakerphone' },
+  orcamento:  { title:'Orçamento',  icon:'ti-cash' },
+  leads:      { title:'Leads',      icon:'ti-target-arrow' },
+  biblioteca: { title:'Biblioteca', icon:'ti-photo' },
+};
+
+function showView(v) {
+  document.querySelectorAll('.view').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('view-' + v).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(el){
+    if (el.getAttribute('onclick') === "showView('" + v + "')") el.classList.add('active');
+  });
+  var cfg = VIEWS[v];
+  if (cfg) {
+    document.getElementById('topbar-title').textContent = cfg.title;
+    document.getElementById('topbar-icon').className = 'ti ' + cfg.icon;
+  }
+  if (v === 'leads') carregarLeads();
+}
+
+/* ═══════════════════════════════════════
+   CARREGAMENTO
+════════════════════════════════════════ */
+async function loadAllData() {
+  try {
+    var [campanhas, gastos, materiais] = await Promise.all([
+      apiFetch(API_MKT + '/campanhas').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+      apiFetch(API_MKT + '/gastos').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+      apiFetch(API_MKT + '/materiais').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+    ]);
+    db.campanhas = Array.isArray(campanhas) ? campanhas : [];
+    db.gastos    = Array.isArray(gastos)    ? gastos    : [];
+    db.materiais = Array.isArray(materiais) ? materiais : [];
+  } catch (e) { /* mostrarTelaSemAcesso já tratou se for 401 */ }
+  renderCampanhas();
+  renderOrcamento();
+  renderBiblioteca();
+  if (leadsCarregados) renderLeads();
+}
+
+/* ═══════════════════════════════════════
+   CAMPANHAS
+════════════════════════════════════════ */
+var TIPOS_CAMPANHA = ['Post','Campanha Paga','Evento','E-mail Marketing','Outro'];
+var CANAIS = ['Instagram','Facebook','Google Ads','Site','WhatsApp','E-mail','Evento','Outro'];
+var STATUS_CAMPANHA = ['Rascunho','Aprovada','Agendada','Publicada'];
+
+function selectOptions_(lista, atual) {
+  return lista.map(function(v){ return '<option value="' + v + '"' + (v === atual ? ' selected' : '') + '>' + v + '</option>'; }).join('');
+}
+
+function linhaCampanha_(c) {
+  var id = c.id || '';
+  var novo = !id;
+  var rowId = id || 'novo';
+  return '<tr id="camp-row-' + rowId + '">' +
+    '<td><input class="form-input" id="camp-nome-' + rowId + '" value="' + (novo ? '' : (c.nome || '')) + '" placeholder="Nome" style="min-width:130px"></td>' +
+    '<td><select class="form-input" id="camp-tipo-' + rowId + '" style="min-width:120px">' + selectOptions_(TIPOS_CAMPANHA, c.tipo) + '</select></td>' +
+    '<td><select class="form-input" id="camp-canal-' + rowId + '" style="min-width:110px">' + selectOptions_(CANAIS, c.canal) + '</select></td>' +
+    '<td><select class="form-input" id="camp-status-' + rowId + '" style="min-width:110px">' + selectOptions_(STATUS_CAMPANHA, c.status || 'Rascunho') + '</select></td>' +
+    '<td><input class="form-input" type="date" id="camp-dplan-' + rowId + '" value="' + (c.data_planejada || '') + '" style="min-width:130px"></td>' +
+    '<td><input class="form-input" type="date" id="camp-dpub-' + rowId + '" value="' + (c.data_publicacao || '') + '" style="min-width:130px"></td>' +
+    '<td><input class="form-input" id="camp-resp-' + rowId + '" value="' + (novo ? '' : (c.responsavel || '')) + '" style="min-width:110px"></td>' +
+    '<td><input class="form-input" type="number" step="0.01" id="camp-orc-' + rowId + '" value="' + (novo ? '' : Number(c.orcamento_previsto || 0)) + '" style="width:100px"></td>' +
+    '<td><input class="form-input" id="camp-obs-' + rowId + '" value="' + (novo ? '' : (c.obs || '')) + '" style="min-width:110px"></td>' +
+    '<td style="white-space:nowrap">' +
+      '<button class="btn btn-ghost btn-sm" onclick="' + (novo ? 'criarCampanha()' : "salvarCampanha('" + id + "')") + '"><i class="ti ti-device-floppy" style="font-size:12px"></i></button>' +
+      (novo ? '' : '<button class="btn btn-danger btn-sm" onclick="excluirCampanha(\'' + id + '\')"><i class="ti ti-trash" style="font-size:12px"></i></button>') +
+    '</td></tr>';
+}
+
+function renderCampanhas() {
+  var tbody = document.getElementById('campanhas-tbody');
+  tbody.innerHTML = db.campanhas.length
+    ? db.campanhas.map(linhaCampanha_).join('')
+    : '<tr><td colspan="10" class="tbl-empty">Nenhuma campanha cadastrada</td></tr>';
+  atualizarSelectCampanhas_();
+}
+
+function adicionarLinhaCampanha() {
+  if (document.getElementById('camp-row-novo')) return;
+  var tbody = document.getElementById('campanhas-tbody');
+  if (tbody.querySelector('.tbl-empty')) tbody.innerHTML = '';
+  tbody.insertAdjacentHTML('beforeend', linhaCampanha_({}));
+}
+
+async function criarCampanha() {
+  var nome = document.getElementById('camp-nome-novo').value.trim();
+  if (!nome) { alert('Informe o nome da campanha.'); return; }
+  var payload = {
+    nome: nome,
+    tipo: document.getElementById('camp-tipo-novo').value,
+    canal: document.getElementById('camp-canal-novo').value,
+    status: document.getElementById('camp-status-novo').value,
+    data_planejada: document.getElementById('camp-dplan-novo').value || null,
+    data_publicacao: document.getElementById('camp-dpub-novo').value || null,
+    responsavel: document.getElementById('camp-resp-novo').value.trim(),
+    orcamento_previsto: parseFloat(document.getElementById('camp-orc-novo').value) || 0,
+    obs: document.getElementById('camp-obs-novo').value.trim(),
+  };
+  try {
+    var r = await apiFetch(API_MKT + '/campanhas', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao criar campanha: ' + (j.error || '')); return; }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao criar campanha.'); }
+}
+
+async function salvarCampanha(id) {
+  var payload = {
+    nome: document.getElementById('camp-nome-' + id).value.trim(),
+    tipo: document.getElementById('camp-tipo-' + id).value,
+    canal: document.getElementById('camp-canal-' + id).value,
+    status: document.getElementById('camp-status-' + id).value,
+    data_planejada: document.getElementById('camp-dplan-' + id).value || null,
+    data_publicacao: document.getElementById('camp-dpub-' + id).value || null,
+    responsavel: document.getElementById('camp-resp-' + id).value.trim(),
+    orcamento_previsto: parseFloat(document.getElementById('camp-orc-' + id).value) || 0,
+    obs: document.getElementById('camp-obs-' + id).value.trim(),
+  };
+  if (!payload.nome) { alert('Informe o nome da campanha.'); return; }
+  try {
+    var r = await apiFetch(API_MKT + '/campanhas/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao salvar campanha: ' + (j.error || '')); return; }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao salvar campanha.'); }
+}
+
+async function excluirCampanha(id) {
+  var emUso = db.gastos.filter(function(g){ return g.campanha_id === id; }).length;
+  var aviso = emUso
+    ? 'Essa campanha tem ' + emUso + ' gasto(s) vinculado(s). Eles continuam registrados, só perdem o vínculo com esta campanha. Continuar?'
+    : 'Excluir esta campanha?';
+  if (!confirm(aviso)) return;
+  try {
+    var r = await apiFetch(API_MKT + '/campanhas/' + id, { method:'DELETE' });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao excluir campanha: ' + (j.error || '')); return; }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao excluir campanha.'); }
+}
+
+/* ═══════════════════════════════════════
+   ORÇAMENTO / GASTOS — ledger próprio do marketing, NÃO toca em
+   Financeiro/Conciliação (ver migration 20261111160000_marketing.sql).
+════════════════════════════════════════ */
+var CATEGORIAS_GASTO = ['Mídia Paga','Produção','Ferramentas/Software','Influenciador','Outro'];
+
+function fM_(v) { return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function atualizarSelectCampanhas_() {
+  var opts = '<option value="">— Nenhuma —</option>' + db.campanhas.map(function(c){ return '<option value="' + c.id + '">' + c.nome + '</option>'; }).join('');
+  document.querySelectorAll('.sel-campanha').forEach(function(sel){
+    var atual = sel.value;
+    sel.innerHTML = opts;
+    if (atual) sel.value = atual;
+  });
+  var leadSel = document.getElementById('lead-campanha');
+  if (leadSel) {
+    var leadOpts = '<option value="">— Sem campanha específica —</option>' + db.campanhas.map(function(c){ return '<option value="' + c.id + '">' + c.nome + '</option>'; }).join('');
+    leadSel.innerHTML = leadOpts;
+  }
+}
+
+function renderOrcamento() {
+  var porCampanha = {};
+  db.gastos.forEach(function(g){
+    if (!g.campanha_id) return;
+    porCampanha[g.campanha_id] = (porCampanha[g.campanha_id] || 0) + Number(g.valor || 0);
+  });
+  var resumoBody = document.getElementById('resumo-orcamento-tbody');
+  resumoBody.innerHTML = db.campanhas.length ? db.campanhas.map(function(c){
+    var gasto = porCampanha[c.id] || 0;
+    var saldo = Number(c.orcamento_previsto || 0) - gasto;
+    return '<tr><td>' + c.nome + '</td><td class="txt-right">' + fM_(c.orcamento_previsto) + '</td>' +
+      '<td class="txt-right">' + fM_(gasto) + '</td>' +
+      '<td class="txt-right ' + (saldo < 0 ? 'txt-red' : 'txt-green') + '">' + fM_(saldo) + '</td></tr>';
+  }).join('') : '<tr><td colspan="4" class="tbl-empty">Nenhuma campanha cadastrada</td></tr>';
+
+  var tbody = document.getElementById('gastos-tbody');
+  tbody.innerHTML = db.gastos.length ? db.gastos.map(linhaGasto_).join('') : '<tr><td colspan="7" class="tbl-empty">Nenhum gasto lançado</td></tr>';
+  atualizarSelectCampanhas_();
+}
+
+function linhaGasto_(g) {
+  var id = g.id || '';
+  var novo = !id;
+  var rowId = id || 'novo';
+  var campanhaSelect = '<select class="form-input sel-campanha" id="gasto-campanha-' + rowId + '" style="min-width:130px">' +
+    '<option value="">— Nenhuma —</option>' + db.campanhas.map(function(c){ return '<option value="' + c.id + '"' + (c.id === g.campanha_id ? ' selected' : '') + '>' + c.nome + '</option>'; }).join('') +
+    '</select>';
+  return '<tr id="gasto-row-' + rowId + '">' +
+    '<td>' + campanhaSelect + '</td>' +
+    '<td><input class="form-input" id="gasto-desc-' + rowId + '" value="' + (novo ? '' : (g.descricao || '')) + '" placeholder="Descrição" style="min-width:140px"></td>' +
+    '<td><select class="form-input" id="gasto-cat-' + rowId + '" style="min-width:120px">' + selectOptions_(CATEGORIAS_GASTO, g.categoria) + '</select></td>' +
+    '<td><input class="form-input" type="number" step="0.01" id="gasto-valor-' + rowId + '" value="' + (novo ? '' : Number(g.valor || 0)) + '" style="width:100px"></td>' +
+    '<td><input class="form-input" type="date" id="gasto-data-' + rowId + '" value="' + (g.data || new Date().toISOString().slice(0,10)) + '" style="min-width:130px"></td>' +
+    '<td><select class="form-input" id="gasto-canal-' + rowId + '" style="min-width:110px">' + selectOptions_(CANAIS, g.canal) + '</select></td>' +
+    '<td style="white-space:nowrap">' +
+      '<button class="btn btn-ghost btn-sm" onclick="' + (novo ? 'criarGasto()' : "salvarGasto('" + id + "')") + '"><i class="ti ti-device-floppy" style="font-size:12px"></i></button>' +
+      (novo ? '' : '<button class="btn btn-danger btn-sm" onclick="excluirGasto(\'' + id + '\')"><i class="ti ti-trash" style="font-size:12px"></i></button>') +
+    '</td></tr>';
+}
+
+function adicionarLinhaGasto() {
+  if (document.getElementById('gasto-row-novo')) return;
+  var tbody = document.getElementById('gastos-tbody');
+  if (tbody.querySelector('.tbl-empty')) tbody.innerHTML = '';
+  tbody.insertAdjacentHTML('beforeend', linhaGasto_({}));
+}
+
+function payloadGasto_(rowId) {
+  return {
+    campanha_id: document.getElementById('gasto-campanha-' + rowId).value || null,
+    descricao: document.getElementById('gasto-desc-' + rowId).value.trim(),
+    categoria: document.getElementById('gasto-cat-' + rowId).value,
+    valor: parseFloat(document.getElementById('gasto-valor-' + rowId).value) || 0,
+    data: document.getElementById('gasto-data-' + rowId).value || new Date().toISOString().slice(0,10),
+    canal: document.getElementById('gasto-canal-' + rowId).value,
+  };
+}
+
+async function criarGasto() {
+  var payload = payloadGasto_('novo');
+  if (!payload.descricao) { alert('Informe a descrição do gasto.'); return; }
+  try {
+    var r = await apiFetch(API_MKT + '/gastos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao criar gasto: ' + (j.error || '')); return; }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao criar gasto.'); }
+}
+
+async function salvarGasto(id) {
+  var payload = payloadGasto_(id);
+  if (!payload.descricao) { alert('Informe a descrição do gasto.'); return; }
+  try {
+    var r = await apiFetch(API_MKT + '/gastos/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao salvar gasto: ' + (j.error || '')); return; }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao salvar gasto.'); }
+}
+
+async function excluirGasto(id) {
+  if (!confirm('Excluir este gasto?')) return;
+  try {
+    var r = await apiFetch(API_MKT + '/gastos/' + id, { method:'DELETE' });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao excluir gasto: ' + (j.error || '')); return; }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao excluir gasto.'); }
+}
+
+/* ═══════════════════════════════════════
+   LEADS — reaproveita o CRM já existente (crm_clientes), não cria
+   cadastro próprio. Requer que o usuário também tenha a ferramenta
+   "crm" (ver aviso em configuracoes.html).
+════════════════════════════════════════ */
+async function carregarLeads() {
+  leadsCarregados = true;
+  try {
+    var r = await apiFetch(API_BASE + '/crm/clientes');
+    if (!r.ok) { db.leads = []; renderLeads(); return; }
+    var clientes = await r.json();
+    db.leads = (Array.isArray(clientes) ? clientes : []).filter(function(c){ return !!c.campanha_id; });
+  } catch (e) { db.leads = []; }
+  renderLeads();
+}
+
+function renderLeads() {
+  var tbody = document.getElementById('leads-tbody');
+  tbody.innerHTML = db.leads.length ? db.leads.map(function(l){
+    var campanha = db.campanhas.find(function(c){ return c.id === l.campanha_id; });
+    return '<tr><td>' + (l.empresa || '—') + '</td><td>' + (l.contato || '—') + '</td>' +
+      '<td>' + (l.telefone || l.whatsapp || '—') + '</td>' +
+      '<td>' + (campanha ? campanha.nome : '—') + '</td>' +
+      '<td><span class="badge badge-gold">' + (l.status || 'Novo') + '</span></td>' +
+      '<td>' + (l.data_cadastro || '—') + '</td></tr>';
+  }).join('') : '<tr><td colspan="6" class="tbl-empty">Nenhum lead gerado por campanha ainda</td></tr>';
+}
+
+function abrirModalNovoLead() {
+  ['lead-empresa','lead-contato','lead-telefone','lead-email'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('lead-campanha').value = '';
+  document.getElementById('modal-novo-lead').classList.add('open');
+}
+
+async function salvarLead() {
+  var empresa = document.getElementById('lead-empresa').value.trim();
+  var contato = document.getElementById('lead-contato').value.trim();
+  if (!empresa || !contato) { alert('Informe empresa e contato.'); return; }
+  var hoje = new Date().toISOString().slice(0,10);
+  var payload = {
+    empresa: empresa,
+    contato: contato,
+    telefone: document.getElementById('lead-telefone').value.trim(),
+    email: document.getElementById('lead-email').value.trim(),
+    origem: 'Campanha de Marketing',
+    campanha_id: document.getElementById('lead-campanha').value || null,
+    status: 'Novo',
+    data_cadastro: hoje,
+  };
+  try {
+    var r = await apiFetch(API_BASE + '/crm/clientes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao criar lead: ' + (j.error || '')); return; }
+    var criado = await r.json();
+    await apiFetch(API_BASE + '/crm/clientes/' + criado.id + '/status-historico', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status:'Novo', data: hoje })
+    }).catch(function(){});
+    document.getElementById('modal-novo-lead').classList.remove('open');
+    await carregarLeads();
+  } catch (e) { alert('Erro de conexão ao criar lead.'); }
+}
+
+/* ═══════════════════════════════════════
+   BIBLIOTECA DE MATERIAIS
+════════════════════════════════════════ */
+function iconePorMime_(mime) {
+  mime = mime || '';
+  if (mime.indexOf('image/') === 0) return 'ti-photo';
+  if (mime.indexOf('video/') === 0) return 'ti-video';
+  if (mime === 'application/pdf') return 'ti-file-type-pdf';
+  return 'ti-file';
+}
+
+function renderBiblioteca() {
+  var grid = document.getElementById('materiais-grid');
+  grid.innerHTML = db.materiais.length ? db.materiais.map(function(m){
+    var tags = Array.isArray(m.tags) ? m.tags : [];
+    return '<div class="material-card">' +
+      '<i class="ti ' + iconePorMime_(m.mime_type) + ' ti-file-icon"></i>' +
+      '<div class="material-title">' + m.titulo + '</div>' +
+      (m.categoria ? '<span class="badge badge-blue">' + m.categoria + '</span>' : '') +
+      '<div class="material-tags">' + tags.map(function(t){ return '<span class="badge badge-gray">' + t + '</span>'; }).join('') + '</div>' +
+      '<div class="material-actions">' +
+        '<a class="btn btn-ghost btn-sm" href="' + m.url + '" target="_blank" rel="noopener"><i class="ti ti-download" style="font-size:12px"></i> Baixar</a>' +
+        '<button class="btn btn-danger btn-sm" onclick="excluirMaterial(\'' + m.id + '\')"><i class="ti ti-trash" style="font-size:12px"></i></button>' +
+      '</div></div>';
+  }).join('') : '<div class="tbl-empty">Nenhum material na biblioteca ainda</div>';
+}
+
+function abrirModalUploadMaterial() {
+  document.getElementById('mat-titulo').value = '';
+  document.getElementById('mat-tags').value = '';
+  document.getElementById('mat-arquivo').value = '';
+  document.getElementById('modal-upload-material').classList.add('open');
+}
+
+async function enviarMaterial() {
+  var titulo = document.getElementById('mat-titulo').value.trim();
+  var arquivo = document.getElementById('mat-arquivo').files[0];
+  if (!titulo) { alert('Informe o título do material.'); return; }
+  if (!arquivo) { alert('Selecione um arquivo.'); return; }
+  if (arquivo.size > 10000000) { alert('Arquivo "' + arquivo.name + '" excede 10MB.'); return; }
+  var categoria = document.getElementById('mat-categoria').value;
+  var tags = document.getElementById('mat-tags').value.split(',').map(function(t){ return t.trim(); }).filter(Boolean);
+  var btn = document.getElementById('mat-btn-enviar');
+  btn.disabled = true;
+  try {
+    var base64 = await new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(ev){ resolve(ev.target.result.split(',')[1]); };
+      reader.onerror = function(){ reject(new Error('Falha ao ler o arquivo')); };
+      reader.readAsDataURL(arquivo);
+    });
+    var r = await apiFetch(API_MKT + '/materiais', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ titulo: titulo, categoria: categoria, tags: tags, nome: arquivo.name, data: base64, mimeType: arquivo.type || 'application/octet-stream' })
+    });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao enviar material: ' + (j.error || '')); return; }
+    document.getElementById('modal-upload-material').classList.remove('open');
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao enviar material.'); } finally { btn.disabled = false; }
+}
+
+async function excluirMaterial(id) {
+  if (!confirm('Excluir este material permanentemente?')) return;
+  try {
+    var r = await apiFetch(API_MKT + '/materiais/' + id, { method:'DELETE' });
+    if (!r.ok && r.status !== 204) { alert('Erro ao excluir material.'); return; }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao excluir material.'); }
+}
+
+/* ═══════════════════════════════════════
+   TEMA (sincronizado com o shell) + BOOTSTRAP
+════════════════════════════════════════ */
+(function(){
+  function applyTema(t){
+    document.body.classList.remove('tema-claro','tema-escuro');
+    if (t === 'claro') document.body.classList.add('tema-claro');
+  }
+  var t = localStorage.getItem('barretos_tema') || 'escuro';
+  applyTema(t);
+  window.addEventListener('message', function(ev){
+    if (ev.data && ev.data.type === 'barretos_tema') {
+      localStorage.setItem('barretos_tema', ev.data.tema);
+      applyTema(ev.data.tema);
+    }
+  });
+})();
+
+document.addEventListener('DOMContentLoaded', function(){
+  if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
+  loadAllData();
+});
+</script>
+</body>
+</html>
