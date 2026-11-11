@@ -1248,6 +1248,14 @@ tbody tr:last-child{border-bottom:none;}
         <div style="font-size:.7rem;color:var(--gray-400);margin-bottom:4px">Descrição Bancária</div>
         <div style="font-size:.85rem;font-weight:500" id="cl-desc">—</div>
       </div>
+      <div id="cl-dup-section" style="display:none;background:var(--danger-light);border:1px solid rgba(226,75,74,.3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span>⛔</span><strong style="font-size:.8rem;color:var(--danger)" id="cl-dup-title">Possível lançamento duplicado</strong>
+        </div>
+        <div style="font-size:.72rem;color:var(--gray-500);margin-bottom:8px">Mesma data, valor e início da descrição desta transação:</div>
+        <div id="cl-dup-matches" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+        <button class="btn bg bsm" id="cl-dup-btn" onclick="toggleDupIgnorado()" style="font-size:.7rem"></button>
+      </div>
       <div class="fg" id="cl-lastcat-banner" style="display:none;background:var(--success-light);border:1px solid rgba(46,189,133,.3);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:.74rem;color:var(--success);display:flex;align-items:center;gap:8px">
         <span>📌</span>
         <span style="flex:1">Categoria padrão da sessão: <strong id="cl-lastcat-name">—</strong></span>
@@ -3249,7 +3257,7 @@ function filterTx() {
     if (ty && t.type  !== ty) return false;
     if (st) {
       if (st === 'duplicate') {
-        if (!dupKeys.has(txDupKey_(t))) return false;
+        if (t.dupIgnorado || !dupKeys.has(txDupKey_(t))) return false;
       } else {
         const s = t.status === 'classified' ? 'classified' : 'unclassified';
         if (s !== st) return false;
@@ -3298,7 +3306,7 @@ function filterTx() {
     const ri  = S.transactions.indexOf(t);
     const key = txKey(t);
     const selected = _txSelected.has(key);
-    const sb = (t.status==='duplicate' || dupKeysBadge.has(txDupKey_(t)))
+    const sb = (!t.dupIgnorado && (t.status==='duplicate' || dupKeysBadge.has(txDupKey_(t))))
       ? '<span class="badge bda">⛔ Duplicado</span>'
       : t.status==='classified'
       ? '<span class="badge bsu">✓ Classificado</span>'
@@ -4632,19 +4640,27 @@ function saveRule() {
 // importado — ver AUDIT_CHECKS) porque aqui o objetivo é achar qualquer
 // duplicidade, não só a intra-lote.
 function txDupKey_(t) { return t.date+'_'+t.val+'_'+t.desc.slice(0,15); }
+// Transações marcadas "não é duplicado" (dupIgnorado) ficam de fora da
+// contagem — tanto pra não aparecerem elas mesmas quanto pra não "segurar"
+// a flag de duplicado em cima de outra transação que só coincide com elas.
 function computeLiveDuplicateKeys() {
   const counts = {};
-  S.transactions.forEach(t => { const k=txDupKey_(t); counts[k]=(counts[k]||0)+1; });
+  S.transactions.forEach(t => { if (t.dupIgnorado) return; const k=txDupKey_(t); counts[k]=(counts[k]||0)+1; });
   const keys = new Set();
   Object.keys(counts).forEach(k=>{ if(counts[k]>1) keys.add(k); });
   return keys;
+}
+function isLiveDuplicate(t) { return !t.dupIgnorado && computeLiveDuplicateKeys().has(txDupKey_(t)); }
+function findDuplicateMatches(t) {
+  const k = txDupKey_(t);
+  return S.transactions.filter(x => x !== t && txDupKey_(x) === k);
 }
 
 function computeAlerts() {
   const a = [];
   const dupKeys = computeLiveDuplicateKeys();
   const seen = {}; let dups = 0;
-  S.transactions.forEach(t => { const k=txDupKey_(t); if(!dupKeys.has(k))return; if(seen[k])dups++; else seen[k]=true; });
+  S.transactions.forEach(t => { if(t.dupIgnorado)return; const k=txDupKey_(t); if(!dupKeys.has(k))return; if(seen[k])dups++; else seen[k]=true; });
   if (dups) a.push({tp:'danger', ic:'🔴', tt:dups+' pagamento(s) duplicado(s) detectado(s)', ds:'Clique para ver só os duplicados em Transações', action:'goToDuplicateTransactions()'});
   const unc = S.transactions.filter(t=>t.status==='unclassified');
   if (unc.length) a.push({tp:'warning', ic:'🟡', tt:unc.length+' transação(ões) sem categoria', ds:'Total: R$ '+fN(unc.reduce((x,t)=>x+Math.abs(t.val),0))+' aguardando classificação'});
@@ -5299,7 +5315,55 @@ function openClassify(idx) {
     : (S.lastUsedCat || '');
   catPickSetValue('cl', preset, t.desc);
   updateLastCatBanner();
+  renderDupSection(idx);
   openModal('modal-classify');
+}
+
+// Mostra, dentro do modal de classificação, os outros lançamentos que batem
+// com a mesma chave (data+valor+início da descrição) usada no alerta de
+// duplicados — pra dar pra comparar valor/data/descrição e confirmar se é
+// mesmo duplicado antes de decidir.
+function renderDupSection(idx) {
+  const t = S.transactions[idx];
+  const section   = document.getElementById('cl-dup-section');
+  const matchesEl = document.getElementById('cl-dup-matches');
+  const btn       = document.getElementById('cl-dup-btn');
+  const titleEl   = document.getElementById('cl-dup-title');
+  const matches = findDuplicateMatches(t);
+  if (!matches.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  matchesEl.innerHTML = matches.map(m => `<div style="background:#fff;border:1px solid rgba(226,75,74,.25);border-radius:6px;padding:8px 10px;font-size:.74rem">
+    <div style="display:flex;justify-content:space-between;gap:8px">
+      <span style="color:var(--gray-500)">${m.date} · ${m.banco||'—'}</span>
+      <strong class="${m.val>=0?'vp':'vn'}">${fM(m.val)}</strong>
+    </div>
+    <div style="color:var(--gray-700);margin-top:2px">${m.desc}</div>
+  </div>`).join('');
+  if (t.dupIgnorado) {
+    titleEl.textContent = 'Marcado como "não é duplicado"';
+    btn.textContent = '↩ Marcar como possível duplicado de novo';
+  } else {
+    titleEl.textContent = 'Possível lançamento duplicado';
+    btn.textContent = '✓ Não é duplicado — manter na lista normal';
+  }
+}
+
+async function toggleDupIgnorado() {
+  const idx = S.classifyIdx;
+  const t = S.transactions[idx];
+  if (!t) return;
+  const novo = !t.dupIgnorado;
+  try {
+    await apiFetch(API_BASE + '/conciliacao/transacoes/' + t.id, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ dupIgnorado: novo })
+    });
+  } catch(e) { toast('Erro de conexão ao salvar', '⚠️'); return; }
+  t.dupIgnorado = novo;
+  renderDupSection(idx);
+  updateBadges(); updateKPIs();
+  const cur = document.querySelector('.view.active');
+  if (cur) { const name = cur.id.replace('view-',''); const r={transactions:renderTransactions,conciliation:renderConciliation,dashboard:renderDashboard,alerts:renderAlerts}; if(r[name])r[name](); }
+  toast(novo ? 'Marcado como "não é duplicado"' : 'Voltou a ser considerado possível duplicado', novo?'✅':'↩️');
 }
 
 // Mostra/esconde a faixa "Categoria padrão da sessão" no topo do modal de
@@ -6088,7 +6152,7 @@ async function loadDoServidor() {
       id: t.id, importId: t.import_id, date: fmtDataISOParaBR_(t.data), desc: t.descricao, val: Number(t.valor)||0,
       type: t.tipo, fitid: t.fitid, cat: t.categoria, conf: Number(t.confianca)||0, banco: t.banco, empresa: t.empresa,
       complemento: t.complemento, cpfCnpj: t.cpf_cnpj, favorecido: t.favorecido, saldoInicial: t.saldo_inicial,
-      status: statusFromCat(t.categoria)
+      status: statusFromCat(t.categoria), dupIgnorado: !!t.dup_ignorado
     }));
     S.categories    = (json.categories||[]).map(c => ({ id:c.id, name:c.name, grupo:c.grupo, categoria:c.categoria, type:c.tipo, color:c.color, acc:c.acc, kw:c.kw }));
     S.importHistory = (json.importHistory||[]).map(h => ({ id:h.id, date: new Date(h.data_hora).toLocaleDateString('pt-BR'), time: new Date(h.data_hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
