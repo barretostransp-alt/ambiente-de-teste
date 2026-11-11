@@ -3240,6 +3240,7 @@ function filterTx() {
   const ty = (document.getElementById('tx-f-type')  ||{value:''}).value;
   const st = (document.getElementById('tx-f-status')||{value:''}).value;
 
+  const dupKeys = st === 'duplicate' ? computeLiveDuplicateKeys() : null;
   const base = filterByEmpresa(S.transactions);
   let f = base.filter(t => {
     if (q && !t.desc.toLowerCase().includes(q) && !(t.cat||'').toLowerCase().includes(q) && !String(t.val).includes(q)) return false;
@@ -3247,8 +3248,12 @@ function filterTx() {
     if (ct && t.cat   !== ct) return false;
     if (ty && t.type  !== ty) return false;
     if (st) {
-      const s = t.status === 'classified' ? 'classified' : t.status === 'duplicate' ? 'duplicate' : 'unclassified';
-      if (s !== st) return false;
+      if (st === 'duplicate') {
+        if (!dupKeys.has(txDupKey_(t))) return false;
+      } else {
+        const s = t.status === 'classified' ? 'classified' : 'unclassified';
+        if (s !== st) return false;
+      }
     }
     if (sc) {
       const c = S.categories.find(x => x.name === t.cat);
@@ -3288,14 +3293,15 @@ function filterTx() {
     return;
   }
 
+  const dupKeysBadge = dupKeys || computeLiveDuplicateKeys();
   tbody.innerHTML = f.map(t => {
     const ri  = S.transactions.indexOf(t);
     const key = txKey(t);
     const selected = _txSelected.has(key);
-    const sb = t.status==='classified'
-      ? '<span class="badge bsu">✓ Classificado</span>'
-      : t.status==='duplicate'
+    const sb = (t.status==='duplicate' || dupKeysBadge.has(txDupKey_(t)))
       ? '<span class="badge bda">⛔ Duplicado</span>'
+      : t.status==='classified'
+      ? '<span class="badge bsu">✓ Classificado</span>'
       : '<span class="badge bwa">⚠ Revisar</span>';
     const catObj  = S.categories.find(c => c.name === t.cat);
     const subcat  = catObj && catObj.categoria ? catObj.categoria : '—';
@@ -4619,10 +4625,26 @@ function saveRule() {
 // ═══════════════════════════════════════
 // ALERTS
 // ═══════════════════════════════════════
+// Chave usada para achar duplicados "ao vivo" — mesma transação (data+valor+
+// início da descrição) aparecendo mais de uma vez em S.transactions, mesmo
+// vindo de importações/lotes diferentes. Separado do status='duplicate'
+// gravado na transação (que só marca repetição dentro do mesmo arquivo
+// importado — ver AUDIT_CHECKS) porque aqui o objetivo é achar qualquer
+// duplicidade, não só a intra-lote.
+function txDupKey_(t) { return t.date+'_'+t.val+'_'+t.desc.slice(0,15); }
+function computeLiveDuplicateKeys() {
+  const counts = {};
+  S.transactions.forEach(t => { const k=txDupKey_(t); counts[k]=(counts[k]||0)+1; });
+  const keys = new Set();
+  Object.keys(counts).forEach(k=>{ if(counts[k]>1) keys.add(k); });
+  return keys;
+}
+
 function computeAlerts() {
   const a = [];
+  const dupKeys = computeLiveDuplicateKeys();
   const seen = {}; let dups = 0;
-  S.transactions.forEach(t => { const k=t.date+'_'+t.val+'_'+t.desc.slice(0,15); if(seen[k])dups++; else seen[k]=true; });
+  S.transactions.forEach(t => { const k=txDupKey_(t); if(!dupKeys.has(k))return; if(seen[k])dups++; else seen[k]=true; });
   if (dups) a.push({tp:'danger', ic:'🔴', tt:dups+' pagamento(s) duplicado(s) detectado(s)', ds:'Clique para ver só os duplicados em Transações', action:'goToDuplicateTransactions()'});
   const unc = S.transactions.filter(t=>t.status==='unclassified');
   if (unc.length) a.push({tp:'warning', ic:'🟡', tt:unc.length+' transação(ões) sem categoria', ds:'Total: R$ '+fN(unc.reduce((x,t)=>x+Math.abs(t.val),0))+' aguardando classificação'});
