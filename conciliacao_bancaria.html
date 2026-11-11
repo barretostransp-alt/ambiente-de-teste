@@ -585,6 +585,12 @@ tbody tr:last-child{border-bottom:none;}
     <select class="fsel" id="tx-f-cat"  onchange="filterTx()"><option value="">Todas as Categorias</option></select>
     <select class="fsel" id="tx-f-subcat" onchange="filterTx()"><option value="">Todas as Subcategorias</option></select>
     <select class="fsel" id="tx-f-type" onchange="filterTx()"><option value="">Todos os Tipos</option><option value="C">Crédito</option><option value="D">Débito</option></select>
+    <select class="fsel" id="tx-f-status" onchange="filterTx()">
+      <option value="">Todos os Status</option>
+      <option value="classified">✓ Classificado</option>
+      <option value="unclassified">⚠ Revisar</option>
+      <option value="duplicate">⛔ Duplicados</option>
+    </select>
     <button class="btn bg bsm" onclick="resetTxFilters()" style="color:var(--gray-400)" title="Limpar filtros">✕</button>
     <button class="btn bg bsm" onclick="exportTx()">⬇ Exportar CSV</button>
   </div>
@@ -2506,7 +2512,7 @@ async function renderDashboard() {
   document.getElementById('dash-alert-badge').className = 'badge ' + (alts.length ? 'bda' : 'bgr');
   const ab = document.getElementById('dash-alerts-body');
   ab.innerHTML = alts.length
-    ? alts.slice(0,4).map(a=>`<div class="alt alt-${a.tp}" style="margin-bottom:8px"><span>${a.ic}</span><div><strong style="font-size:.78rem">${a.tt}</strong><br><span style="font-size:.72rem">${a.ds}</span></div></div>`).join('')
+    ? alts.slice(0,4).map(a=>`<div class="alt alt-${a.tp}" style="margin-bottom:8px${a.action?';cursor:pointer':''}"${a.action?` onclick="${a.action}" title="Clique para abrir"`:''}><span>${a.ic}</span><div><strong style="font-size:.78rem">${a.tt}</strong><br><span style="font-size:.72rem">${a.ds}</span></div>${a.action?'<span style="font-size:13px;color:var(--gray-400);margin-left:auto">→</span>':''}</div>`).join('')
       + (alts.length>4?`<button class="btn bg bsm" style="width:100%;justify-content:center;margin-top:4px" onclick="showView('alerts')">Ver todos (${alts.length}) →</button>`:'')
     : '<div class="es"><div class="es-ic">✅</div><div class="es-tt">Nenhum alerta</div></div>';
 }
@@ -3219,7 +3225,7 @@ function renderTransactions() {
 }
 
 function resetTxFilters() {
-  ['tx-search','tx-f-bank','tx-f-cat','tx-f-subcat','tx-f-type'].forEach(id => {
+  ['tx-search','tx-f-bank','tx-f-cat','tx-f-subcat','tx-f-type','tx-f-status'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -3232,6 +3238,7 @@ function filterTx() {
   const ct = (document.getElementById('tx-f-cat')   ||{value:''}).value;
   const sc = (document.getElementById('tx-f-subcat')||{value:''}).value;
   const ty = (document.getElementById('tx-f-type')  ||{value:''}).value;
+  const st = (document.getElementById('tx-f-status')||{value:''}).value;
 
   const base = filterByEmpresa(S.transactions);
   let f = base.filter(t => {
@@ -3239,6 +3246,10 @@ function filterTx() {
     if (bk && t.banco !== bk) return false;
     if (ct && t.cat   !== ct) return false;
     if (ty && t.type  !== ty) return false;
+    if (st) {
+      const s = t.status === 'classified' ? 'classified' : t.status === 'duplicate' ? 'duplicate' : 'unclassified';
+      if (s !== st) return false;
+    }
     if (sc) {
       const c = S.categories.find(x => x.name === t.cat);
       if (!c || c.categoria !== sc) return false;
@@ -4612,7 +4623,7 @@ function computeAlerts() {
   const a = [];
   const seen = {}; let dups = 0;
   S.transactions.forEach(t => { const k=t.date+'_'+t.val+'_'+t.desc.slice(0,15); if(seen[k])dups++; else seen[k]=true; });
-  if (dups) a.push({tp:'danger', ic:'🔴', tt:dups+' pagamento(s) duplicado(s) detectado(s)', ds:'Verifique os lançamentos na tela de Transações'});
+  if (dups) a.push({tp:'danger', ic:'🔴', tt:dups+' pagamento(s) duplicado(s) detectado(s)', ds:'Clique para ver só os duplicados em Transações', action:'goToDuplicateTransactions()'});
   const unc = S.transactions.filter(t=>t.status==='unclassified');
   if (unc.length) a.push({tp:'warning', ic:'🟡', tt:unc.length+' transação(ões) sem categoria', ds:'Total: R$ '+fN(unc.reduce((x,t)=>x+Math.abs(t.val),0))+' aguardando classificação'});
   const ov = S.payables.filter(p=>p.status==='overdue');
@@ -4621,13 +4632,22 @@ function computeAlerts() {
   return a;
 }
 
+function goToDuplicateTransactions() {
+  showView('transactions');
+  resetTxFilters();
+  const sel = document.getElementById('tx-f-status');
+  if (sel) sel.value = 'duplicate';
+  filterTx();
+}
+
 function renderAlerts() {
   const alts = computeAlerts();
   const c = document.getElementById('alerts-container');
   c.innerHTML = alts.length
-    ? alts.map(a=>`<div class="alt alt-${a.tp}" style="border-radius:var(--radius);margin-bottom:12px">
+    ? alts.map(a=>`<div class="alt alt-${a.tp}" style="border-radius:var(--radius);margin-bottom:12px${a.action?';cursor:pointer':''}"${a.action?` onclick="${a.action}" title="Clique para abrir"`:''}>
         <span style="font-size:18px">${a.ic}</span>
         <div style="flex:1"><strong>${a.tt}</strong><br><span style="font-size:.75rem">${a.ds}</span></div>
+        ${a.action?'<span style="font-size:14px;color:var(--gray-400)">→</span>':''}
       </div>`).join('')
     : '<div class="es"><div class="es-ic">✅</div><div class="es-tt">Nenhum alerta</div><div class="es-sb">O sistema está monitorando em tempo real</div></div>';
 }
