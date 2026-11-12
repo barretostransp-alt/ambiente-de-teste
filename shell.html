@@ -235,6 +235,12 @@ body.tema-claro #login-screen .logo-claro{display:block!important}
   transition:transform .15s;
 }
 .asst-bubble:hover{transform:scale(1.06)}
+/* Em telas cujo próprio conteúdo já usa o canto inferior direito (ex:
+   campo de enviar mensagem do WhatsApp Operacional), a bolha do Manuel
+   passa pro canto inferior esquerdo em vez de ficar em cima do botão —
+   ver TOOLS[key].asstEsquerda e a chamada em navigate(). */
+.asst-bubble.asst-esquerda{right:auto;left:20px}
+.asst-panel.asst-esquerda{right:auto;left:20px}
 .asst-panel{
   position:fixed;bottom:20px;right:20px;width:340px;max-width:calc(100vw - 32px);
   height:480px;max-height:calc(100vh - 100px);background:var(--card);border:1px solid var(--border);
@@ -861,7 +867,7 @@ var TOOLS = {
   calendario:{ src:"calendario.html",            cat:"Geral",       label:"Calendário",            icon:"ti-calendar"         },
   despesas:  { src:"despesas.html",              cat:"Geral",       label:"Despesas",              icon:"ti-wallet"           },
   marketing: { src:"marketing.html",             cat:"Geral",       label:"Marketing",             icon:"ti-speakerphone"     },
-  whatsapp_operacional: { src:"whatsapp_operacional.html", cat:"Geral", label:"WhatsApp Operacional", icon:"ti-brand-whatsapp" },
+  whatsapp_operacional: { src:"whatsapp_operacional.html", cat:"Geral", label:"WhatsApp Operacional", icon:"ti-brand-whatsapp", asstEsquerda:true },
   rh_colaboradores: { src:"rh_gestao.html",      cat:"RH",          label:"RH",                     icon:"ti-users-group"     },
   diarias:   { src:"diarias_desktop.html",      cat:"RH",          label:"Diárias de Motoristas", icon:"ti-calendar-check"   },
   cotacao:   { src:"cotacao_comercial.html",     cat:"Comercial",   label:"Cotação Comercial",     icon:"ti-calculator"       },
@@ -1030,6 +1036,9 @@ function navigate(key){
     : '<span class="topbar-page">'+tool.label+'</span>';
   document.getElementById("iframe-loading").classList.remove("hidden");
   document.getElementById("main-frame").src=tool.src;
+  var bolha=document.getElementById("asst-bubble"), painel=document.getElementById("asst-panel");
+  if(bolha) bolha.classList.toggle("asst-esquerda", !!tool.asstEsquerda);
+  if(painel) painel.classList.toggle("asst-esquerda", !!tool.asstEsquerda);
 }
 function onFrameLoad(){
   document.getElementById("iframe-loading").classList.add("hidden");
