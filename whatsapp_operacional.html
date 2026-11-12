@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Operacional — Barreto's</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root {
+  --gold:#F5B800; --gold-dim:rgba(245,184,0,.12); --gold-border:rgba(245,184,0,.3);
+  --bg:#0E0F12; --surface:#161820; --surface2:#1D1F27; --surface3:#252731;
+  --border:#2A2D38; --border2:#353848;
+  --txt:#E4E6F0; --txt-dim:#7B7F96; --txt-muted:#4A4E63;
+  --red:#E24B4A; --red-dim:rgba(226,75,74,.12); --red-border:rgba(226,75,74,.3);
+  --green:#2EBD85; --green-dim:rgba(46,189,133,.1); --green-border:rgba(46,189,133,.3);
+  --blue:#4A8FE8; --blue-dim:rgba(74,143,232,.1); --orange:#F5832A;
+  --radius:8px; --radius-lg:12px; --sidebar-w:220px;
+  font-family:'Barlow',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);min-height:100vh;display:flex;overflow:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:18px 14px 14px;border-bottom:1px solid var(--border)}
+.sidebar-logo-text{font-size:13px;font-weight:800;letter-spacing:.04em}
+.sidebar-section{padding:14px 14px 4px;font-size:9px;font-weight:700;color:var(--txt-muted);
+  letter-spacing:.1em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 12px;margin:1px 6px;
+  border-radius:7px;cursor:pointer;color:var(--txt-dim);font-size:12px;font-weight:500;
+  transition:all .15s;position:relative;user-select:none}
+.nav-item i{font-size:16px;flex-shrink:0}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--txt)}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.nav-item.active i{color:var(--gold)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px}
+.topbar-title i{color:var(--gold);font-size:18px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;
+  font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--gold);color:#111}
+.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--txt-dim)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-ghost.active{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.btn-danger{background:var(--red-dim);border:1px solid var(--red-border);color:var(--red)}
+.btn-green{background:var(--green-dim);border:1px solid var(--green-border);color:var(--green)}
+.btn-blue{background:var(--blue-dim);border:1px solid rgba(74,143,232,.3);color:var(--blue)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.view{display:none}
+.view.active{display:flex;flex:1;overflow:hidden}
+.form-input{background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+  padding:8px 12px;font-size:13px;color:var(--txt);font-family:inherit;transition:all .15s;width:100%}
+.form-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(245,184,0,.1)}
+select.form-input option{background:var(--surface2);color:var(--txt)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;
+  font-size:10px;font-weight:700;letter-spacing:.04em}
+.badge-green{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border)}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid var(--red-border)}
+.badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(74,143,232,.3)}
+.badge-gray{background:rgba(123,127,150,.1);color:var(--txt-dim);border:1px solid var(--border)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);
+  padding:20px;max-width:460px;width:100%;max-height:88vh;overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.modal-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.modal-title{font-size:15px;font-weight:700;flex:1}
+.modal-close{background:none;border:none;color:var(--txt-dim);cursor:pointer;
+  font-size:20px;padding:2px;border-radius:5px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;
+  border-top:1px solid var(--border)}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.form-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-dim)}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--txt-dim);border-bottom:2px solid var(--border);
+  white-space:nowrap;background:var(--surface2)}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl-empty{text-align:center;padding:32px;color:var(--txt-dim);font-size:13px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;justify-content:center;gap:8px;padding:24px;color:var(--txt-dim);font-size:12px}
+/* ── CONVERSAS: lista ── */
+.conv-pane{width:320px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.conv-filtros{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.conv-lista{flex:1;overflow-y:auto}
+.conv-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.conv-item:hover{background:rgba(255,255,255,.03)}
+.conv-item.active{background:var(--gold-dim);border-left:3px solid var(--gold)}
+.conv-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.conv-item-nome{font-size:13px;font-weight:700}
+.conv-item-sub{font-size:11px;color:var(--txt-dim);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+/* ── CHAT ── */
+.chat-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.chat-header-info{flex:1}
+.chat-header-nome{font-size:14px;font-weight:700}
+.chat-header-sub{font-size:11px;color:var(--txt-dim)}
+.chat-corpo{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:60%;padding:9px 12px;border-radius:10px;font-size:13px;position:relative;display:flex;gap:8px;align-items:flex-start}
+.msg-in{align-self:flex-start;background:var(--surface2);border:1px solid var(--border)}
+.msg-out{align-self:flex-end;background:var(--gold-dim);border:1px solid var(--gold-border)}
+.msg-out .msg-autor{color:var(--gold)}
+.msg-autor{font-size:10px;font-weight:700;color:var(--txt-dim);margin-bottom:3px}
+.msg-media img{max-width:220px;border-radius:7px;display:block;margin-top:4px}
+.msg-media a{font-size:12px;color:var(--blue);display:flex;align-items:center;gap:4px;margin-top:4px}
+.msg-chk{margin-top:2px;flex-shrink:0;display:none}
+.selecionando .msg-chk{display:block}
+.chat-rodape{border-top:1px solid var(--border);padding:12px;display:flex;gap:8px}
+.chat-vazio{flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt-dim);font-size:13px}
+/* ── BARRA DE AÇÃO (seleção múltipla) ── */
+.action-bar{display:none;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--surface2);align-items:center}
+.action-bar.visible{display:flex}
+.action-bar-count{font-size:12px;color:var(--txt-dim);margin-right:auto}
+/* ── ADMIN SETORES ── */
+.setores-wrap{flex:1;overflow-y:auto;padding:20px 24px}
+.setor-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:14px;overflow:hidden}
+.setor-card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.setor-card-body{padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.usuario-chip{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;font-size:11px;
+  background:var(--surface2);border:1px solid var(--border);cursor:pointer;user-select:none}
+.usuario-chip.ativo{background:var(--green-dim);border-color:var(--green-border);color:var(--green)}
+</style>
+<style>
+body.tema-claro{--bg:#F0F2F5;--surface:#FFFFFF;--border:#E2E6ED;--txt:#111827;--txt-dim:#6B7280;--txt-muted:#9CA3AF;--gold:#D97706;--green:#059669;--blue:#2563EB;--orange:#EA580C;--red:#DC2626;--gold-dim:rgba(217,119,6,.10);}
+body.tema-claro .topbar{background:#111827!important;border-bottom-color:#1F2937!important}
+body.tema-claro .topbar *{color:#E5E7EB!important}
+body.tema-claro .tbl th{background:#F8FAFC!important;color:#374151!important;border-color:#E5E7EB!important}
+body.tema-claro .tbl td{background:#FFFFFF!important;color:#111827!important;border-color:#F1F5F9!important}
+body.tema-claro .form-input{background:#F8FAFC!important;border-color:#E2E8F0!important;color:#111827!important}
+body.tema-claro select.form-input option{background:#FFFFFF!important;color:#111827!important}
+body.tema-claro .modal{background:#FFFFFF!important;border-color:#E2E8F0!important}
+body.tema-claro .conv-pane,body.tema-claro .chat-header,body.tema-claro .chat-rodape,body.tema-claro .action-bar{background:#FFFFFF!important}
+body.tema-claro .msg-in{background:#F3F4F6!important;border-color:#E5E7EB!important}
+body.tema-claro .setor-card{background:#FFFFFF!important;border-color:#E2E8F0!important}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><div class="sidebar-logo-text">WhatsApp Operacional</div></div>
+  <div class="sidebar-section">Atendimento</div>
+  <div class="nav-item active" onclick="showView('conversas')">
+    <i class="ti ti-message-circle"></i>Conversas
+  </div>
+  <div class="sidebar-section" id="section-admin" style="display:none">Administração</div>
+  <div class="nav-item" id="nav-setores" onclick="showView('setores')" style="display:none">
+    <i class="ti ti-users-group"></i>Setores
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title"><i class="ti ti-message-circle" id="topbar-icon"></i><span id="topbar-title">Conversas</span></div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="loadAllData()"><i class="ti ti-refresh" style="font-size:13px"></i> Atualizar</button>
+    </div>
+  </div>
+
+  <!-- ─── CONVERSAS ─── -->
+  <div id="view-conversas" class="view active">
+    <div class="conv-pane">
+      <div class="conv-filtros">
+        <button class="btn btn-ghost btn-sm filtro-pill active" data-filtro="todas" onclick="mudarFiltro('todas')">Todas</button>
+        <button class="btn btn-ghost btn-sm filtro-pill" data-filtro="minhas" onclick="mudarFiltro('minhas')">Minhas</button>
+        <button class="btn btn-ghost btn-sm filtro-pill" data-filtro="meu-setor" onclick="mudarFiltro('meu-setor')">Meu setor</button>
+        <button class="btn btn-ghost btn-sm filtro-pill" data-filtro="sem-dono" onclick="mudarFiltro('sem-dono')">Sem dono</button>
+      </div>
+      <div class="conv-lista" id="conv-lista"><div class="loading-row"><span class="spinner"></span> Carregando…</div></div>
+    </div>
+    <div class="chat-pane" id="chat-pane">
+      <div class="chat-vazio" id="chat-vazio">Selecione uma conversa à esquerda</div>
+      <div id="chat-conteudo" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="chat-header-nome" id="chat-nome">—</div>
+            <div class="chat-header-sub" id="chat-sub">—</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-selecionar" onclick="toggleModoSelecao()"><i class="ti ti-checkbox" style="font-size:13px"></i> Selecionar anexos</button>
+          <button class="btn btn-ghost btn-sm" onclick="abrirModalTransferir()"><i class="ti ti-arrow-forward-up" style="font-size:13px"></i> Transferir</button>
+        </div>
+        <div class="chat-corpo" id="chat-corpo"></div>
+        <div class="action-bar" id="action-bar">
+          <span class="action-bar-count" id="action-bar-count">0 selecionado(s)</span>
+          <button class="btn btn-green btn-sm" onclick="rotear('canhoto')"><i class="ti ti-file-check" style="font-size:13px"></i> Canhoto</button>
+          <button class="btn btn-blue btn-sm" onclick="rotear('faturamento')"><i class="ti ti-file-invoice" style="font-size:13px"></i> Faturamento</button>
+          <button class="btn btn-ghost btn-sm" onclick="rotear('documento')"><i class="ti ti-paperclip" style="font-size:13px"></i> Documento do card</button>
+        </div>
+        <div class="chat-rodape">
+          <input class="form-input" id="chat-input-texto" placeholder="Digite uma mensagem…" onkeydown="if(event.key==='Enter')enviarTexto()">
+          <button class="btn btn-primary btn-sm" onclick="enviarTexto()"><i class="ti ti-send" style="font-size:13px"></i> Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ADMIN SETORES ─── -->
+  <div id="view-setores" class="view">
+    <div class="setores-wrap" id="setores-wrap"><div class="loading-row"><span class="spinner"></span> Carregando…</div></div>
+  </div>
+</div>
+
+<!-- Modal: Transferir conversa -->
+<div id="modal-transferir" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-arrow-forward-up" style="color:var(--gold);margin-right:6px"></i>Transferir conversa</div>
+      <button class="modal-close" onclick="document.getElementById('modal-transferir').classList.remove('open')">×</button>
+    </div>
+    <div class="form-group"><label class="form-label">Setor</label>
+      <select class="form-input" id="transf-setor" onchange="atualizarUsuariosDoSetorTransferir()"><option value="">— Nenhum —</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Usuário específico (opcional)</label>
+      <select class="form-input" id="transf-usuario"><option value="">— Nenhum —</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-transferir').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarTransferencia()"><i class="ti ti-device-floppy" style="font-size:13px"></i> Transferir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ambiguidade de card -->
+<div id="modal-ambiguidade" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-alert-triangle" style="color:var(--orange);margin-right:6px"></i>Pra qual card?</div>
+      <button class="modal-close" onclick="document.getElementById('modal-ambiguidade').classList.remove('open')">×</button>
+    </div>
+    <div style="font-size:12px;color:var(--txt-dim);margin-bottom:10px">Esse motorista está em mais de um card aberto — escolha pra qual vai esse envio.</div>
+    <div id="ambiguidade-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   AUTH / API
+════════════════════════════════════════ */
+var API_BASE = 'https://barretos-backend.onrender.com/api';
+var API_WA   = API_BASE + '/whatsapp';
+var SUPABASE_URL      = 'https://qjwobkpgqmaqisphwonl.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_c4MrJXB6nTHY0a5ShAFRaQ_Jc4qDdPr';
+
+function getAuthToken()    { return localStorage.getItem('barretos_auth_token'); }
+function getRefreshToken() { return localStorage.getItem('barretos_auth_refresh'); }
+
+async function tentarRenovarToken() {
+  var refresh = getRefreshToken();
+  if (!refresh) return false;
+  var agora = Date.now();
+  var ultimaRenovacao = parseInt(localStorage.getItem('barretos_auth_renovado_em') || '0', 10);
+  if (agora - ultimaRenovacao < 5000) return !!getAuthToken();
+  try {
+    var r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: refresh }),
+    });
+    if (!r.ok) return false;
+    var j = await r.json();
+    localStorage.setItem('barretos_auth_token', j.access_token);
+    localStorage.setItem('barretos_auth_refresh', j.refresh_token);
+    localStorage.setItem('barretos_auth_renovado_em', String(Date.now()));
+    return true;
+  } catch (e) { return false; }
+}
+
+async function apiFetch(url, options) {
+  options = options || {};
+  var headers = Object.assign({}, options.headers, { Authorization: 'Bearer ' + getAuthToken() });
+  var res = await fetch(url, Object.assign({}, options, { headers: headers }));
+  if (res.status === 401) {
+    if (await tentarRenovarToken()) {
+      headers.Authorization = 'Bearer ' + getAuthToken();
+      res = await fetch(url, Object.assign({}, options, { headers: headers }));
+    }
+    if (res.status === 401) {
+      mostrarTelaSemAcesso();
+      throw new Error('Sessão expirada');
+    }
+  }
+  return res;
+}
+
+function mostrarTelaSemAcesso() {
+  var el = document.getElementById('sem-acesso-overlay');
+  if (el) { el.style.display = 'flex'; return; }
+  el = document.createElement('div');
+  el.id = 'sem-acesso-overlay';
+  el.style.cssText = 'position:fixed;inset:0;background:#0F1117;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#E8E9F0;text-align:center;padding:24px';
+  el.innerHTML = '<div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Sessão não encontrada</div>' +
+    '<div style="font-size:13px;color:#9CA3AF">Acesse esta tela pelo menu principal do sistema (shell.html), não direto por este arquivo.</div></div>';
+  document.body.appendChild(el);
+}
+
+/* ═══════════════════════════════════════
+   ESTADO
+════════════════════════════════════════ */
+var db = { conversas: [], setores: [], setorUsuarios: [], usuarios: [] };
+var filtroAtual = 'todas';
+var conversaAtual = null;
+var mensagensAtual = [];
+var modoSelecao = false;
+var mensagensSelecionadas = new Set();
+var acaoRoteamentoPendente = null;
+
+function showView(v) {
+  document.querySelectorAll('.view').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('view-' + v).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(el){
+    if (el.getAttribute('onclick') === "showView('" + v + "')") el.classList.add('active');
+  });
+  document.getElementById('topbar-title').textContent = v === 'setores' ? 'Setores' : 'Conversas';
+  document.getElementById('topbar-icon').className = v === 'setores' ? 'ti ti-users-group' : 'ti ti-message-circle';
+  if (v === 'setores') renderSetores();
+}
+
+/* ═══════════════════════════════════════
+   CARREGAMENTO
+════════════════════════════════════════ */
+async function loadAllData() {
+  try {
+    var [conversas, setores, setorUsuarios, usuarios] = await Promise.all([
+      apiFetch(API_WA + '/conversas?filtro=' + filtroAtual).then(function(r){ return r.json(); }).catch(function(){ return []; }),
+      apiFetch(API_WA + '/setores').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+      apiFetch(API_WA + '/setor-usuarios').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+      apiFetch(API_BASE + '/usuarios').then(function(r){ return r.json(); }).catch(function(){ return []; }),
+    ]);
+    db.conversas = Array.isArray(conversas) ? conversas : [];
+    db.setores = Array.isArray(setores) ? setores : [];
+    db.setorUsuarios = Array.isArray(setorUsuarios) ? setorUsuarios : [];
+    db.usuarios = Array.isArray(usuarios) ? usuarios : [];
+  } catch (e) { /* mostrarTelaSemAcesso já tratou se for 401 */ }
+  renderListaConversas();
+  if (document.getElementById('view-setores').classList.contains('active')) renderSetores();
+}
+
+function mudarFiltro(f) {
+  filtroAtual = f;
+  document.querySelectorAll('.filtro-pill').forEach(function(el){ el.classList.toggle('active', el.dataset.filtro === f); });
+  loadAllData();
+}
+
+/* ═══════════════════════════════════════
+   LISTA DE CONVERSAS
+════════════════════════════════════════ */
+function renderListaConversas() {
+  var el = document.getElementById('conv-lista');
+  el.innerHTML = db.conversas.length ? db.conversas.map(function(c){
+    var cardInfo = c.card ? ('<span class="badge badge-blue">' + c.card.codigo + '</span>') : '<span class="badge badge-gray">sem card</span>';
+    var setorInfo = c.setor_atual ? ('<span class="badge badge-gold">' + c.setor_atual.nome + '</span>') : '';
+    return '<div class="conv-item' + (conversaAtual && conversaAtual.id === c.id ? ' active' : '') + '" onclick="selecionarConversa(\'' + c.id + '\')">' +
+      '<div class="conv-item-top"><span class="conv-item-nome">' + (c.nome_contato || c.telefone) + '</span></div>' +
+      '<div class="conv-item-sub">' + cardInfo + setorInfo + '</div>' +
+      '</div>';
+  }).join('') : '<div class="tbl-empty">Nenhuma conversa ainda</div>';
+}
+
+async function selecionarConversa(id) {
+  conversaAtual = db.conversas.find(function(c){ return c.id === id; }) || { id: id };
+  modoSelecao = false;
+  mensagensSelecionadas.clear();
+  document.getElementById('chat-vazio').style.display = 'none';
+  document.getElementById('chat-conteudo').style.display = 'flex';
+  document.getElementById('chat-nome').textContent = conversaAtual.nome_contato || conversaAtual.telefone;
+  document.getElementById('chat-sub').textContent = conversaAtual.telefone + (conversaAtual.card ? ' · Card ' + conversaAtual.card.codigo : ' · Sem card vinculado');
+  renderListaConversas();
+  var r = await apiFetch(API_WA + '/conversas/' + id + '/mensagens');
+  mensagensAtual = r.ok ? await r.json() : [];
+  renderChat();
+}
+
+function iconePorMime_(mime) {
+  mime = mime || '';
+  if (mime.indexOf('image/') === 0) return 'imagem';
+  return 'documento';
+}
+
+function renderChat() {
+  var corpo = document.getElementById('chat-corpo');
+  corpo.className = 'chat-corpo' + (modoSelecao ? ' selecionando' : '');
+  corpo.innerHTML = mensagensAtual.map(function(m){
+    var checked = mensagensSelecionadas.has(m.id) ? 'checked' : '';
+    var chk = m.storage_path ? '<input type="checkbox" class="msg-chk" ' + checked + ' onchange="toggleMensagemSelecionada(\'' + m.id + '\')">' : '<span class="msg-chk"></span>';
+    var media = '';
+    if (m.storage_path) {
+      if (iconePorMime_(m.mime_type) === 'imagem') {
+        media = '<div class="msg-media"><img src="' + m.url + '" alt=""></div>';
+      } else {
+        media = '<div class="msg-media"><a href="' + m.url + '" target="_blank" rel="noopener"><i class="ti ti-file"></i> ' + (m.nome_arquivo || 'arquivo') + '</a></div>';
+      }
+    }
+    var autor = m.direcao === 'out' ? '<div class="msg-autor">' + (m.usuario ? m.usuario.nome : 'Você') + '</div>' : '';
+    return '<div class="msg ' + (m.direcao === 'out' ? 'msg-out' : 'msg-in') + '">' + chk +
+      '<div>' + autor + (m.texto ? '<div>' + m.texto + '</div>' : '') + media + '</div></div>';
+  }).join('');
+  corpo.scrollTop = corpo.scrollHeight;
+  document.getElementById('btn-selecionar').classList.toggle('active', modoSelecao);
+  atualizarActionBar();
+}
+
+function toggleModoSelecao() {
+  modoSelecao = !modoSelecao;
+  if (!modoSelecao) mensagensSelecionadas.clear();
+  renderChat();
+}
+
+function toggleMensagemSelecionada(id) {
+  if (mensagensSelecionadas.has(id)) mensagensSelecionadas.delete(id); else mensagensSelecionadas.add(id);
+  atualizarActionBar();
+}
+
+function atualizarActionBar() {
+  var bar = document.getElementById('action-bar');
+  bar.classList.toggle('visible', mensagensSelecionadas.size > 0);
+  document.getElementById('action-bar-count').textContent = mensagensSelecionadas.size + ' selecionado(s)';
+}
+
+/* ═══════════════════════════════════════
+   ENVIO DE TEXTO
+════════════════════════════════════════ */
+async function enviarTexto() {
+  var input = document.getElementById('chat-input-texto');
+  var texto = input.value.trim();
+  if (!texto || !conversaAtual) return;
+  try {
+    var r = await apiFetch(API_WA + '/conversas/' + conversaAtual.id + '/mensagens', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: texto }),
+    });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao enviar: ' + (j.error || '')); return; }
+    input.value = '';
+    await selecionarConversa(conversaAtual.id);
+  } catch (e) { alert('Erro de conexão ao enviar mensagem.'); }
+}
+
+/* ═══════════════════════════════════════
+   TRANSFERIR
+════════════════════════════════════════ */
+function abrirModalTransferir() {
+  var selSetor = document.getElementById('transf-setor');
+  selSetor.innerHTML = '<option value="">— Nenhum —</option>' + db.setores.map(function(s){ return '<option value="' + s.id + '">' + s.nome + '</option>'; }).join('');
+  atualizarUsuariosDoSetorTransferir();
+  document.getElementById('modal-transferir').classList.add('open');
+}
+
+function atualizarUsuariosDoSetorTransferir() {
+  var setorId = document.getElementById('transf-setor').value;
+  var ids = setorId ? db.setorUsuarios.filter(function(su){ return su.setor_id === setorId; }).map(function(su){ return su.usuario_id; }) : db.usuarios.map(function(u){ return u.id; });
+  var selUsuario = document.getElementById('transf-usuario');
+  selUsuario.innerHTML = '<option value="">— Nenhum —</option>' + db.usuarios.filter(function(u){ return ids.includes(u.id); }).map(function(u){ return '<option value="' + u.id + '">' + u.nome + '</option>'; }).join('');
+}
+
+async function salvarTransferencia() {
+  if (!conversaAtual) return;
+  var paraSetorId = document.getElementById('transf-setor').value || null;
+  var paraUsuarioId = document.getElementById('transf-usuario').value || null;
+  try {
+    var r = await apiFetch(API_WA + '/conversas/' + conversaAtual.id + '/transferir', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paraSetorId: paraSetorId, paraUsuarioId: paraUsuarioId }),
+    });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao transferir: ' + (j.error || '')); return; }
+    document.getElementById('modal-transferir').classList.remove('open');
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao transferir.'); }
+}
+
+/* ═══════════════════════════════════════
+   ROTEAMENTO DE ANEXOS (os 3 botões)
+════════════════════════════════════════ */
+async function rotear(acao, cardIdForcado) {
+  if (!conversaAtual || !mensagensSelecionadas.size) return;
+  if (!cardIdForcado && !conversaAtual.card_id && !(conversaAtual.card && conversaAtual.card.codigo)) {
+    // Sem card vinculado ainda — busca candidatos antes de seguir.
+    var r0 = await apiFetch(API_WA + '/conversas/' + conversaAtual.id + '/cards-candidatos');
+    var candidatos0 = r0.ok ? await r0.json() : [];
+    if (candidatos0.length !== 1) { abrirModalAmbiguidade(acao, candidatos0); return; }
+    cardIdForcado = candidatos0[0].id;
+  }
+  try {
+    var r = await apiFetch(API_WA + '/conversas/' + conversaAtual.id + '/rotear', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: acao, mensagemIds: Array.from(mensagensSelecionadas), cardId: cardIdForcado || null }),
+    });
+    if (!r.ok) {
+      var j = await r.json().catch(function(){ return {}; });
+      alert('Erro ao rotear: ' + (j.error || ''));
+      return;
+    }
+    toggleModoSelecao();
+    alert('Enviado com sucesso.');
+    await selecionarConversa(conversaAtual.id);
+  } catch (e) { alert('Erro de conexão ao rotear anexo(s).'); }
+}
+
+async function abrirModalAmbiguidade(acao, candidatosJaCarregados) {
+  acaoRoteamentoPendente = acao;
+  var candidatos = candidatosJaCarregados;
+  if (!candidatos || !candidatos.length) {
+    var r = await apiFetch(API_WA + '/conversas/' + conversaAtual.id + '/cards-candidatos');
+    candidatos = r.ok ? await r.json() : [];
+  }
+  var lista = document.getElementById('ambiguidade-lista');
+  lista.innerHTML = candidatos.length ? candidatos.map(function(c){
+    return '<button class="btn btn-ghost btn-sm" style="justify-content:flex-start" onclick="escolherCardAmbiguo(\'' + c.id + '\')">' +
+      '<strong>' + c.codigo + '</strong>&nbsp;—&nbsp;' + (c.cliente || '—') + '&nbsp;<span class="badge badge-gray">' + c.status + '</span></button>';
+  }).join('') : '<div class="tbl-empty">Nenhum card em aberto encontrado pra esse telefone.</div>';
+  document.getElementById('modal-ambiguidade').classList.add('open');
+}
+
+function escolherCardAmbiguo(cardId) {
+  document.getElementById('modal-ambiguidade').classList.remove('open');
+  rotear(acaoRoteamentoPendente, cardId);
+}
+
+/* ═══════════════════════════════════════
+   ADMIN — SETORES E VÍNCULO DE USUÁRIOS
+════════════════════════════════════════ */
+function renderSetores() {
+  var wrap = document.getElementById('setores-wrap');
+  wrap.innerHTML = db.setores.map(function(s){
+    var membros = db.setorUsuarios.filter(function(su){ return su.setor_id === s.id; }).map(function(su){ return su.usuario_id; });
+    var chips = db.usuarios.map(function(u){
+      var ativo = membros.includes(u.id);
+      return '<div class="usuario-chip' + (ativo ? ' ativo' : '') + '" onclick="toggleVinculoSetor(\'' + s.id + '\',\'' + u.id + '\',' + ativo + ')">' +
+        (ativo ? '<i class="ti ti-check" style="font-size:12px"></i>' : '') + u.nome + '</div>';
+    }).join('');
+    return '<div class="setor-card">' +
+      '<div class="setor-card-header"><i class="ti ti-users-group" style="color:var(--gold)"></i><strong>' + s.nome + '</strong></div>' +
+      '<div class="setor-card-body">' + (chips || '<span class="tbl-empty">Nenhum usuário cadastrado</span>') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function toggleVinculoSetor(setorId, usuarioId, estaAtivo) {
+  try {
+    if (estaAtivo) {
+      var vinculo = db.setorUsuarios.find(function(su){ return su.setor_id === setorId && su.usuario_id === usuarioId; });
+      if (!vinculo) return;
+      await apiFetch(API_WA + '/setor-usuarios/' + vinculo.id, { method: 'DELETE' });
+    } else {
+      await apiFetch(API_WA + '/setor-usuarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ setor_id: setorId, usuario_id: usuarioId }) });
+    }
+    await loadAllData();
+  } catch (e) { alert('Erro de conexão ao atualizar vínculo.'); }
+}
+
+/* ═══════════════════════════════════════
+   TEMA + BOOTSTRAP
+════════════════════════════════════════ */
+(function(){
+  function applyTema(t){
+    document.body.classList.remove('tema-claro','tema-escuro');
+    if (t === 'claro') document.body.classList.add('tema-claro');
+  }
+  var t = localStorage.getItem('barretos_tema') || 'escuro';
+  applyTema(t);
+  window.addEventListener('message', function(ev){
+    if (ev.data && ev.data.type === 'barretos_tema') {
+      localStorage.setItem('barretos_tema', ev.data.tema);
+      applyTema(ev.data.tema);
+    }
+  });
+})();
+
+document.addEventListener('DOMContentLoaded', function(){
+  if (!getAuthToken()) { mostrarTelaSemAcesso(); return; }
+  var perfil = localStorage.getItem('barretos_perfil') || sessionStorage.getItem('barretos_perfil') || '';
+  if (perfil === 'gestor') {
+    document.getElementById('section-admin').style.display = '';
+    document.getElementById('nav-setores').style.display = '';
+  }
+  loadAllData();
+});
+</script>
+</body>
+</html>

@@ -510,6 +510,9 @@ body.tema-claro .topbar * { color: #E8E9F0 !important; }
       <div class="sb-item" id="nav-marketing" onclick="navigate('marketing')">
         <i class="ti ti-speakerphone"></i><span>Marketing</span>
       </div>
+      <div class="sb-item" id="nav-whatsapp_operacional" onclick="navigate('whatsapp_operacional')">
+        <i class="ti ti-brand-whatsapp"></i><span>WhatsApp Operacional</span>
+      </div>
       <div class="sb-section" id="section-rh">RH</div>
       <div class="sb-item" id="nav-rh_colaboradores" onclick="navigate('rh_colaboradores')">
         <i class="ti ti-users-group"></i><span>RH</span>
@@ -858,6 +861,7 @@ var TOOLS = {
   calendario:{ src:"calendario.html",            cat:"Geral",       label:"Calendário",            icon:"ti-calendar"         },
   despesas:  { src:"despesas.html",              cat:"Geral",       label:"Despesas",              icon:"ti-wallet"           },
   marketing: { src:"marketing.html",             cat:"Geral",       label:"Marketing",             icon:"ti-speakerphone"     },
+  whatsapp_operacional: { src:"whatsapp_operacional.html", cat:"Geral", label:"WhatsApp Operacional", icon:"ti-brand-whatsapp" },
   rh_colaboradores: { src:"rh_gestao.html",      cat:"RH",          label:"RH",                     icon:"ti-users-group"     },
   diarias:   { src:"diarias_desktop.html",      cat:"RH",          label:"Diárias de Motoristas", icon:"ti-calendar-check"   },
   cotacao:   { src:"cotacao_comercial.html",     cat:"Comercial",   label:"Cotação Comercial",     icon:"ti-calculator"       },
@@ -992,7 +996,7 @@ function aplicarMenuPermissoes(p){
   // nunca deveria acessar. Se uma ferramenta nova precisar ser liberada
   // pra alguém, isso deve ser feito atualizando a permissão dela mesmo,
   // não escondendo o controle de acesso inteiro.)
-  ["cotacao","relatorio","crm","clientes","calendario","despesas","marketing","galpao","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","patrimonio","config","log_atividades","rh_colaboradores","diarias","financeiro","faturamento","conciliacao"].forEach(function(k){
+  ["cotacao","relatorio","crm","clientes","calendario","despesas","marketing","whatsapp_operacional","galpao","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","patrimonio","config","log_atividades","rh_colaboradores","diarias","financeiro","faturamento","conciliacao"].forEach(function(k){
     var el=document.getElementById("nav-"+k);
     if(!el) return;
     el.style.display=p.includes(k)?"flex":"none";
@@ -1005,7 +1009,7 @@ function aplicarMenuPermissoes(p){
 }
 
 function mostrarTudo(){
-  ["cotacao","relatorio","crm","clientes","calendario","despesas","marketing","galpao","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","patrimonio","rh_colaboradores","diarias","financeiro","faturamento","conciliacao"].forEach(function(k){
+  ["cotacao","relatorio","crm","clientes","calendario","despesas","marketing","whatsapp_operacional","galpao","frota","mapa_operacoes","torre_controle","kanban_pin","kanban_inf","kanban_bar","kanban_gon","ideias","helpdesk","patrimonio","rh_colaboradores","diarias","financeiro","faturamento","conciliacao"].forEach(function(k){
     var el=document.getElementById("nav-"+k); if(el) el.style.display="flex";
   });
   ["section-geral","section-rh","section-comercial","section-financeiro","section-operacional","section-melhoria","section-contabilidade"].forEach(function(s){
