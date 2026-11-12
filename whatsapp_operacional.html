@@ -159,6 +159,9 @@ body.tema-claro .setor-card{background:#FFFFFF!important;border-color:#E2E8F0!im
   <div class="nav-item" id="nav-setores" onclick="showView('setores')" style="display:none">
     <i class="ti ti-users-group"></i>Setores
   </div>
+  <div class="nav-item" id="nav-atendimento" onclick="showView('atendimento')" style="display:none">
+    <i class="ti ti-chart-line"></i>Atendimento
+  </div>
 </nav>
 
 <div class="main">
@@ -177,6 +180,7 @@ body.tema-claro .setor-card{background:#FFFFFF!important;border-color:#E2E8F0!im
         <button class="btn btn-ghost btn-sm filtro-pill" data-filtro="minhas" onclick="mudarFiltro('minhas')">Minhas</button>
         <button class="btn btn-ghost btn-sm filtro-pill" data-filtro="meu-setor" onclick="mudarFiltro('meu-setor')">Meu setor</button>
         <button class="btn btn-ghost btn-sm filtro-pill" data-filtro="sem-dono" onclick="mudarFiltro('sem-dono')">Sem dono</button>
+        <button class="btn btn-ghost btn-sm filtro-pill" data-filtro="encerradas" onclick="mudarFiltro('encerradas')">Encerradas</button>
       </div>
       <div class="conv-lista" id="conv-lista"><div class="loading-row"><span class="spinner"></span> Carregando…</div></div>
     </div>
@@ -190,6 +194,7 @@ body.tema-claro .setor-card{background:#FFFFFF!important;border-color:#E2E8F0!im
           </div>
           <button class="btn btn-ghost btn-sm" id="btn-selecionar" onclick="toggleModoSelecao()"><i class="ti ti-checkbox" style="font-size:13px"></i> Selecionar anexos</button>
           <button class="btn btn-ghost btn-sm" onclick="abrirModalTransferir()"><i class="ti ti-arrow-forward-up" style="font-size:13px"></i> Transferir</button>
+          <button class="btn btn-danger btn-sm" id="btn-finalizar" onclick="finalizarConversaAtual()"><i class="ti ti-circle-check" style="font-size:13px"></i> Finalizar conversa</button>
         </div>
         <div class="chat-corpo" id="chat-corpo"></div>
         <div class="action-bar" id="action-bar">
@@ -209,6 +214,19 @@ body.tema-claro .setor-card{background:#FFFFFF!important;border-color:#E2E8F0!im
   <!-- ─── ADMIN SETORES ─── -->
   <div id="view-setores" class="view">
     <div class="setores-wrap" id="setores-wrap"><div class="loading-row"><span class="spinner"></span> Carregando…</div></div>
+  </div>
+
+  <!-- ─── ATENDIMENTO (métricas) ─── -->
+  <div id="view-atendimento" class="view">
+    <div class="setores-wrap">
+      <div style="font-size:12px;color:var(--txt-dim);margin-bottom:14px">
+        "Pra assumir": da transferência pra essa pessoa até a primeira resposta dela. "Pra finalizar": da transferência até ela encerrar a conversa.
+      </div>
+      <div style="overflow-x:auto"><table class="tbl" id="tbl-atendimento">
+        <thead><tr><th>Usuário</th><th>Tempo médio p/ assumir</th><th>Qtd.</th><th>Tempo médio p/ finalizar</th><th>Qtd.</th></tr></thead>
+        <tbody id="atendimento-tbody"><tr><td colspan="5" class="tbl-empty"><span class="spinner"></span> Carregando…</td></tr></tbody>
+      </table></div>
+    </div>
   </div>
 </div>
 
@@ -323,9 +341,12 @@ function showView(v) {
   document.querySelectorAll('.nav-item').forEach(function(el){
     if (el.getAttribute('onclick') === "showView('" + v + "')") el.classList.add('active');
   });
-  document.getElementById('topbar-title').textContent = v === 'setores' ? 'Setores' : 'Conversas';
-  document.getElementById('topbar-icon').className = v === 'setores' ? 'ti ti-users-group' : 'ti ti-message-circle';
+  var titulos = { setores: 'Setores', atendimento: 'Atendimento' };
+  var icones = { setores: 'ti-users-group', atendimento: 'ti-chart-line' };
+  document.getElementById('topbar-title').textContent = titulos[v] || 'Conversas';
+  document.getElementById('topbar-icon').className = 'ti ' + (icones[v] || 'ti-message-circle');
   if (v === 'setores') renderSetores();
+  if (v === 'atendimento') carregarAtendimento();
 }
 
 /* ═══════════════════════════════════════
@@ -375,8 +396,11 @@ async function selecionarConversa(id) {
   mensagensSelecionadas.clear();
   document.getElementById('chat-vazio').style.display = 'none';
   document.getElementById('chat-conteudo').style.display = 'flex';
+  var encerrada = conversaAtual.status === 'encerrada';
   document.getElementById('chat-nome').textContent = conversaAtual.nome_contato || conversaAtual.telefone;
-  document.getElementById('chat-sub').textContent = conversaAtual.telefone + (conversaAtual.card ? ' · Card ' + conversaAtual.card.codigo : ' · Sem card vinculado');
+  document.getElementById('chat-sub').textContent = conversaAtual.telefone + (conversaAtual.card ? ' · Card ' + conversaAtual.card.codigo : ' · Sem card vinculado') + (encerrada ? ' · Encerrada' : '');
+  document.getElementById('btn-finalizar').style.display = encerrada ? 'none' : '';
+  document.getElementById('chat-input-texto').disabled = encerrada;
   renderListaConversas();
   var r = await apiFetch(API_WA + '/conversas/' + id + '/mensagens');
   mensagensAtual = r.ok ? await r.json() : [];
@@ -444,6 +468,19 @@ async function enviarTexto() {
     input.value = '';
     await selecionarConversa(conversaAtual.id);
   } catch (e) { alert('Erro de conexão ao enviar mensagem.'); }
+}
+
+async function finalizarConversaAtual() {
+  if (!conversaAtual) return;
+  if (!confirm('Finalizar esta conversa? Ela sai da fila de atendimento ativa.')) return;
+  try {
+    var r = await apiFetch(API_WA + '/conversas/' + conversaAtual.id + '/finalizar', { method: 'PUT' });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao finalizar: ' + (j.error || '')); return; }
+    await loadAllData();
+    document.getElementById('chat-vazio').style.display = 'flex';
+    document.getElementById('chat-conteudo').style.display = 'none';
+    conversaAtual = null;
+  } catch (e) { alert('Erro de conexão ao finalizar conversa.'); }
 }
 
 /* ═══════════════════════════════════════
@@ -558,6 +595,31 @@ async function toggleVinculoSetor(setorId, usuarioId, estaAtivo) {
 }
 
 /* ═══════════════════════════════════════
+   ATENDIMENTO — métricas de SLA (só gestor)
+════════════════════════════════════════ */
+function formatarMinutos_(min) {
+  if (min === null || min === undefined) return '—';
+  if (min < 60) return min + ' min';
+  var h = Math.floor(min / 60), m = min % 60;
+  return h + 'h' + (m ? ' ' + m + 'min' : '');
+}
+
+async function carregarAtendimento() {
+  var tbody = document.getElementById('atendimento-tbody');
+  try {
+    var r = await apiFetch(API_WA + '/metricas-atendimento');
+    var metricas = r.ok ? await r.json() : [];
+    tbody.innerHTML = metricas.length ? metricas.map(function(m){
+      return '<tr><td>' + m.nome + '</td>' +
+        '<td>' + formatarMinutos_(m.tempoMedioAssumirMin) + '</td><td>' + m.nAssumir + '</td>' +
+        '<td>' + formatarMinutos_(m.tempoMedioFinalizarMin) + '</td><td>' + m.nFinalizar + '</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="tbl-empty">Nenhum dado ainda — precisa de conversas transferidas e respondidas/finalizadas</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Erro ao carregar métricas</td></tr>';
+  }
+}
+
+/* ═══════════════════════════════════════
    TEMA + BOOTSTRAP
 ════════════════════════════════════════ */
 (function(){
@@ -581,6 +643,7 @@ document.addEventListener('DOMContentLoaded', function(){
   if (perfil === 'gestor') {
     document.getElementById('section-admin').style.display = '';
     document.getElementById('nav-setores').style.display = '';
+    document.getElementById('nav-atendimento').style.display = '';
   }
   loadAllData();
 });
