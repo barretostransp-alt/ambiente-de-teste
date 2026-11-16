@@ -125,6 +125,8 @@ select.form-input option{background:var(--surface2);color:var(--txt)}
 .msg-chk{margin-top:2px;flex-shrink:0;display:none}
 .selecionando .msg-chk{display:block}
 .chat-rodape{border-top:1px solid var(--border);padding:12px;display:flex;gap:8px}
+#btn-gravar-audio.gravando{background:var(--red-dim);border-color:var(--red-border);color:var(--red);animation:pulse-rec 1.2s infinite}
+@keyframes pulse-rec{0%,100%{opacity:1}50%{opacity:.45}}
 .chat-vazio{flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt-dim);font-size:13px}
 /* ── BARRA DE AÇÃO (seleção múltipla) ── */
 .action-bar{display:none;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--surface2);align-items:center}
@@ -212,6 +214,7 @@ body.tema-claro .setor-card{background:#FFFFFF!important;border-color:#E2E8F0!im
         </div>
         <div class="chat-rodape">
           <input class="form-input" id="chat-input-texto" placeholder="Digite uma mensagem…" onkeydown="if(event.key==='Enter')enviarTexto()">
+          <button class="btn btn-ghost btn-sm" id="btn-gravar-audio" onclick="toggleGravarAudio()" title="Gravar áudio"><i class="ti ti-microphone" style="font-size:13px"></i></button>
           <button class="btn btn-primary btn-sm" onclick="enviarTexto()"><i class="ti ti-send" style="font-size:13px"></i> Enviar</button>
         </div>
       </div>
@@ -428,6 +431,7 @@ async function selecionarConversa(id) {
 function iconePorMime_(mime) {
   mime = mime || '';
   if (mime.indexOf('image/') === 0) return 'imagem';
+  if (mime.indexOf('audio/') === 0) return 'audio';
   return 'documento';
 }
 
@@ -439,8 +443,11 @@ function renderChat() {
     var chk = m.storage_path ? '<input type="checkbox" class="msg-chk" ' + checked + ' onchange="toggleMensagemSelecionada(\'' + m.id + '\')">' : '<span class="msg-chk"></span>';
     var media = '';
     if (m.storage_path) {
-      if (iconePorMime_(m.mime_type) === 'imagem') {
+      var tipoMidia = iconePorMime_(m.mime_type);
+      if (tipoMidia === 'imagem') {
         media = '<div class="msg-media"><img src="' + m.url + '" alt=""></div>';
+      } else if (tipoMidia === 'audio') {
+        media = '<div class="msg-media"><audio controls style="max-width:220px;height:32px;display:block;margin-top:4px" src="' + m.url + '"></audio></div>';
       } else {
         media = '<div class="msg-media"><a href="' + m.url + '" target="_blank" rel="noopener"><i class="ti ti-file"></i> ' + (m.nome_arquivo || 'arquivo') + '</a></div>';
       }
@@ -486,6 +493,69 @@ async function enviarTexto() {
     input.value = '';
     await selecionarConversa(conversaAtual.id);
   } catch (e) { alert('Erro de conexão ao enviar mensagem.'); }
+}
+
+/* ═══════════════════════════════════════
+   GRAVAÇÃO E ENVIO DE ÁUDIO — o navegador grava no formato que tiver
+   (webm/mp4), o backend converte pra OGG/Opus antes de mandar pra Meta,
+   que é o formato que o WhatsApp exibe como mensagem de voz de verdade.
+════════════════════════════════════════ */
+var mediaRecorderAtual = null;
+var chunksGravacaoAudio = [];
+var gravandoAudio = false;
+
+async function toggleGravarAudio() {
+  if (!conversaAtual) return;
+  if (gravandoAudio) { mediaRecorderAtual.stop(); return; }
+  try {
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunksGravacaoAudio = [];
+    mediaRecorderAtual = new MediaRecorder(stream);
+    mediaRecorderAtual.ondataavailable = function(e){ if (e.data && e.data.size > 0) chunksGravacaoAudio.push(e.data); };
+    mediaRecorderAtual.onstop = function(){
+      stream.getTracks().forEach(function(t){ t.stop(); });
+      gravandoAudio = false;
+      atualizarBotaoGravar_();
+      var blob = new Blob(chunksGravacaoAudio, { type: mediaRecorderAtual.mimeType || 'audio/webm' });
+      enviarAudioGravado_(blob);
+    };
+    mediaRecorderAtual.start();
+    gravandoAudio = true;
+    atualizarBotaoGravar_();
+  } catch (e) {
+    alert('Não foi possível acessar o microfone: ' + (e.message || ''));
+  }
+}
+
+function atualizarBotaoGravar_() {
+  var btn = document.getElementById('btn-gravar-audio');
+  btn.classList.toggle('gravando', gravandoAudio);
+  btn.innerHTML = gravandoAudio
+    ? '<i class="ti ti-player-stop-filled" style="font-size:13px"></i>'
+    : '<i class="ti ti-microphone" style="font-size:13px"></i>';
+}
+
+async function enviarAudioGravado_(blob) {
+  var btn = document.getElementById('btn-gravar-audio');
+  btn.disabled = true;
+  try {
+    var base64 = await new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(ev){ resolve(ev.target.result.split(',')[1]); };
+      reader.onerror = function(){ reject(new Error('Falha ao ler áudio gravado')); };
+      reader.readAsDataURL(blob);
+    });
+    var r = await apiFetch(API_WA + '/conversas/' + conversaAtual.id + '/audio', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: base64, mimeType: blob.type || 'audio/webm' }),
+    });
+    if (!r.ok) { var j = await r.json().catch(function(){ return {}; }); alert('Erro ao enviar áudio: ' + (j.error || '')); return; }
+    await selecionarConversa(conversaAtual.id);
+  } catch (e) {
+    alert('Erro de conexão ao enviar áudio.');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function finalizarConversaAtual() {
