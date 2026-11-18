@@ -1535,9 +1535,15 @@ function renderAlertasDash(){
   });
 
   var alerts = alertasDashData;
-  if(filtroAlertaDashAtual==='vencidos') alerts = alerts.filter(o=>o.diff<0);
-  else if(filtroAlertaDashAtual==='avencer') alerts = alerts.filter(o=>o.diff>=0);
-  else if(filtroAlertaDashAtual==='protestados') alerts = alerts.filter(o=>o.l.status==='Protestado');
+  // Protestado só aparece no próprio filtro — nos outros (Todos, Vencidos,
+  // A Vencer) ele some da lista, pra não poluir o que já está vencido
+  // "normal" com o que já virou um problema à parte.
+  if(filtroAlertaDashAtual==='protestados') alerts = alerts.filter(o=>o.l.status==='Protestado');
+  else{
+    alerts = alerts.filter(o=>o.l.status!=='Protestado');
+    if(filtroAlertaDashAtual==='vencidos') alerts = alerts.filter(o=>o.diff<0);
+    else if(filtroAlertaDashAtual==='avencer') alerts = alerts.filter(o=>o.diff>=0);
+  }
 
   var alertsEl = document.getElementById('dash-alerts');
   alertsEl.innerHTML = alerts.length ? alerts.map(o=>{
