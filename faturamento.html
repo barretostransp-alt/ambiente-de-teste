@@ -1585,7 +1585,11 @@ function diasEmAbertoMdf_(r){
 }
 function renderControleMdf(){
   var filtro = (document.getElementById('mdf-f-texto').value||'').toLowerCase();
-  var rows = todosRegistrosFat.filter(function(r){ return !!r.mdf; });
+  // Só entram MDFs com data de entrada registrada — ou seja, só o que
+  // passou pelo controle novo daqui pra frente. MDFs antigos (de antes
+  // dessa tela existir) não têm essa data e ficam de fora, por pedido do
+  // Alex pra começar o controle "zerado".
+  var rows = todosRegistrosFat.filter(function(r){ return !!r.mdfDataEntrada; });
   if(filtro){
     rows = rows.filter(function(r){
       return (r.mdf||'').toLowerCase().includes(filtro) ||
