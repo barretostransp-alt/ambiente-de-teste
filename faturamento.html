@@ -1528,9 +1528,10 @@ function renderFila(){
     </div>`;
   }).join('');
   var htmlAnalise = aguardandoAnalise.map(function(r){
+    var mdfTag = r.mdf ? '<span class="badge badge-gold" style="white-space:nowrap"><i class="ti ti-file-certificate" style="font-size:11px"></i> MDF nº '+e(r.mdf)+'</span>' : '';
     return `<div class="fila-card" ${ehColaborador?'':`onclick="openSidePanel('${r._id}')"`} style="cursor:${ehColaborador?'default':'pointer'}">
       <div class="fila-card-icon" style="background:var(--blue-dim)"><i class="ti ti-receipt" style="color:var(--blue)"></i></div>
-      <div class="fila-card-main"><strong>${r.cliente||'—'} · CT-e ${r.cte||'—'}</strong>
+      <div class="fila-card-main"><strong style="display:flex;align-items:center;gap:7px">${r.cliente||'—'} · CT-e ${r.cte||'—'} ${mdfTag}</strong>
         <span style="display:block">Canhoto enviado, aguardando análise · Cód. ${r.cod||'—'}</span>
       </div>
       ${ehColaborador ? '' : '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openSidePanel(\''+r._id+'\')"><i class="ti ti-eye"></i> Analisar</button>'}
